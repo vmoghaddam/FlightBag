@@ -54,6 +54,19 @@ namespace APCore.Controllers
         }
 
         [HttpGet]
+        //[Authorize]
+        [Route("api/crew/flights/{from}/{to}")]
+        public async Task<IActionResult> GetFlights(DateTime from, DateTime to,string origin,string destination,string no,string register)
+        {
+            //var userData = User.FindFirst(ClaimTypes.UserData).Value;
+            //var crewId = Objects.AuthDataHelper.GetEmployeeId(userData);
+            var result = await _flightService.GetFlights(from, to, no, origin, destination, "", "", "", "", "", register);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+        }
+
+        [HttpGet]
         [Authorize]
         [Route("api/crew/calendar/ym/{crewId}/{year}/{month}")]
         public async Task<IActionResult> GetCrewCalendar(int crewId,int year,int month)

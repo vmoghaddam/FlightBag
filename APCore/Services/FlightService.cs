@@ -13,6 +13,7 @@ namespace APCore.Services
     {
 
         Task<DataResponse> GetCrewFlights(int crewId, DateTime from, DateTime to);
+        Task<DataResponse> GetFlights(DateTime from, DateTime to, string no, string origin, string destination, string route, string cpt, string fo, string ip, string sccm, string register);
 
         DbSet<AppCrewFlight> GetCrewFlightsQuery();
         DbSet<AppLeg> GetFlightsQuery();
@@ -47,6 +48,30 @@ namespace APCore.Services
                     q.CrewId == crewId &&
                     q.STDDay >= _from && q.STDDay <= _to
             ).ToListAsync();
+            return new DataResponse
+            {
+                Data = flights,
+                Errors = null,
+                IsSuccess = true
+            };
+        }
+        public async Task<DataResponse> GetFlights(DateTime from, DateTime to, string no, string origin, string destination, string route, string cpt, string fo, string ip, string sccm,string register)
+        {
+            var _from = from.Date;
+            var _to = to.Date;
+            var query =   _context.AppCrewFlights.Where(q =>
+                   
+                    q.STDDay >= _from && q.STDDay <= _to
+            ) ;
+            if (!string.IsNullOrEmpty(no))
+                query = query.Where(q => q.FlightNumber == no);
+            if (!string.IsNullOrEmpty(origin))
+                query = query.Where(q => q.FromAirportIATA == origin);
+            if (!string.IsNullOrEmpty(destination))
+                query = query.Where(q => q.ToAirportIATA == destination);
+            if (!string.IsNullOrEmpty(register))
+                query = query.Where(q => q.Register == register);
+            var flights = await query.ToListAsync();
             return new DataResponse
             {
                 Data = flights,
