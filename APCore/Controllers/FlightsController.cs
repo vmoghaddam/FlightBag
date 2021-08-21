@@ -55,7 +55,7 @@ namespace APCore.Controllers
 
         [HttpGet]
         //[Authorize]
-        [Route("api/crew/flights/{from}/{to}")]
+        [Route("api/flights/{from}/{to}")]
         public async Task<IActionResult> GetFlights(DateTime from, DateTime to,string origin,string destination,string no,string register)
         {
             //var userData = User.FindFirst(ClaimTypes.UserData).Value;
