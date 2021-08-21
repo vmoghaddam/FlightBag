@@ -1,0 +1,12 @@
+{
+    "version": "1.0.0",
+     "name": "ClientAppHtml",
+     "private": true,
+     "devDependencies": {},
+     "scripts":{
+       "start": "http-server -o -p 8095"
+     },
+     "dependencies": {
+       "http-server": "^0.11.1"
+     }
+   }

@@ -1,0 +1,60 @@
+﻿<style>
+    .station {
+        background-color: dimgray;
+    }
+
+        .station.selected {
+            background-color: lightseagreen !important;
+        }
+
+    .selected-obj {
+        background: #306b65 !important;
+    }
+</style>
+<div ng-controller="metarController">
+    <div id="popup_add" dx-popup="popup_add" class="no-padding">
+        <div style="padding:5px;">
+            <div style="padding:0px;">
+                <table style="width:100%;">
+                    <tr>
+                        <td ng-repeat="x in stations" style="padding:10px;" ng-style="{'width':(100.0/stations.length)+'%'}">
+                            <div style="padding:10px;border:1px solid #eee;text-align:center;font-size:18px;color:white;" ng-click="stationClick(x)" ng-class="getStationClass(x)">
+                                {{x}}
+                            </div>
+                        </td>
+                    </tr>
+
+                </table>
+            </div>
+            <div style="padding: 5px 10px 5px 10px;">
+                <div style="border:1px solid #eee">
+                    <div class="padding-0">
+                        <div id="scroll_left" dx-scroll-view="scroll_left" style="margin-top:5px;border-right:1px solid #eee">
+                            <div style="padding:0px 10px 5px 10px;" ng-show="isContentVisible">
+                                <div ng-repeat="taf in filtered" style="border:1px solid rgb(204, 204, 204); margin-top:5px;" ng-class="getObjClass(taf)" ng-click="showObj(taf)">
+                                   <!-- <div style="font-size:15px;font-weight:bold;border-bottom:1px dotted rgb(204, 204, 204);padding:10px">{{taf.StationId}}</div>-->
+                                    <div style="font-size:14px;padding:10px;text-align:justify;line-height:20px;">{{taf.RawText}}</div>
+                                </div>
+                            </div>
+                            <div style="clear:both"></div>
+                        </div>
+                    </div>
+                    <!--<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 padding-0">
+                        <div id="scroll_right" dx-scroll-view="scroll_right" style="margin-top:5px;">
+                            <div style="padding: 0px 10px 5px 10px;" ng-show="isContentVisible">
+
+                            </div>
+                            <div style="clear:both"></div>
+                        </div>
+                    </div>-->
+                    <div style="clear:both"></div>
+                </div>
+            </div>
+
+
+            <div style="clear:both"></div>
+        </div>
+    </div>
+    <div dx-load-panel="loadPanel"></div>
+    
+</div>

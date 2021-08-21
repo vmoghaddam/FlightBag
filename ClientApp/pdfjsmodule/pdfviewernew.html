@@ -1,0 +1,23 @@
+﻿<style>
+    .station {
+        background-color: dimgray;
+    }
+
+        .station.selected {
+            background-color: lightseagreen !important;
+        }
+
+    .selected-obj {
+        background: #306b65 !important;
+    }
+</style>
+<div ng-controller="pdfviewernewController">
+    <div id="popup_add" dx-popup="popup_add" class="no-padding">
+        <div style="padding:0px;">
+            <iframe id="frame" ng-src="{{_url}}"
+                    style="border: none;width:100%" />
+        </div>
+    </div>
+    <div dx-load-panel="loadPanel"></div>
+
+</div>
