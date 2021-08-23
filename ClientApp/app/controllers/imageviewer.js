@@ -1,10 +1,10 @@
 ﻿'use strict';
 app.controller('imageviewerController', ['$scope', '$location', 'flightService', 'authService', '$routeParams', '$rootScope', '$window', '$q', '$sce', function ($scope, $location, flightService, authService, $routeParams, $rootScope, $window, $q, $sce) {
     $scope.isFullScreen = true;
-    $scope.cWidth = $(window).width() - 100;
+    $scope.cWidth = $(window).width() - 5;
     $scope.scroll_height = $(window).height() - 100;
 
-    $scope.url = "https://localhost:5001/Upload/Weather/SIGWX/ADDS/SIGWX_ADDS_20210819_2105.png";
+    $scope.url = clientBase+'images/empty.png'; 
     $scope.scroll_width = '100%';
     $scope.scroll_view = {
         direction:'both',
@@ -51,6 +51,16 @@ app.controller('imageviewerController', ['$scope', '$location', 'flightService',
         }
     };
 
+    $scope.imgWidth = 100;
+    $scope.zoomIn = function () {
+        $scope.imgWidth = $scope.imgWidth + 10;
+    };
+    $scope.zoomOut = function () {
+        $scope.imgWidth = $scope.imgWidth - 10;
+        if ($scope.imgWidth < 100)
+            $scope.imgWidth = 100;
+    };
+
     $scope.popup_add_visible = false;
     $scope.popup_add_title = 'Viewer';
     $scope.popup_instance = null;
@@ -60,7 +70,20 @@ app.controller('imageviewerController', ['$scope', '$location', 'flightService',
         showTitle: true,
 
         toolbarItems: [
-
+            {
+                widget: 'dxButton', location: 'before', options: {
+                    type: 'default', text: 'Zoom In',   onClick: function (e) {
+                        $scope.zoomIn();
+                    }
+                }, toolbar: 'bottom'
+            },
+            {
+                widget: 'dxButton', location: 'before', options: {
+                    type: 'default', text: 'Zoom Out',   onClick: function (e) {
+                        $scope.zoomOut();
+                    }
+                }, toolbar: 'bottom'
+            },
 
             {
                 widget: 'dxButton', location: 'after', options: {
@@ -77,14 +100,17 @@ app.controller('imageviewerController', ['$scope', '$location', 'flightService',
         onShowing: function (e) {
             $scope.popup_instance.repaint();
 
-
+            $scope.imgWidth = 100;
         },
         onShown: function (e) {
+           
             $('#frame').height($(window).height() - 120);
             //https://apoc.ir/download/2021-08-01.pdf
-            var url = ('https://apoc.ir/download/2021-08-01.pdf');
-            $scope._url = $sce.trustAsResourceUrl('pdfjsmodule/viewer.html?file=' + url);
 
+            //var url = ('https://apoc.ir/download/2021-08-01.pdf');
+            //$scope._url = $sce.trustAsResourceUrl('pdfjsmodule/viewer.html?file=' + url);
+            $scope.url = $scope.tempData.url;
+            
             //var $images = $('.docs-pictures');
 
             //$images.viewer({
@@ -129,8 +155,9 @@ app.controller('imageviewerController', ['$scope', '$location', 'flightService',
     $scope.tempData = null;
     $scope.$on('InitImageViewer', function (event, prms) {
 
-
+        $scope.url = clientBase + 'images/empty.png'; 
         $scope.tempData = prms;
+        $scope.popup_add_title = prms.caption;
 
         $scope.popup_add_visible = true;
 

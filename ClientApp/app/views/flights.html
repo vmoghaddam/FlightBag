@@ -197,13 +197,18 @@
     .event.dother {
         color: #ffffff;
     }
+
     .hasInfo {
-        background-color: #428bca !important;
+        background-color: darkslategray !important;
+    }
+    .wind td {border:1px solid #ddd; text-align:center;padding:10px;}
+    .folder-item {
+        background: darkslategray;
     }
 </style>
 
 <div style="height:100%;">
-    
+
     <div class="box flight maincontainer" style="height:100%;overflow-y:hidden;max-width:1024px;margin:0 auto 0 auto">
         <div class="rowx header" ng-include="'app/views/header.html?vx=2'"></div>
         <div style="position:relative;">
@@ -233,7 +238,8 @@
                 </div>
                 <div class="col-lg-5 col-md-5 col-sm-5 col-xs-6 padding-0" style="border-right:1px solid #eee;">
                     <div id="leftColumn" dx-scroll-view="scroll_left" style="padding:5px;padding-top:0">
-                        <div ng-repeat="g in groupedFlights" style="border-bottom:1px dotted #eee;padding-bottom:10px;padding-top:5px">
+                        <!--<img  ng-src="{{imgurl}}" style="width:200px;" />-->
+                        <div ng-repeat="g in groupedFlights" style="border-bottom:1px dotted #eee;padding-bottom:0px;padding-top:5px">
                             <div ng-repeat="x in g.items">
 
                                 <!--1165-->
@@ -423,8 +429,11 @@
                             </div>
 
                             <div ng-show="g.DutyType==1165" style="padding-top:5px;padding:7px;margin-top:5px">
-                                <div style="border-top:1px solid #eee">
-                                    <table style="width:100%;border:1px solid #eee; background-color:dimgray;margin-top:5px;" ng-class="getInfoClass(g,'TAF')" ng-click="infoClick(g.FDPId,'TAF',g)">
+                                <div style="border-top:0px solid #eee">
+                                    <div style="border:1px solid #eee; background-color:dimgray;margin-top:5px;text-align:center;font-size:16px;font-weight:bold;padding:10px" ng-click="folderClick(g)">
+                                        FOLDER
+                                    </div>
+                                    <!--<table style="width:100%;border:1px solid #eee; background-color:dimgray;margin-top:5px;" ng-class="getInfoClass(g,'TAF')" ng-click="infoClick(g.FDPId,'TAF',g)">
                                         <tr>
                                             <td style="text-align:left;padding:5px 0 5px 5px;font-size:16px;font-weight:bold">TAF <span style="display:inline-block;font-size:14px;margin-left:3px" ng-show="g.tafLoading">(Loading...)</span></td>
                                             <td style="text-align:right;padding-right:5px;font-size:16px;">{{g.TAF && g.TAF[0]?formatDateTime( g.TAF[0].DateCreate) :'-'}}</td>
@@ -441,7 +450,7 @@
                                             <td style="text-align:left;padding:5px 0 5px 5px;font-size:16px;font-weight:bold">NOTAM<span style="display:inline-block;font-size:14px;margin-left:3px" ng-show="g.notamLoading">(Loading...)</span></td>
                                             <td style="text-align:right;padding-right:5px;font-size:16px;">{{g.NOTAM && g.NOTAM[0]?formatDateTime( g.NOTAM[0].DateCreate) :'-'}}</td>
                                         </tr>
-                                    </table>
+                                    </table>-->
                                 </div>
                             </div>
 
@@ -1235,6 +1244,145 @@
             on <span style="display:inline-block;font-weight:bold">{{checkResult.JLDate2}}</span>
         </div>
     </div>
+
+    <div id="popup_folder" dx-popup="popup_folder" class="no-padding">
+        <div id="scroll_folder" dx-scroll-view="scroll_folder"  >
+            <div style="padding:10px;"  >
+                <div>
+                    <table style="width:100%;border:1px solid #eee; background-color:dimgray;margin-top:5px;" ng-class="getInfoClass(selectedGroup,'TAF')" ng-click="infoClick(selectedGroup.FDPId,'TAF',selectedGroup)">
+                        <tr>
+                            <td style="text-align:left;padding:10px;font-size:16px;font-weight:bold">TAF <span style="display:inline-block;font-size:14px;margin-left:3px" ng-show="selectedGroup.tafLoading">(Loading...)</span></td>
+                            <td style="text-align:right;padding :10px;font-size:16px;">{{selectedGroup.TAF && selectedGroup.TAF[0]?formatDateTime( selectedGroup.TAF[0].DateCreate) :'-'}}</td>
+                        </tr>
+                    </table>
+                    <table style="width:100%;border:1px solid #eee;margin-top:10px; background:dimgray" ng-class="getInfoClass(selectedGroup,'METAR')" ng-click="infoClick(selectedGroup.FDPId,'METAR',selectedGroup)">
+                        <tr>
+                            <td style="text-align:left;padding:10px;font-size:16px;font-weight:bold">METAR<span style="display:inline-block;font-size:14px;margin-left:3px" ng-show="selectedGroup.metarLoading">(Loading...)</span></td>
+                            <td style="text-align:right;padding :10px;font-size:16px;">{{selectedGroup.METAR && selectedGroup.METAR[0]?formatDateTime( selectedGroup.METAR[0].DateCreate) :'-'}}</td>
+                        </tr>
+                    </table>
+                    <table style="width:100%;border:1px solid #eee;margin-top:10px; background:dimgray" ng-class="getInfoClass(selectedGroup,'NOTAM')" ng-click="infoClick(selectedGroup.FDPId,'NOTAM',selectedGroup)">
+                        <tr>
+                            <td style="text-align:left;padding:10px;font-size:16px;font-weight:bold">NOTAM<span style="display:inline-block;font-size:14px;margin-left:3px" ng-show="selectedGroup.notamLoading">(Loading...)</span></td>
+                            <td style="text-align:right;padding :10px;font-size:16px;">{{selectedGroup.NOTAM && selectedGroup.NOTAM[0]?formatDateTime( selectedGroup.NOTAM[0].DateCreate) :'-'}}</td>
+                        </tr>
+                    </table>
+                    <div dx-tabs="tabs_options">
+
+                    </div>
+                    <div class="tab adds" id="adds">
+                        <div style="border :1px solid #eee;padding:10px;font-weight:bold;margin-top:10px" class="folder-item">
+                            Significant Weather (SIGWX)
+                        </div>
+                        <div ng-repeat="item in folderSIGWX" style="padding:5px;">
+                            <!--<div style="padding:5px;border-bottom:1px solid #ddd;">{{item.date}}</div>-->
+                            <div style="padding:7px 0 7px 0;border-bottom:1px solid #ddd">
+                                <table>
+                                    <tr>
+                                        <td ng-repeat="x in item.items" style="padding-right:10px;">
+                                            <div style="width:150px;padding:7px;background-color:gray;border:1px solid #ddd;text-align:center" ng-class="getSIGWXClass(item.source,'SIGWX'+x.no)" ng-click="showImage(x)">{{x.title}}</div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                        </div>
+
+
+                        <div style="border :1px solid #eee;padding:10px;font-weight:bold;margin-top:5px;" class="folder-item">
+                            Wind and Temperature
+                        </div>
+                        <div style="padding:3px;">
+                            <table style="width:100%;border:1px solid #ddd" class="wind">
+                                <tr style="background-color:darkgray;color:black">
+                                    <td style="width:10%;font-weight:bold;padding:5px 7px 5px 7px !important">Level</td>
+                                    <td colspan="6" style="font-weight:bold;padding:5px 7px 5px 7px !important">Valid</td>
+                                </tr>
+                                <tr>
+                                    <td>FL 340</td>
+                                    <td style="width:15%" ng-click="showWind('340','06')">+06 hr</td>
+                                    <td style="width:15%" ng-click="showWind('340','12')">+12 hr</td>
+                                    <td style="width:15%" ng-click="showWind('340','18')">+18 hr</td>
+                                    <td style="width:15%" ng-click="showWind('340','24')">+24 hr</td>
+                                    <td style="width:15%" ng-click="showWind('340','30')">+30 hr</td>
+                                    <td style="width:15%" ng-click="showWind('340','36')">+36 hr</td>
+                                </tr>
+                                <tr style="background: #464653;">
+                                    <td>FL 300</td>
+                                    <td style="width:15%" ng-click="showWind('300','06')">+06 hr</td>
+                                    <td style="width:15%" ng-click="showWind('300','12')">+12 hr</td>
+                                    <td style="width:15%" ng-click="showWind('300','18')">+18 hr</td>
+                                    <td style="width:15%" ng-click="showWind('300','24')">+24 hr</td>
+                                    <td style="width:15%" ng-click="showWind('300','30')">+30 hr</td>
+                                    <td style="width:15%" ng-click="showWind('300','36')">+36 hr</td>
+                                </tr>
+                                <tr>
+                                    <td>FL 240</td>
+                                    <td style="width:15%" ng-click="showWind('240','06')">+06 hr</td>
+                                    <td style="width:15%" ng-click="showWind('240','12')">+12 hr</td>
+                                    <td style="width:15%" ng-click="showWind('240','18')">+18 hr</td>
+                                    <td style="width:15%" ng-click="showWind('240','24')">+24 hr</td>
+                                    <td style="width:15%" ng-click="showWind('240','30')">+30 hr</td>
+                                    <td style="width:15%" ng-click="showWind('240','36')">+36 hr</td>
+                                </tr>
+                                <tr style="background: #464653;">
+                                    <td>FL 180</td>
+                                    <td style="width:15%" ng-click="showWind('180','06')">+06 hr</td>
+                                    <td style="width:15%" ng-click="showWind('180','12')">+12 hr</td>
+                                    <td style="width:15%" ng-click="showWind('180','18')">+18 hr</td>
+                                    <td style="width:15%" ng-click="showWind('180','24')">+24 hr</td>
+                                    <td style="width:15%" ng-click="showWind('180','30')">+30 hr</td>
+                                    <td style="width:15%" ng-click="showWind('180','36')">+36 hr</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab irimo" id="irimo">
+                        <div style="border :1px solid #eee;padding:10px;font-weight:bold;margin-top:10px" class="folder-item">
+                            Significant Weather (SIGWX)
+                        </div>
+                        <div style="padding:3px;">
+                            <table style="width:100%;border:1px solid #ddd" class="wind">
+                                <tr style="background-color:darkgray;color:black">
+                                     
+                                    <td colspan="4" style="font-weight:bold;padding:5px 7px 5px 7px !important">Valid(Z)</td>
+                                </tr>
+                                <tr>
+
+                                    <td style="width:25%" ng-click="showIRIMOSIGWX('00')">00 - 06</td>
+                                    <td style="width:25%" ng-click="showIRIMOSIGWX('06')">06 - 12</td>
+                                    <td style="width:25%" ng-click="showIRIMOSIGWX('12')">12 - 18</td>
+                                    <td style="width:25%" ng-click="showIRIMOSIGWX('18')">18 - 24</td>
+
+                                </tr>
+
+                            </table>
+                        </div>
+                        <!--<div ng-repeat="item in folderSIGWX" style="padding:5px;">
+
+        <div style="padding:7px 0 7px 0;border-bottom:1px solid #ddd">
+            <table>
+                <tr>
+                    <td ng-repeat="x in item.items" style="padding-right:10px;">
+                        <div style="width:150px;padding:7px;background-color:gray;border:1px solid #ddd;text-align:center" ng-class="getSIGWXClass(item.source,'SIGWX'+x.no)" ng-click="showImage(x)">{{x.title}}</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+    </div>-->
+                    </div>
+                  
+
+
+
+                </div>
+                <div style="clear:both"></div>
+            </div>
+            
+        </div>
+    </div>
+
     <div dx-load-panel="loadPanel"></div>
 
     <div ng-include="'app/views/logAdd.html?vx=2'"></div>

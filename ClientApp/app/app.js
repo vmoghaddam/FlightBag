@@ -270,7 +270,7 @@ app.config(function ($routeProvider) {
 //var serviceBase = 'http://localhost:58908/';
 var webBase = 'http://localhost:30273/';
 //var reportBase = 'https://localhost:44350/frmReportView.aspx';
-var clientBase = 'http://localhost:22323/';
+var clientBase = 'http://localhost:20005/';
 
 var serviceBase = 'http://api.epapocket.ir/';
 //var webBase = 'http://web.crewpocket.ir/';
@@ -280,6 +280,8 @@ var reportBase = 'http://report.crewpocket.ir/';
 var serviceBase = 'http://fleet.flypersia.aero/apiv2/';
 var serviceBase2 = 'https://localhost:5001/api/';
 var serviceBase3 = 'https://fbpocket.ir/service/api/';
+
+var staticFiles = 'https://localhost:5001/Upload/';
 //var serviceBase2 = 'https://fleet.caspianairlines.com/fbservicea/api/';
 
 //'http://localhost:58908/';

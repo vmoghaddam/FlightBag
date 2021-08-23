@@ -59,7 +59,7 @@ namespace APCore.Services
         {
             var _from = from.Date;
             var _to = to.Date;
-            var query =   _context.AppCrewFlights.Where(q =>
+            var query =   _context.AppLegs.Where(q =>
                    
                     q.STDDay >= _from && q.STDDay <= _to
             ) ;

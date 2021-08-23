@@ -1,12 +1,12 @@
-﻿const cacheName = 'cache-v1129';
-const dynamicCache = 'dyn-1011';
+﻿const cacheName = 'cache-v1294';
+const dynamicCache = 'dyn-1095';
 const assets = [
     '/',
-     '/pwa.js',
-   // '/offline.html',
+    '/pwa.js',
+    // '/offline.html',
     '/index.html',
     'manifest.json',
-    
+
     'app/views/calendar.html?vx=2',
     'app/views/logAdd.html?vx=2',
     'app/views/vrAdd.html?vx=2',
@@ -32,7 +32,7 @@ const assets = [
     '/content/css/dx.common.css',
     '/content/css/dx.material.material-teal-dark.css',
     '/content/css/fontawsome2.css',
-   
+
     '/content/css/loading-bar.css',
     '/content/css/social-buttons.css',
     '/content/css/persian-datepicker.min.css',
@@ -76,12 +76,12 @@ const assets = [
     '/app/services/flightService.js?vx=2',
     '/app/controllers/indexController.js?vx=2',
     //'/app/controllers/appsController.js',
-     '/app/controllers/footerController.js?vx=2',
-     '/app/controllers/homeController.js?vx=2',
+    '/app/controllers/footerController.js?vx=2',
+    '/app/controllers/homeController.js?vx=2',
     '/app/controllers/loginController.js?vx=2',
-   // '/app/controllers/signupController.js',
+    // '/app/controllers/signupController.js',
 
-   // '/app/controllers/filterController.js',
+    // '/app/controllers/filterController.js',
 
 
 
@@ -122,19 +122,19 @@ const assets = [
     //'/app/controllers/reports.js',
     //'/app/controllers/docViewer.js',
     '/pdfjsmodule/pdfviewernew.js?vx=2',
-    '/app/controllers/epLogBook.js?vx=2', 
-    '/app/controllers/imageviewer.js?vx=2', 
-    '/app/controllers/calendarController.js?vx=2', 
-    
+    '/app/controllers/epLogBook.js?vx=2',
+    '/app/controllers/imageviewer.js?vx=2',
+    '/app/controllers/calendarController.js?vx=2',
+
 
     //'/app/controllers/pdfViewer.js',
     //'/app/controllers/reportViewer.js',
-    
+
     '/content/css/free-v4-font-face.min.css',
     '/content/css/free.min.css',
     '/content/css/free-v4-shims.min.css',
     '/content/css/css_roboto_300_400_500_700.css',
-   // 'https://fonts.googleapis.com/earlyaccess/notokufiarabic.css',
+    // 'https://fonts.googleapis.com/earlyaccess/notokufiarabic.css',
     '/content/css/free-fa-solid-900.woff2',
     '/content/css/free-fa-regular-400.woff2',
     '/content/css/KFOlCnqEu92Fr1MmEU9fBBc4.woff2',
@@ -148,8 +148,8 @@ const assets = [
     '/content/webfonts/fa-regular-400.woff',
     '/content/webfonts/fa-solid-900.ttf',
     '/content/webfonts/fa-regular-400.ttf',
-    
-     
+
+
     '/images/icons/icon-72x72.png',
     '/images/icons/icon-96x96.png',
     '/images/icons/icon-128x128.png',
@@ -159,24 +159,25 @@ const assets = [
     '/images/icons/icon-384x384.png',
     '/images/icons/icon-512x512.png',
     '/content/images/logo-white.png',
+    '/images/empty.png',
 
 
-   
-    
+
+
 ];
 
 self.addEventListener('install', e => {
     self.skipWaiting();
     e.waitUntil(
         caches.open(cacheName).then(cache => {
-           // console.log('cache assets');
+            // console.log('cache assets');
             cache.addAll(assets);
-            
+
         })
-    ); 
-    
-    
-}); 
+    );
+
+
+});
 
 //activate eve
 self.addEventListener('activate', evt => {
@@ -192,40 +193,189 @@ self.addEventListener('activate', evt => {
 
 //self.addEventListener('fetch', function (event) {
 //    // either respond with the cached object or go ahead and fetch the actual url
-  
+
 //    event.respondWith(
 //        caches.match(event.request).then(function (response) {
 //            if (response) {
-               
+
 //                return response;
 //            }
-            
+
 //            return fetch(event.request);
 //        })
 //    );
 //});
+function get_url_extension(url) {
+    return url.split(/[#?]/)[0].split('.').pop().trim();
+}
 
 self.addEventListener('fetch', evt => {
-    //console.log('fetch     ',evt.request.url);
-    evt.respondWith(
-        caches.match(evt.request).then(cacheRes => {
-            if (cacheRes) {
-                return cacheRes;
-            }
-            else if (!evt.request.url.includes('api/')) {
-                return fetch(evt.request).then(fetchRes => {
-                    return caches.open(dynamicCache).then(cache => {
-                        cache.put(evt.request.url, fetchRes.clone());
-                        return fetchRes;
-                    })
+
+    var ext = get_url_extension(evt.request.url);
+    if (ext == 'png' && evt.request.url.toLowerCase().includes("upload/")) {
+        console.log('***********************  1007');
+        evt.respondWith(
+            fetch(evt.request).then(response => {
+                console.log('png', evt.request.url + '   ' + response.status);
+                //console.log('response', response);
+                return caches.open(dynamicCache).then(cache => {
+                    cache.put(evt.request.url, response.clone());
+                    return response;
                 });
-            }
-            else return fetch(evt.request);
+            }).catch(
+                function () {
+                    //offline
+                    console.log('catch error');
+                    return caches.match(evt.request).then(cacheRes => {
+                        console.log('catch req', evt.request); console.log('catch req', cacheRes);
+                        if (cacheRes)
+                            return cacheRes;
+                        else
+                            return caches.match("http://localhost:20005/images/empty.png").then(nodata => { return nodata; });
+                    });
+                }
+            )
 
-            
-        })
+            //fetch(evt.request).then(response => {
+            //    console.log('png', evt.request.url + '   ' + response.status);
+            //    console.log('response', response);
+
+            //    if (response.status == 200)
+            //        return caches.open(dynamicCache).then(cache => {
+            //            cache.put(evt.request.url, response.clone());
+            //            return response;
+            //        });
+            //    else
+            //        return caches.match(evt.request).then(cacheRes => {
+            //            console.log('catch req', evt.request); console.log('catch req', cacheRes);
+            //            if (cacheRes)
+            //                return cacheRes;
+            //            else
+            //                return caches.match("http://localhost:20005/images/empty.png").then(nodata => { return nodata; });
+            //        });
+
+            //}).catch(_ => {
+            //    console.log('catch error');
+            //    return caches.match(evt.request).then(cacheRes => {
+            //        console.log('catch req', evt.request); console.log('catch req', cacheRes);
+            //        if (cacheRes)
+            //            return cacheRes;
+            //        else
+            //            return caches.match("http://localhost:20005/images/empty.png").then(nodata => { return nodata; });
+            //    });
+            //})
+
+            //// END RESPOND
+        );
+
+        /// end png
+    }
+    else {
+        evt.respondWith(
+
+            caches.match(evt.request).then(cacheRes => {
+
+                if (cacheRes) {
+                    return cacheRes;
+                }
+                else if (!evt.request.url.includes('api/')) {
 
 
-         
-    );
+                    return fetch(evt.request).then(fetchRes => {
+                        return caches.open(dynamicCache).then(cache => {
+                            cache.put(evt.request.url, fetchRes.clone());
+                            return fetchRes;
+                        })
+                    });
+
+
+
+                }
+                else return fetch(evt.request);
+
+
+
+            })
+
+
+
+        );
+    }
+
+
 });
+
+self.addEventListener('_fetch', evt => {
+    var ext = get_url_extension(evt.request.url);
+    if (ext == 'png' && evt.request.url.toLowerCase().includes("upload/")) {
+        evt.respondWith(
+            fetch(evt.request).then(response => {
+                console.log('png', evt.request.url + '   ' + response.status);
+                console.log('response', response);
+
+                if (response.status == 200)
+                    return caches.open(dynamicCache).then(cache => {
+                        cache.put(evt.request.url, response.clone());
+                        return response;
+                    });
+                else
+                    return caches.match(evt.request).then(cacheRes => {
+                        console.log('catch req', evt.request); console.log('catch req', cacheRes);
+                        if (cacheRes)
+                            return cacheRes;
+                        else
+                            return caches.match("http://localhost:20005/images/empty.png").then(nodata => { return nodata; });
+                    });
+
+            }).catch(_ => {
+                console.log('catch error');
+                return caches.match(evt.request).then(cacheRes => {
+                    console.log('catch req', evt.request); console.log('catch req', cacheRes);
+                    if (cacheRes)
+                        return cacheRes;
+                    else
+                        return caches.match("http://localhost:20005/images/empty.png").then(nodata => { return nodata; });
+                });
+            })
+
+            //// END RESPOND
+        );
+
+        /// end png
+    }
+    else {
+        evt.respondWith(
+
+            caches.match(evt.request).then(cacheRes => {
+
+                if (cacheRes) {
+                    return cacheRes;
+                }
+                else if (!evt.request.url.includes('api/')) {
+
+
+                    return fetch(evt.request).then(fetchRes => {
+                        return caches.open(dynamicCache).then(cache => {
+                            cache.put(evt.request.url, fetchRes.clone());
+                            return fetchRes;
+                        })
+                    });
+
+
+
+                }
+                else return fetch(evt.request);
+
+
+
+            })
+
+
+
+        );
+    }
+
+
+});
+
+

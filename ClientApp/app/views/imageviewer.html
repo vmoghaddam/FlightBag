@@ -16,13 +16,17 @@
         -o-transform-origin: top right;
         transform-origin: top right;
     }
+    .rot90 {
+        
+        transition: width 1s, height 1s;
+    }
 </style>
 <div ng-controller="imageviewerController">
     <div id="popup_add" dx-popup="popup_add" class="no-padding">
         <div style="padding:0px;">
-            <div dx-scroll-view="scroll_view" style="margin-top:5px;border-right:1px solid #eee">
+            <div dx-scroll-view="scroll_view" style="margin-top:5px;border-right:0px solid #eee">
                 <div   ng-style="{ 'width' : cWidth+'px' }">
-                    <img class="rot90" style="width:100%; display: block; height: auto"  alt="Picture 1" ng-src="{{url}}">
+                    <img class="rot90" ng-style="{'width': imgWidth+'%'}" style="display: block; height: auto"    ng-src="{{url}}">
                 </div>
                 
             </div>

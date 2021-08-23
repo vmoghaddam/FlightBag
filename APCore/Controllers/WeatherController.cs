@@ -69,12 +69,12 @@ namespace APCore.Controllers
         }
         [HttpGet]
         //[Authorize]
-        [Route("api/weather/wind/adds")]
-        public async Task<IActionResult> GetWIND_ADDS_IMG()
+        [Route("api/weather/wind/adds/{fl}")]
+        public async Task<IActionResult> GetWIND_ADDS_IMG(string fl)
         {
             //  var userData = User.FindFirst(ClaimTypes.UserData).Value;
 
-            var result = await _weatherService.GetWIND_ADDS_IMG();
+            var result = await _weatherService.GetWIND_ADDS_IMG(fl);
             if (!result.IsSuccess)
                 return NotFound(result.Errors);
             return Ok(result);

@@ -33,7 +33,7 @@ namespace APCore.Services
         Task<DataResponse> GetSIGWX_ADDS(string doc);
         Task<DataResponse> GetSIGWX_ADDS_UPDATE();
         Task<DataResponse> GetSIGWX_ADDS_Date(string dt);
-        Task<DataResponse> GetWIND_ADDS_IMG();
+        Task<DataResponse> GetWIND_ADDS_IMG(string fl);
         Task<DataResponse> GetWIND_ADDS_PDF();
         Task<DataResponse> GetTAF_ADDS(string stations, string from, string to, DateTime baseDate);
         Task<DataResponse> GetMETAR_ADDS(string stations, string period);
@@ -263,7 +263,19 @@ namespace APCore.Services
 
 
         }
-
+        public   Image ScaleImage(Image image, int height)
+        {
+            double ratio = (double)height / image.Height;
+            int newWidth = (int)(image.Width * ratio);
+            int newHeight = (int)(image.Height * ratio);
+            Bitmap newImage = new Bitmap(newWidth, newHeight);
+            using (Graphics g = Graphics.FromImage(newImage))
+            {
+                g.DrawImage(image, 0, 0, newWidth, newHeight);
+            }
+            image.Dispose();
+            return newImage;
+        }
 
         public async Task<DataResponse> GetWIND_ADDS_PDF()
         {
@@ -315,9 +327,11 @@ namespace APCore.Services
                 IsSuccess = true
             };
         }
-        public async Task<DataResponse> GetWIND_ADDS_IMG()
+        public async Task<DataResponse> GetWIND_ADDS_IMG(string fl)
         {
             List<ADDSWindUrl> docs = ADDSWindUrl.GetADDSWindUrls();
+            if (fl != "-1")
+                docs = docs.Where(q => q.FL == fl).ToList();
             List<string> results = new List<string>();
             foreach (var doc in docs)
             {
@@ -336,6 +350,9 @@ namespace APCore.Services
                         using (var yourImage = System.Drawing.Image.FromStream(mem))
                         {
                             // If you want it as Png
+                            //var h =Convert.ToInt32( Math.Round( (yourImage.Height*0.8)));
+                            //var img = ScaleImage(yourImage, h);
+                            yourImage.RotateFlip(RotateFlipType.Rotate270FlipNone);
                             yourImage.Save(path, System.Drawing.Imaging.ImageFormat.Png);
 
                             // If you want it as Jpeg
