@@ -138,10 +138,16 @@ namespace APCore
 
             // using Microsoft.Extensions.FileProviders;
             // using System.IO;
+            //app.UseStaticFiles(new StaticFileOptions
+            //{
+            //    FileProvider = new PhysicalFileProvider(
+            //        Path.Combine(env.ContentRootPath, "upload")),
+            //    RequestPath = "/service/upload"
+            //});
+
             app.UseStaticFiles(new StaticFileOptions
             {
-                FileProvider = new PhysicalFileProvider(
-                    Path.Combine(env.ContentRootPath, "upload")),
+                FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "upload")),
                 RequestPath = "/upload"
             });
 

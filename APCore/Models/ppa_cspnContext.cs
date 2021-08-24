@@ -593,6 +593,7 @@ namespace APCore.Models
         public virtual DbSet<ViewJobGroupType> ViewJobGroupTypes { get; set; }
         public virtual DbSet<ViewJournal> ViewJournals { get; set; }
         public virtual DbSet<ViewLayOver> ViewLayOvers { get; set; }
+        public virtual DbSet<ViewLayOverNew> ViewLayOverNews { get; set; }
         public virtual DbSet<ViewLegCrew> ViewLegCrews { get; set; }
         public virtual DbSet<ViewLegFdpItem> ViewLegFdpItems { get; set; }
         public virtual DbSet<ViewLegFuel> ViewLegFuels { get; set; }
@@ -655,6 +656,7 @@ namespace APCore.Models
         public virtual DbSet<WeatherMetarQualityControl> WeatherMetarQualityControls { get; set; }
         public virtual DbSet<WeatherMetarSkyCondition> WeatherMetarSkyConditions { get; set; }
         public virtual DbSet<WeatherSIGWX> WeatherSIGWXes { get; set; }
+        public virtual DbSet<WeatherSIGWXIrimo> WeatherSIGWXIrimos { get; set; }
         public virtual DbSet<WeatherTaf> WeatherTafs { get; set; }
         public virtual DbSet<WeatherTafForecast> WeatherTafForecasts { get; set; }
         public virtual DbSet<XCrewAssigned> XCrewAssigneds { get; set; }
@@ -23341,6 +23343,27 @@ namespace APCore.Models
                 entity.Property(e => e.ToAirportIATA).HasMaxLength(255);
             });
 
+            modelBuilder.Entity<ViewLayOverNew>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("ViewLayOverNew", "dbo");
+
+                entity.Property(e => e.DestinationIATA).HasMaxLength(255);
+
+                entity.Property(e => e.DestinationIATALag).HasMaxLength(255);
+
+                entity.Property(e => e.FlightNumber).HasMaxLength(50);
+
+                entity.Property(e => e.STADay).HasColumnType("date");
+
+                entity.Property(e => e.STADayLag).HasColumnType("date");
+
+                entity.Property(e => e.ScheduleName)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
+            });
+
             modelBuilder.Entity<ViewLegCrew>(entity =>
             {
                 entity.HasNoKey();
@@ -25760,6 +25783,27 @@ namespace APCore.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.Updated)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<WeatherSIGWXIrimo>(entity =>
+            {
+                entity.ToTable("WeatherSIGWXIrimo", "dbo");
+
+                entity.Property(e => e.DateCreate).HasColumnType("datetime");
+
+                entity.Property(e => e.DateDay).HasColumnType("date");
+
+                entity.Property(e => e.Level)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Title)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Valid)
                     .HasMaxLength(255)
                     .IsUnicode(false);
             });

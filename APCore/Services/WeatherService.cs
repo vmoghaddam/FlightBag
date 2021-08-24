@@ -167,7 +167,7 @@ namespace APCore.Services
                 var lastSIGWX = await _context.WeatherSIGWXes.Where(q => q.DateDay == date).OrderByDescending(q => q.DateCreate).FirstOrDefaultAsync();
                 if (lastSIGWX == null || lastSIGWX.Updated != updated)
                 {
-                    var rec=new  WeatherSIGWX() { DateDay = date, };
+                    var rec = new WeatherSIGWX() { DateDay = date, };
                     _context.WeatherSIGWXes.Add(rec);
                     //if (lastSIGWX == null)
                     //{
@@ -259,11 +259,11 @@ namespace APCore.Services
                     };
             }
 
-           
+
 
 
         }
-        public   Image ScaleImage(Image image, int height)
+        public Image ScaleImage(Image image, int height)
         {
             double ratio = (double)height / image.Height;
             int newWidth = (int)(image.Width * ratio);
@@ -375,13 +375,14 @@ namespace APCore.Services
         public async Task<DataResponse> GetSIGWX_IRIMO()
         {
             List<string> valid = new List<string>() { "00", "06", "12", "18" };
-            List<string> level = new List<string>() { "IRAN", "WEST", "EAST" };
+            List<string> level = new List<string>() { "IRAN"/*, "WEST", "EAST"*/ };
             List<string> results = new List<string>();
+            var nowDate = DateTime.Now.Date;
             foreach (var v in valid)
             {
                 foreach (var l in level)
                 {
-                    var result = "SIGWX_IRIMO_" + DateTime.Now.ToString("yyyyMMdd") + "_" + "VALID" + v + "LVL" + l + ".png";
+                    var result = "SIGWX_IRIMO_" + nowDate.ToString("yyyyMMdd") + "_" + "VALID" + v + "LVL" + l + ".png";
                     results.Add(result);
                     string webRootPath = _webHostEnvironment.ContentRootPath;
                     string path = "";
@@ -394,12 +395,56 @@ namespace APCore.Services
 
                         using (MemoryStream mem = new MemoryStream(data))
                         {
-
+                            var memLen = mem.Length;
                             using (var yourImage = System.Drawing.Image.FromStream(mem))
                             {
-                                // If you want it as Png
-                                yourImage.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+                                var yyy = yourImage.GetHashCode();
+                                var dbrec = await _context.WeatherSIGWXIrimos.Where(q => q.Title == result).FirstOrDefaultAsync();
+                                if (dbrec != null)
+                                {
+                                    if (dbrec.Size != memLen)
+                                    {
 
+                                        result = "SIGWX_IRIMO_" + nowDate.AddDays(1).ToString("yyyyMMdd") + "_" + "VALID" + v + "LVL" + l + ".png";
+                                        path = Path.Combine(webRootPath, "Upload", "Weather", "SIGWX", "IRIMO", result);
+                                        var newdbRec= await _context.WeatherSIGWXIrimos.Where(q => q.Title == result).FirstOrDefaultAsync();
+                                        if (newdbRec == null)
+                                            _context.WeatherSIGWXIrimos.Add(new WeatherSIGWXIrimo()
+                                            {
+                                                DateCreate = DateTime.Now,
+                                                DateDay = nowDate.AddDays(1).Date,
+                                                Level = l,
+                                                Valid = v,
+                                                Size = Convert.ToInt32(memLen),
+                                                Title = result
+
+                                            });
+                                        else
+                                        {
+                                            newdbRec.DateCreate = DateTime.Now;
+                                            newdbRec.DateDay = nowDate.AddDays(1).Date;
+                                            newdbRec.Size = Convert.ToInt32(memLen);
+                                        }
+                                    }
+
+                                }
+                                else
+                                {
+                                    _context.WeatherSIGWXIrimos.Add(new WeatherSIGWXIrimo()
+                                    {
+                                        DateCreate = DateTime.Now,
+                                        DateDay = nowDate.Date,
+                                        Level = l,
+                                        Valid = v,
+                                        Size = Convert.ToInt32(memLen),
+                                        Title = result
+
+                                    });
+                                }
+                                // If you want it as Png
+                                yourImage.RotateFlip(RotateFlipType.Rotate270FlipNone);
+                                yourImage.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+                                await _context.SaveAsync();
                                 // If you want it as Jpeg
                                 //yourImage.Save("path_to_your_file.jpg", System.Drawing.Imaging.ImageFormat.Jpeg);
                             }
@@ -432,59 +477,69 @@ namespace APCore.Services
 
 
             List<string> valid = new List<string>() { "06", "12", "18", "00" };
-            List<string> level = new List<string>() { "IRAN", "WEST", "EAST" };
+            List<string> level = new List<string>() { "IRAN"/*, "WEST", "EAST"*/ };
+            List<DateTime> _dates = new List<DateTime>() { DateTime.Now, DateTime.Now.AddDays(1) };
             List<string> results = new List<string>();
-            var dtstr = DateTime.Now.ToString("yMMdd");
-            foreach (var v in valid)
+            foreach (var _dts in _dates)
             {
-                foreach (var l in level)
+                //var dtstr = DateTime.Now.ToString("yMMdd");
+                var dtstr = _dts.ToString("yMMdd");
+                foreach (var v in valid)
                 {
-                    var result = "FF_IRIMO_" + DateTime.Now.ToString("yyyyMMdd") + "_" + "VALID" + v + "LVL" + l + ".pdf";
-                    results.Add(result);
-                    string webRootPath = _webHostEnvironment.ContentRootPath;
-                    string path = "";
-                    path = Path.Combine(webRootPath, "Upload", "Weather", "FF", "IRIMO", result);
-                    var url = _configuration["WeatherUrls:PDF_IRIMO"];
-                    //using (WebClient webClient = new WebClient())
-                    //{
-
-                    //    var fn = url + "FLT210" + dtstr + v + "_" + l;
-                    //    var data = webClient.DownloadData(fn);
-                    //    using (MemoryStream mem = new MemoryStream(data))
-                    //    {
-
-                    //    }
-
-
-                    //}
-                    using (HttpClient httpClient = new HttpClient())
+                    foreach (var l in level)
                     {
-                        var fn = url + "FLT" + dtstr + v + "_" + l;
-                        httpClient.BaseAddress = new Uri("https://irimo.ir/");
+                        var result = "FF_IRIMO_" + /*DateTime.Now.ToString("yyyyMMdd")*/_dts.ToString("yyyyMMdd") + "_" + "VALID" + v + "LVL" + l + ".pdf";
+                        results.Add(result);
+                        string webRootPath = _webHostEnvironment.ContentRootPath;
+                        string path = "";
+                        path = Path.Combine(webRootPath, "Upload", "Weather", "FF", "IRIMO", result);
+                        var url = _configuration["WeatherUrls:PDF_IRIMO"];
+                        //using (WebClient webClient = new WebClient())
+                        //{
 
-                        System.Net.Http.HttpRequestMessage httpRequestMessage = new System.Net.Http.HttpRequestMessage();
-                        httpRequestMessage.Method = new System.Net.Http.HttpMethod("GET");
-                        httpRequestMessage.Headers.Add("context-type", "application/pdf");
-                        httpRequestMessage.RequestUri = new Uri(fn);
+                        //    var fn = url + "FLT210" + dtstr + v + "_" + l;
+                        //    var data = webClient.DownloadData(fn);
+                        //    using (MemoryStream mem = new MemoryStream(data))
+                        //    {
 
-                        System.Net.Http.HttpResponseMessage httpResponseMessage = httpClient.SendAsync(httpRequestMessage).Result;
+                        //    }
 
-                        if (httpResponseMessage.StatusCode == System.Net.HttpStatusCode.OK)
+
+                        //}
+                        using (HttpClient httpClient = new HttpClient())
                         {
-                            System.IO.Stream stream = httpResponseMessage.Content.ReadAsStreamAsync().Result;
-                            using (System.IO.FileStream fs = new System.IO.FileStream(path, System.IO.FileMode.CreateNew))
+                            var fn = url + "FLT" + dtstr + v + "_" + l;
+                            httpClient.BaseAddress = new Uri("https://irimo.ir/");
+
+                            System.Net.Http.HttpRequestMessage httpRequestMessage = new System.Net.Http.HttpRequestMessage();
+                            httpRequestMessage.Method = new System.Net.Http.HttpMethod("GET");
+                            httpRequestMessage.Headers.Add("context-type", "application/pdf");
+                            httpRequestMessage.RequestUri = new Uri(fn);
+
+                            System.Net.Http.HttpResponseMessage httpResponseMessage = httpClient.SendAsync(httpRequestMessage).Result;
+
+                            if (httpResponseMessage.StatusCode == System.Net.HttpStatusCode.OK)
                             {
-                                byte[] buffer = new byte[stream.Length];
-                                stream.Read(buffer, 0, buffer.Length);
-                                fs.Write(buffer, 0, buffer.Length);
+                                System.IO.Stream stream = httpResponseMessage.Content.ReadAsStreamAsync().Result;
+                                if (stream.Length > 0)
+                                {
+                                    using (System.IO.FileStream fs = new System.IO.FileStream(path, System.IO.FileMode.OpenOrCreate, FileAccess.ReadWrite))
+                                    {
+                                        byte[] buffer = new byte[stream.Length];
+                                        stream.Read(buffer, 0, buffer.Length);
+                                        fs.Write(buffer, 0, buffer.Length);
+                                    }
+                                }
+
                             }
                         }
+
+
+
+
+
+
                     }
-
-
-
-
-
 
                 }
 
