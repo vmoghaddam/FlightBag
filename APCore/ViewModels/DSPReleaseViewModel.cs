@@ -46,6 +46,7 @@ namespace APCore.ViewModels
         public string JeppesenAirwayManualCPTRemark { get; set; }
         public bool? MinFuelRequiredDSP { get; set; }
         public bool? MinFuelRequiredCPT { get; set; }
+        public decimal? MinFuelRequiredCFP { get; set; }
         public decimal? MinFuelRequiredSFP { get; set; }
         public decimal? MinFuelRequiredPilotReq { get; set; }
         public bool? GeneralDeclarationDSP { get; set; }
@@ -95,5 +96,6 @@ namespace APCore.ViewModels
         public DateTime? DateConfirmed { get; set; }
         public int? DispatcherId { get; set; }
         public int Id { get; set; }
+        public string User { get; set; }
     }
 }

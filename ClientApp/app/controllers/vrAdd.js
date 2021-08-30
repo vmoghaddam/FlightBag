@@ -1,6 +1,7 @@
 'use strict';
 app.controller('vrAddController', ['$scope', '$location', 'flightService', 'authService', '$routeParams', '$rootScope', '$window',   '$http', function ($scope, $location, flightService, authService, $routeParams, $rootScope, $window,   $http) {
     $scope.isNew = true;
+    $scope.isEditable = false;
     $scope.isContentVisible = false;
     $scope.isFullScreen = false;
     var detector = new MobileDetect(window.navigator.userAgent);
@@ -336,7 +337,8 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
             //fullScreen: 'isFullScreen',
             title: 'popup_add_title',
             height: 'popup_height',
-            width: 'popup_width'
+            width: 'popup_width',
+            'toolbarItems[0].visible': 'isEditable', 
 
         }
     };
@@ -382,6 +384,8 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
         flightService.epGetFlightLocal($scope.entity.FlightId).then(function (response) {
 
             $scope.loadingVisible = false;
+            var diff = Math.abs((new Date()).getTime() - (new Date(response.Data.STALocal)).getTime()) / 3600000;
+            $scope.isEditable = (diff <= 24);
             $scope.flight = response.Data;
 
             $scope.loadingVisible = true;
@@ -418,6 +422,8 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
         flightService.epGetFlightLocal($scope.entity.FlightId).then(function (response) {
 
             $scope.loadingVisible = false;
+            var diff = Math.abs((new Date()).getTime() - (new Date(response.Data.STALocal)).getTime()) / 3600000;
+            $scope.isEditable = (diff <= 24);
             $scope.flight = response.Data;
 
             $scope.loadingVisible = true;

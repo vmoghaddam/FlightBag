@@ -23,7 +23,7 @@ namespace APCore.Controllers
 
 
         [HttpPost]
-        [Route("api/EFBDSPrelease/save")]
+        [Route("api/dr/save")]
         public async Task<IActionResult> saveDispatchRelease(DSPReleaseViewModel DSPRelease)
         {
 
@@ -120,6 +120,14 @@ namespace APCore.Controllers
         }
 
         [HttpGet]
+        [Route("api/dr/flight/{flightId}")]
+        public async Task<IActionResult> GetDRByFlightId(int flightId)
+        {
+            var result = await _flightBagService.GetDRByFlightId(flightId);
+            return Ok(result);
+        }
+
+        [HttpGet]
         [Route("api/voyage/flight2/{flightId}")]
         public async Task<IActionResult> GetVoyageReportByFlightId2(int flightId)
         {
@@ -148,6 +156,37 @@ namespace APCore.Controllers
         public async Task<IActionResult> GetASRViewByFlightId(int flightId)
         {
             var result = await _flightBagService.GetEFBASRByFlightId(flightId);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Route("api/asr/flights")]
+        public async Task<IActionResult> PostGetEFBASRs(SimpleDto dto)
+        {
+             
+            var result = await _flightBagService.GetEFBASRsByFlightIds(dto.ids);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+        }
+        [HttpPost]
+        [Route("api/vr/flights")]
+        public async Task<IActionResult> PostGetEFBVRs(SimpleDto dto)
+        {
+
+            var result = await _flightBagService.GetEFBVRsByFlightIds(dto.ids);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+        }
+        [HttpPost]
+        [Route("api/dr/flights")]
+        public async Task<IActionResult> PostGetDRs(SimpleDto dto)
+        {
+
+            var result = await _flightBagService.GetDRsByFlightIds(dto.ids);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
             return Ok(result);
         }
 

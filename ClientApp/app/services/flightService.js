@@ -295,22 +295,22 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
     ///////////////////////////////
 
-    var _epGetCrewFlights = function (df, dt) { 
+    var _epGetCrewFlights = function (df, dt) {
 
         var deferred = $q.defer();
         if ($rootScope.online) {
             $http.get($rootScope.apiUrl + 'crew/flights/' + df + '/' + dt /*+ '?from=' + _df + '&to=' + _dt*/).then(function (response) {
-               
-               
+
+
                 if ($rootScope.isServerMode)
                     deferred.resolve(response.data);
                 else if (response.data.IsSuccess)
                     db.sync.SyncAppCrewFlightsByDateRange(df, dt, response.data.Data, function (syncResult) {
-                         
+
 
                         deferred.resolve(syncResult);
                     });
-                   // deferred.resolve(response.data);
+                // deferred.resolve(response.data);
 
 
 
@@ -528,22 +528,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
         return deferred.promise;
     };
 
-    var _epCheckLog = function (dto) {
-        var deferred = $q.defer();
-        if ($rootScope.getOnlineStatus()) {
-            $http.post($rootScope.apiUrl + 'flight/log/check', dto).then(function (response) {
-                deferred.resolve(response.data);
-            }, function (err, status) {
 
-                //deferred.reject(Exceptions.getMessage(err));
-                deferred.resolve(dto);
-            });
-        }
-        else {
-            deferred.resolve(dto);
-        }
-        return deferred.promise;
-    };
     var _epSaveLogOverwriteServer = function (entity) {
         var deferred = $q.defer();
         var changes = {
@@ -555,8 +540,8 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
         if ($rootScope.getOnlineStatus()) {
             $http.post($rootScope.apiUrl + 'flight/log/save', entity).then(function (response) {
                 changes.JLDate = momentFromatLocalUTC(response.data.Data);
-               // alert(entity.FlightId);
-                 
+                // alert(entity.FlightId);
+
                 db.Update('AppCrewFlights', entity.FlightId, changes, function (row2) {
                     deferred.resolve({ Data: row2, IsSuccess: 1 });
                 });
@@ -847,11 +832,25 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
     var _epReplaceASR = function (item) {
         var deferred = $q.defer();
-        db.Clear("ASRs", function () {
+        //db.Clear("ASR", function () {
+        db.DeleteAsr(item.FlightId, function () {
             item.IsSynced = 1;
             item.Alert = null;
             item.server = null;
-            db.Put('ASRs', item.Id, item, function (dbitem) {
+            db.Put('ASR', item.Id, item, function (dbitem) {
+                deferred.resolve(dbitem);
+            });
+        });
+        return deferred.promise;
+    };
+    var _epReplaceDR = function (item) {
+        var deferred = $q.defer();
+        //db.Clear("ASR", function () {
+        db.DeleteDr(item.FlightId, function () {
+            item.IsSynced = 1;
+            item.Alert = null;
+            item.server = null;
+            db.Put('DR', item.Id, item, function (dbitem) {
                 deferred.resolve(dbitem);
             });
         });
@@ -859,31 +858,37 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
     };
     var _epGetASRByFlight = function (flightId) {
         var deferred = $q.defer();
+        
         db.GetASRsByFlightId(flightId, function (_dbitem) {
             var dbitem = _dbitem && _dbitem.length > 0 ? _dbitem[0] : null;
             if ($rootScope.getOnlineStatus()) {
 
                 $http.get($rootScope.apiUrl + 'asr/flight/' + flightId /*+ '?from=' + _df + '&to=' + _dt*/).then(function (response) {
                     if (response.data.IsSuccess && response.data.Data) {
-                        var _dbdate = !dbitem?0: Number(dbitem.DateUpdate);
+                        var _dbdate = !dbitem ? 0 : Number(dbitem.DateUpdate);
                         var _serverdate = Number(response.data.Data.DateUpdate);
-                         
-                        if (!dbitem || (dbitem.IsSynced == 1 && _serverdate >= _dbdate) ) {
+                        //alert(dbitem.IsSynced + '   ' + _serverdate + '   ' + _dbdate);
+                        if (!dbitem || (dbitem.IsSynced == 1 && _serverdate >= _dbdate)) {
                             //update local
 
-                            db.Clear("ASRs", function () {
+                            //db.Clear("ASR", function () {
+                            
+                            db.DeleteAsr(flightId, function () {
+                                
                                 response.data.Data.IsSynced = 1;
-                                db.Put('ASRs', response.data.Data.Id, response.data.Data, function (dbitem) {
+                                db.Put('ASR', response.data.Data.FlightId, response.data.Data, function (dbitem) {
                                     deferred.resolve(response.data);
                                 });
                             });
                         }
                         else if (dbitem.IsSynced == 0 && _serverdate > _dbdate) {
+                            //alert('x  ' + response.data.Data.User);
                             dbitem.Alert = response.data.Data.User;
                             dbitem.server = response.data.Data;
                             deferred.resolve({ IsSuccess: 1, Data: dbitem });
                         }
-                        else if (dbitem.IsSynced == 0 && _serverdate <= _dbdate){
+                        else if (dbitem.IsSynced == 0 && _serverdate <= _dbdate) {
+                            //alert('y');
                             deferred.resolve({ IsSuccess: 1, Data: dbitem });
                         }
                         else {
@@ -902,7 +907,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
             }
             else {
                 var data = { IsSuccess: 1, Data: dbitem };
-               
+
                 deferred.resolve(data);
             }
         });
@@ -915,25 +920,25 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
             var dbitem = _dbitem && _dbitem.length > 0 ? _dbitem[0] : null;
             console.log('asr get bd', dbitem);
             if ((dbitem && dbitem.IsSynced == 0) || !$rootScope.getOnlineStatus()) {
-                var data = { IsSuccess: 1, Data: dbitem  };
-                console.log('asr local',data);
+                var data = { IsSuccess: 1, Data: dbitem };
+                console.log('asr local', data);
                 deferred.resolve(data);
             }
             else {
                 if ($rootScope.getOnlineStatus()) {
                     $http.get($rootScope.apiUrl + 'asr/flight/' + flightId /*+ '?from=' + _df + '&to=' + _dt*/).then(function (response) {
                         if (response.data.IsSuccess && response.data.Data) {
-                            db.Clear("ASRs", function () {
+                            db.Clear("ASR", function () {
                                 response.data.Data.IsSynced = 1;
-                                db.Put('ASRs', response.data.Data.Id, response.data.Data, function (dbitem) {
+                                db.Put('ASR', response.data.Data.Id, response.data.Data, function (dbitem) {
                                     deferred.resolve(response.data);
                                 });
                             });
                         }
                         else
                             deferred.resolve(response.data);
-                        
-                        
+
+
                     }, function (err, status) {
 
                         deferred.reject(Exceptions.getMessage(err));
@@ -943,37 +948,41 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                     var data = { IsSuccess: 1, Data: dbitem };
                     deferred.resolve(data);
                 }
-               
+
             }
         });
-     
-       
+
+
 
         return deferred.promise;
     };
-
+    var momentUtcNowString = function () {
+        return moment.utc().format('YYYYMMDDHHmm');
+    };
     var _saveASR = function (entity) {
-        var pk = entity.Id;
+        var pk = entity.FlightId;
         var deferred = $q.defer();
         entity.IsSynced = 1;
-        db.Put('ASRs', entity.Id, entity, function (row) {
+        
+        entity.DateUpdate= momentUtcNowString();
+        db.Put('ASR', entity.FlightId, entity, function (row) {
             if ($rootScope.getOnlineStatus()) {
-                 entity.OccurrenceDate = moment(new Date( entity.OccurrenceDate)).format('YYYY-MM-DD-HH-mm');
+                entity.OccurrenceDate = moment(new Date(entity.OccurrenceDate)).format('YYYY-MM-DD-HH-mm');
                 $http.post($rootScope.apiUrl + 'asr/save', entity).then(function (response) {
                     if (response.data.IsSuccess) {
                         //deferred.resolve(response.data);
                         var item = response.data.Data;
                         item.IsSynced = 1;
-                        db.Delete('ASRs', pk, function () {
-                            db.Put('ASRs', item.Id, item, function (dbitem) {
-                                deferred.resolve({Data: dbitem, IsSuccess: 1 });
+                        db.Delete('ASR', pk, function () {
+                            db.Put('ASR', item.FlightId, item, function (dbitem) {
+                                deferred.resolve({ Data: dbitem, IsSuccess: 1 });
                             });
                         });
 
                     }
                     else
                         deferred.resolve(response.data);
-                    
+
                 }, function (err, status) {
 
                     deferred.reject(Exceptions.getMessage(err));
@@ -981,7 +990,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
             }
             else {
                 row.IsSynced = 0;
-                db.deSyncedItem('ASRs', entity.Id, function () {
+                db.deSyncedItem('ASR', entity.FlightId, function () {
                     deferred.resolve({ Data: row, IsSuccess: 1 });
                 });
             }
@@ -998,56 +1007,90 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
         //return deferred.promise;
     };
-    ////////////////////////////////////////
-    var _epReplaceVR = function (item) {
+
+    var _saveDR = function (entity) {
+        var pk = entity.FlightId;
         var deferred = $q.defer();
-        db.Clear("VRs", function () {
-            item.IsSynced = 1;
-            item.Alert = null;
-            item.server = null;
-            db.Put('VRs', item.Id, item, function (dbitem) {
-                deferred.resolve(dbitem);
-            });
+        entity.IsSynced = 1;
+        
+        entity.DateUpdate = momentUtcNowString();
+        db.Put('DR', entity.FlightId, entity, function (row) {
+           
+            if ($rootScope.getOnlineStatus()) {
+                entity.OccurrenceDate = moment(new Date(entity.OccurrenceDate)).format('YYYY-MM-DD-HH-mm');
+                $http.post($rootScope.apiUrl + 'dr/save', entity).then(function (response) {
+                    if (response.data.IsSuccess) {
+                        //deferred.resolve(response.data);
+                        var item = response.data.Data;
+                        item.IsSynced = 1;
+                        db.Delete('DR', pk, function () {
+                            db.Put('DR', item.FlightId, item, function (dbitem) {
+                                deferred.resolve({ Data: dbitem, IsSuccess: 1 });
+                            });
+                        });
+
+                    }
+                    else
+                        deferred.resolve(response.data);
+
+                }, function (err, status) {
+
+                    deferred.reject(Exceptions.getMessage(err));
+                });
+            }
+            else {
+                
+                row.IsSynced = 0;
+                db.deSyncedItem('DR', entity.FlightId, function () {
+                    
+                    deferred.resolve({ Data: row, IsSuccess: 1 });
+                });
+            }
         });
         return deferred.promise;
+
+         
     };
-    var _epGetVRByFlight = function (flightId) {
+    ////////////////////////////////////////
+    var _epGetDRByFlight = function (flightId) {
         var deferred = $q.defer();
-        db.GetVRsByFlightId(flightId, function (_dbitem) {
-           
+
+        db.GetDRsByFlightId(flightId, function (_dbitem) { 
             var dbitem = _dbitem && _dbitem.length > 0 ? _dbitem[0] : null;
             if ($rootScope.getOnlineStatus()) {
 
-                $http.get($rootScope.apiUrl + 'voyage/flight/' + flightId /*+ '?from=' + _df + '&to=' + _dt*/).then(function (response) {
+                $http.get($rootScope.apiUrl + 'dr/flight/' + flightId /*+ '?from=' + _df + '&to=' + _dt*/).then(function (response) {
                     if (response.data.IsSuccess && response.data.Data) {
                         var _dbdate = !dbitem ? 0 : Number(dbitem.DateUpdate);
                         var _serverdate = Number(response.data.Data.DateUpdate);
-                        
+                        //alert(dbitem.IsSynced + '   ' + _serverdate + '   ' + _dbdate);
                         if (!dbitem || (dbitem.IsSynced == 1 && _serverdate >= _dbdate)) {
                             //update local
-                           
-                            db.Clear("VRs", function () {
+
+                            //db.Clear("ASR", function () {
+
+                            db.DeleteAsr(flightId, function () {
+
                                 response.data.Data.IsSynced = 1;
-                                db.Put('VRs', response.data.Data.Id, response.data.Data, function (dbitem) {
+                                db.Put('DR', response.data.Data.FlightId, response.data.Data, function (dbitem) {
                                     deferred.resolve(response.data);
                                 });
                             });
                         }
                         else if (dbitem.IsSynced == 0 && _serverdate > _dbdate) {
-                           
+                            //alert('x  ' + response.data.Data.User);
                             dbitem.Alert = response.data.Data.User;
                             dbitem.server = response.data.Data;
                             deferred.resolve({ IsSuccess: 1, Data: dbitem });
                         }
                         else if (dbitem.IsSynced == 0 && _serverdate <= _dbdate) {
-                             
+                            //alert('y');
                             deferred.resolve({ IsSuccess: 1, Data: dbitem });
                         }
                         else {
-                           
+
                             deferred.resolve({ IsSuccess: 1, Data: dbitem });
                         }
-
                         //alert(_dbdate + '    ' + _serverdate);
                         //deferred.resolve({ IsSuccess: 1, Data: dbitem });
                     }
@@ -1067,11 +1110,83 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
         return deferred.promise;
     };
+    ////////////////////////////////////////
+    var _epReplaceVR = function (item) {
+        var deferred = $q.defer();
+        //db.Clear("VR", function () {
+        db.DeleteVr(item.FlightId, function () {
+            item.IsSynced = 1;
+            item.Alert = null;
+            item.server = null;
+            db.Put('VR', item.Id, item, function (dbitem) {
+                deferred.resolve(dbitem);
+            });
+        });
+        return deferred.promise;
+    };
+    var _epGetVRByFlight = function (flightId) {
+        var deferred = $q.defer();
+        db.GetVRsByFlightId(flightId, function (_dbitem) {
+
+            var dbitem = _dbitem && _dbitem.length > 0 ? _dbitem[0] : null;
+            if ($rootScope.getOnlineStatus()) {
+
+                $http.get($rootScope.apiUrl + 'voyage/flight/' + flightId /*+ '?from=' + _df + '&to=' + _dt*/).then(function (response) {
+                    if (response.data.IsSuccess && response.data.Data) {
+                        var _dbdate = !dbitem ? 0 : Number(dbitem.DateUpdate);
+                        var _serverdate = Number(response.data.Data.DateUpdate);
+
+                        if (!dbitem || (dbitem.IsSynced == 1 && _serverdate >= _dbdate)) {
+                            //update local
+
+                            //db.Clear("VRs", function () {
+                            db.DeleteVr(flightId, function () {
+                                response.data.Data.IsSynced = 1;
+                                db.Put('VR', response.data.Data.FlightId, response.data.Data, function (dbitem) {
+                                    deferred.resolve(response.data);
+                                });
+                            });
+                        }
+                        else if (dbitem.IsSynced == 0 && _serverdate > _dbdate) {
+
+                            dbitem.Alert = response.data.Data.User;
+                            dbitem.server = response.data.Data;
+                            deferred.resolve({ IsSuccess: 1, Data: dbitem });
+                        }
+                        else if (dbitem.IsSynced == 0 && _serverdate <= _dbdate) {
+
+                            deferred.resolve({ IsSuccess: 1, Data: dbitem });
+                        }
+                        else {
+
+                            deferred.resolve({ IsSuccess: 1, Data: dbitem });
+                        }
+
+                        //alert(_dbdate + '    ' + _serverdate);
+                        //deferred.resolve({ IsSuccess: 1, Data: dbitem });
+                    }
+                    else
+                        deferred.resolve({ IsSuccess: 1, Data: dbitem });
+                });
+
+
+
+            }
+            else {
+                var data = { IsSuccess: 1, Data: dbitem };
+                
+                deferred.resolve(data);
+            }
+        });
+
+        return deferred.promise;
+    };
     var _saveVR = function (entity) {
-        var pk = entity.Id;
+        var pk = entity.FlightId;
         var deferred = $q.defer();
         entity.IsSynced = 1;
-        db.Put('VRs', entity.Id, entity, function (row) {
+        entity.DateUpdate = momentUtcNowString();
+        db.Put('VR', entity.FlightId, entity, function (row) {
             if ($rootScope.getOnlineStatus()) {
                 //entity.OccurrenceDate = moment(new Date(entity.OccurrenceDate)).format('YYYY-MM-DD-HH-mm');
                 $http.post($rootScope.apiUrl + 'voyage/save', entity).then(function (response) {
@@ -1079,8 +1194,8 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                         //deferred.resolve(response.data);
                         var item = response.data.Data;
                         item.IsSynced = 1;
-                        db.Delete('VRs', pk, function () {
-                            db.Put('VRs', item.Id, item, function (dbitem) {
+                        db.Delete('VR', pk, function () {
+                            db.Put('VR', item.FlightId, item, function (dbitem) {
                                 deferred.resolve({ Data: dbitem, IsSuccess: 1 });
                             });
                         });
@@ -1096,17 +1211,17 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
             }
             else {
                 row.IsSynced = 0;
-                db.deSyncedItem('VRs', entity.Id, function () {
+                db.deSyncedItem('VR', entity.FlightId, function () {
                     deferred.resolve({ Data: row, IsSuccess: 1 });
                 });
             }
         });
         return deferred.promise;
 
-        
+
     };
     //////////////////////////////////
-      
+
     var _epGetVRByFlight2 = function (flightId) {
 
         var deferred = $q.defer();
@@ -1125,7 +1240,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
         var deferred = $q.defer();
         entity.IsSynced = 1;
         db.Put('VRs', entity.Id, entity, function (row) {
-            if ($rootScope.getOnlineStatus()  ) {
+            if ($rootScope.getOnlineStatus()) {
                 $http.post($rootScope.apiUrl + 'voyage/save', entity).then(function (response) {
                     if (response.data.IsSuccess) {
                         //deferred.resolve(response.data);
@@ -1163,13 +1278,482 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
         //return deferred.promise;
     };
+    var _epCheckLog = function (dto) {
+        var deferred = $q.defer();
+        if ($rootScope.getOnlineStatus()) {
+            $http.post($rootScope.apiUrl + 'flight/log/check', dto).then(function (response) {
+                deferred.resolve(response.data);
+            }, function (err, status) {
+
+                //deferred.reject(Exceptions.getMessage(err));
+                deferred.resolve(dto);
+            });
+        }
+        else {
+            deferred.resolve(dto);
+        }
+        return deferred.promise;
+    };
+
+    var _getSyncDto = function (flt) {
+
+        var dto = { Server: true };
+        dto.FlightId = flt.FlightId;
+        dto.CrewId = flt.CrewId;
+        dto.DelayBlockOff = null;
+        dto.BlockTime = null;
+        dto.FlightTime = null;
+        if (flt.BlockOff)
+            dto.BlockOffDate = momentFromatFroServerUTC(flt.BlockOff);
+        if (flt.BlockOn)
+            dto.BlockOnDate = momentFromatFroServerUTC(flt.BlockOn);
+        if (flt.TakeOff)
+            dto.TakeOffDate = momentFromatFroServerUTC(flt.TakeOff);
+        if (flt.Landing)
+            dto.LandingDate = momentFromatFroServerUTC(flt.Landing);
+
+        dto.FuelRemaining = flt.FuelRemaining;
+        dto.FuelUplift = flt.FuelUplift;
+        dto.FuelUsed = flt.FuelUsed;
+        dto.FuelDensity = flt.FuelDensity;
+        dto.FuelTotal = flt.FuelTotal;
+        ////////////
+        dto.PaxAdult = flt.PaxAdult;
+        dto.PaxChild = flt.PaxChild;
+        dto.PaxInfant = flt.PaxInfant;
+        dto.PaxTotal = flt.PaxTotal;
+
+        dto.BaggageWeight = flt.BaggageWeight;
+        dto.CargoWeight = flt.CargoWeight;
+
+        dto.SerialNo = flt.SerialNo;
+        dto.LTR = flt.LTR;
+        dto.PF = flt.PF;
+
+        dto.RVSM_GND_CPT = flt.RVSM_GND_CPT;
+        dto.RVSM_GND_STBY = flt.RVSM_GND_STBY;
+        dto.RVSM_GND_FO = flt.RVSM_GND_FO;
+
+        dto.RVSM_FLT_CPT = flt.RVSM_FLT_CPT;
+        dto.RVSM_FLT_STBY = flt.RVSM_FLT_STBY;
+        dto.RVSM_FLT_FO = flt.RVSM_FLT_FO;
+
+        dto.CommanderNote = flt.CommanderNote;
+
+        dto.AttRepositioning1 = flt.AttRepositioning1;
+        dto.AttRepositioning1 = flt.AttRepositioning1;
+
+
+        ///////////////
+        //sook
+        dto.JLUserId = flt.CrewId;
+        dto.JLDate = momentUtcNow();
+        dto.Version = flt.Version;
+
+        //$scope.loadingVisible = true;
+        //flightService.epSaveLogOverwriteServer($scope.dto).then(function (response) {
+        //    $scope.loadingVisible = false;
+
+        //    if (response.IsSuccess) {
+        //        General.ShowNotify(Config.Text_SavedOk, 'success');
+        //        $rootScope.$broadcast('onFlightLocgSaved', response.Data);
+
+        //    }
+        //    else {
+        //        General.ShowNotify(response.Data, 'error');
+        //    }
+        //}, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
+
+        return dto;
+    };
+    var _autoSyncLogs = async function (callback) {
+        var _db = db.getDb();
+        var flights = await _db.AppCrewFlights
+            .filter(function (flight) {
+
+                return flight.IsSynced == 0;
+            }).toArray();
+
+        if (!flights || flights.length == 0) {
+            callback({
+                total: 0,
+                synced: 0,
+                remark: 'no logs found',
+            });
+            return;
+        }
+        var logResult = { total: flights.length };
+
+        var promises = [];
+        var checkResults = [];
+        $.each(flights, function (_i, flight) {
+            var dto = { JLDate: flight.JLDate, CrewId: flight.CrewId, FlightId: flight.FlightId };
+            promises.push($http.post($rootScope.apiUrl + 'flight/log/check', dto).then(cr => { checkResults.push({ flt: flight, result: cr }); }));
+        });
+
+
+        $q.all(promises).then(result => {
+
+            var passed = [];
+            $.each(checkResults, function (_i, _d) {
+                var flt = _d.flt;
+                if (_d.result.data.IsSuccess) {
+
+                    var checkResult = _d.result.data.Data;
+
+                    if (!checkResult) { passed.push(_getSyncDto(flt)); }
+                    else {
+
+                        if ((checkResult.JLUserId && checkResult.JLUserId != flt.JLUserId)
+                            || (checkResult.JLUserId && getTimeForSync(checkResult.JLDate) > getTimeForSync(flt.JLDate))
+                        ) {
+                            console.log('Cant Sync ', checkResult);
+                        }
+                        else {
+
+                            passed.push(_getSyncDto(flt));
+
+                        }
+                    }
+
+                }
+            });
+
+            if (passed.length > 0) {
+                var syncedPromises = [];
+                var resps = [];
+                $.each(passed, function (_i, _dto) {
+
+                    syncedPromises.push($http.post($rootScope.apiUrl + 'flight/log/save', _dto).then(resp => { resps.push({ id: _dto.FlightId, dt: resp.data.Data }); }));
+                });
+                var jlDate = null;
+                $q.all(syncedPromises).then(result => {
+
+                    var _cntr = 0;
+                    $.each(resps, function (_w, _item) {
+                        var _flt = Enumerable.From(flights).Where('$.FlightId==' + _item.id).FirstOrDefault();
+                        if (_flt) {
+                            var changes = {
+                                JLDate: momentFromatLocalUTC(_item.dt),
+                                JLUserId: $rootScope.employeeId,
+                                IsSynced: 1,
+                            };
+                            db.Update('AppCrewFlights', _item.id, changes, function (_obj) {
+
+                                _cntr++;
+                                if (_cntr >= resps.length) {
+
+                                    $rootScope.$broadcast('COMMAND', { title: 'BIND_FLIGHTS' });
+                                    logResult.synced = passed.length;
+                                    logResult.remark = (logResult.total - passed.length) + ' flight(s) cant sync';
+                                    callback(logResult);
+                                }
+                            });
+                        }
+
+                    });
+                });
+
+            }
+            else {
+                logResult.synced = 0;
+                logResult.remark = logResult.total + ' flight(s) cant sync';
+                callback(logResult);
+                return;
+            }
+
+        });
+
+        //callback(flights);
+    };
+
+    var _autoSyncASR = async function (callback) {
+        var _db = db.getDb();
+        var asrs = await _db.ASR
+            .filter(function (asr) {
+
+                return asr.IsSynced == 0;
+            }).toArray();
+
+        if (!asrs || asrs.length == 0) {
+            callback({
+                total: 0,
+                synced: 0,
+                remark: 'no asrs found',
+            });
+            return;
+        }
+        var logResult = { total: asrs.length };
+        var flightIds = Enumerable.From(asrs).Select('$.FlightId').ToArray();
+        var dto = { ids: flightIds };
+        $http.post($rootScope.apiUrl + 'asr/flights', dto).then(sr => {
+            console.log('asr server result', sr);
+            var resps = sr.data.Data;
+
+            $.each(asrs, function (_i, _local) {
+                var _server = Enumerable.From(resps).Where('$.FlightId==' + _local.FlightId).FirstOrDefault();
+                if (!_server) {
+                    console.log('update server 0 ' + _local.FlightId);
+                    ////// UPDATE SERVER /////////////////////
+                    _local.User = $rootScope.userTitle
+                    _local.OccurrenceDate = moment(new Date(_local.OccurrenceDate)).format('YYYY-MM-DD-HH-mm');
+                    $http.post($rootScope.apiUrl + 'asr/save', _local).then(function (response1) {
+                        if (response1.data.IsSuccess) {
+                           
+                            var item = response1.data.Data;
+                            item.IsSynced = 1;
+                            db.Delete('ASR', _local.FlightId, function () {
+                                db.Put('ASR', item.FlightId, item, function (dbitem) {});
+                            });
+
+                        }
+                         
+
+                    });
+                    /////////END UPDATE SERVER ////////////////////////////
+
+
+                } else {
+                    var _localDate = Number(_local.DateUpdate);
+                    var _serverDate = Number(_server.DateUpdate);
+                    if (_serverDate >= _localDate) {
+                        console.log('update local ' + _local.FlightId);
+                        ///////////////// UPDATE LOCAL ///////////////////
+                        _epReplaceASR(_server).then(rp => { });
+                        ////////////////END UPDATE LOCAL //////////////////
+                    }
+                    else {
+                        console.log(_serverDate+'   local: '+ _localDate);
+                        console.log('update server 1 ' + _local.FlightId);
+                        /////////////////UPDATE SERVER //////////////////////////
+                        _local.User = $rootScope.userTitle
+                        _local.OccurrenceDate = moment(new Date(_local.OccurrenceDate)).format('YYYY-MM-DD-HH-mm');
+                        $http.post($rootScope.apiUrl + 'asr/save', _local).then(function (response1) {
+                            if (response1.data.IsSuccess) {
+
+                                var item = response1.data.Data;
+                                item.IsSynced = 1;
+                                db.Delete('ASR', _local.FlightId, function () {
+                                    db.Put('ASR', item.FlightId, item, function (dbitem) { });
+                                });
+
+                            }
+
+
+                        }); 
+                        ////////////////END UPDATE SERVER //////////////////////
+                    }
+                }
+
+            });
+
+            
+        });
+
+        //var promises = [];
+        //var checkResults = [];
+        //$.each(asrs, function (_i, asr) {
+        //    var dto = { JLDate: flight.JLDate, CrewId: flight.CrewId, FlightId: flight.FlightId };
+        //    promises.push($http.post($rootScope.apiUrl + 'flight/log/check', dto).then(cr => { checkResults.push({ flt: flight, result: cr }); }));
+        //});
+
+
+
+    };
+
+    var _autoSyncVR = async function (callback) {
+        var _db = db.getDb();
+        var asrs = await _db.VR
+            .filter(function (asr) {
+
+                return asr.IsSynced == 0;
+            }).toArray();
+
+        if (!asrs || asrs.length == 0) {
+            callback({
+                total: 0,
+                synced: 0,
+                remark: 'no vrs found',
+            });
+            return;
+        }
+        var logResult = { total: asrs.length };
+        var flightIds = Enumerable.From(asrs).Select('$.FlightId').ToArray();
+        var dto = { ids: flightIds };
+        $http.post($rootScope.apiUrl + 'vr/flights', dto).then(sr => {
+            console.log('vr server result', sr);
+            var resps = sr.data.Data;
+
+            $.each(asrs, function (_i, _local) {
+                var _server = Enumerable.From(resps).Where('$.FlightId==' + _local.FlightId).FirstOrDefault();
+                if (!_server) {
+                    console.log('update server 0 ' + _local.FlightId);
+                    ////// UPDATE SERVER /////////////////////
+                    _local.User = $rootScope.userTitle
+                    _local.OccurrenceDate = moment(new Date(_local.OccurrenceDate)).format('YYYY-MM-DD-HH-mm');
+                    $http.post($rootScope.apiUrl + 'voyage/save', _local).then(function (response1) {
+                        if (response1.data.IsSuccess) {
+
+                            var item = response1.data.Data;
+                            item.IsSynced = 1;
+                            db.Delete('VR', _local.FlightId, function () {
+                                db.Put('VR', item.FlightId, item, function (dbitem) { });
+                            });
+
+                        }
+
+
+                    });
+                    /////////END UPDATE SERVER ////////////////////////////
+
+
+                } else {
+                    var _localDate = Number(_local.DateUpdate);
+                    var _serverDate = Number(_server.DateUpdate);
+                    if (_serverDate >= _localDate) {
+                        console.log('update local ' + _local.FlightId);
+                        ///////////////// UPDATE LOCAL ///////////////////
+                        _epReplaceVR(_server).then(rp => { });
+                        
+                        ////////////////END UPDATE LOCAL //////////////////
+                    }
+                    else {
+                        console.log(_serverDate + '   local: ' + _localDate);
+                        console.log('update server 1 ' + _local.FlightId);
+                        /////////////////UPDATE SERVER //////////////////////////
+                        _local.User = $rootScope.userTitle
+                        _local.OccurrenceDate = moment(new Date(_local.OccurrenceDate)).format('YYYY-MM-DD-HH-mm');
+                        $http.post($rootScope.apiUrl + 'voyage/save', _local).then(function (response1) {
+                            if (response1.data.IsSuccess) {
+
+                                var item = response1.data.Data;
+                                item.IsSynced = 1;
+                                db.Delete('VR', _local.FlightId, function () {
+                                    db.Put('VR', item.FlightId, item, function (dbitem) { });
+                                });
+
+                            }
+
+
+                        });
+                        ////////////////END UPDATE SERVER //////////////////////
+                    }
+                }
+
+            });
+
+
+        });
+
+     
+
+
+    };
+
+
+
+    var _autoSyncDR = async function (callback) {
+        var _db = db.getDb();
+        var asrs = await _db.DR
+            .filter(function (asr) {
+
+                return asr.IsSynced == 0;
+            }).toArray();
+
+        if (!asrs || asrs.length == 0) {
+            callback({
+                total: 0,
+                synced: 0,
+                remark: 'no drs found',
+            });
+            return;
+        }
+        var logResult = { total: asrs.length };
+        var flightIds = Enumerable.From(asrs).Select('$.FlightId').ToArray();
+        var dto = { ids: flightIds };
+        $http.post($rootScope.apiUrl + 'vr/flights', dto).then(sr => {
+            console.log('dr server result', sr);
+            var resps = sr.data.Data;
+
+            $.each(asrs, function (_i, _local) {
+                var _server = Enumerable.From(resps).Where('$.FlightId==' + _local.FlightId).FirstOrDefault();
+                if (!_server) {
+                    console.log('update server 0 ' + _local.FlightId);
+                    ////// UPDATE SERVER /////////////////////
+                    _local.User = $rootScope.userTitle
+                    
+                    $http.post($rootScope.apiUrl + 'dr/save', _local).then(function (response1) {
+                        if (response1.data.IsSuccess) {
+
+                            var item = response1.data.Data;
+                            item.IsSynced = 1;
+                            db.Delete('DR', _local.FlightId, function () {
+                                db.Put('DR', item.FlightId, item, function (dbitem) { });
+                            });
+
+                        }
+
+
+                    });
+                    /////////END UPDATE SERVER ////////////////////////////
+
+
+                } else {
+                    var _localDate = Number(_local.DateUpdate);
+                    var _serverDate = Number(_server.DateUpdate);
+                    if (_serverDate >= _localDate) {
+                        console.log('update local ' + _local.FlightId);
+                        ///////////////// UPDATE LOCAL ///////////////////
+                        _epReplaceVR(_server).then(rp => { });
+
+                        ////////////////END UPDATE LOCAL //////////////////
+                    }
+                    else {
+                        console.log(_serverDate + '   local: ' + _localDate);
+                        console.log('update server 1 ' + _local.FlightId);
+                        /////////////////UPDATE SERVER //////////////////////////
+                        _local.User = $rootScope.userTitle
+                        _local.OccurrenceDate = moment(new Date(_local.OccurrenceDate)).format('YYYY-MM-DD-HH-mm');
+                        $http.post($rootScope.apiUrl + 'dr/save', _local).then(function (response1) {
+                            if (response1.data.IsSuccess) {
+
+                                var item = response1.data.Data;
+                                item.IsSynced = 1;
+                                db.Delete('DR', _local.FlightId, function () {
+                                    db.Put('DR', item.FlightId, item, function (dbitem) { });
+                                });
+
+                            }
+
+
+                        });
+                        ////////////////END UPDATE SERVER //////////////////////
+                    }
+                }
+
+            });
+
+
+        });
+
+
+
+
+    };
     //////////////////////////////////
+    serviceFactory.autoSyncLogs = _autoSyncLogs;
+    serviceFactory.autoSyncASR = _autoSyncASR;
+    serviceFactory.autoSyncVR = _autoSyncVR;
+    serviceFactory.autoSyncDR = _autoSyncDR;
+    serviceFactory.epGetDRByFlight = _epGetDRByFlight;
     serviceFactory.epGetASRByFlight = _epGetASRByFlight;
     serviceFactory.saveASR = _saveASR;
+    serviceFactory.saveDR = _saveDR;
     serviceFactory.epGetVRByFlight = _epGetVRByFlight;
     serviceFactory.saveVR = _saveVR;
     serviceFactory.epReplaceASR = _epReplaceASR;
     serviceFactory.epReplaceVR = _epReplaceVR;
+    serviceFactory.epReplaceDR = _epReplaceDR;
 
 
     serviceFactory.updateTAFs = _updateTAFs;

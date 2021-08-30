@@ -95,6 +95,8 @@ namespace APCore.Models
         public DateTime? DateConfirmed { get; set; }
         public int? DispatcherId { get; set; }
         public int Id { get; set; }
+        public string DateUpdate { get; set; }
+        public string User { get; set; }
 
         public virtual Employee Dispatcher { get; set; }
         public virtual FlightInformation Flight { get; set; }

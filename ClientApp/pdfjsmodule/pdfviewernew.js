@@ -54,7 +54,8 @@ app.controller('pdfviewernewController', ['$scope', '$location', 'flightService'
         onShown: function (e) {
             $('#frame').height($(window).height()-120);
              //https://apoc.ir/download/2021-08-01.pdf
-            var url = ('https://apoc.ir/download/2021-08-01.pdf');
+            //var url = ('https://apoc.ir/download/2021-08-01.pdf');
+            var url=$scope.tempData.url;
             $scope._url = $sce.trustAsResourceUrl('pdfjsmodule/viewer.html?file='+url);
 
 
@@ -94,8 +95,13 @@ app.controller('pdfviewernewController', ['$scope', '$location', 'flightService'
 
 
         $scope.tempData = prms;
-
-        $scope.popup_add_visible = true;
+        $scope.popup_add_title = prms.caption;
+        if (!prms.hidden) {
+            
+            $scope.popup_add_visible = true;
+        }
+        else
+            $scope.popup_add_visible = false;
 
     });
     //////////////////////////////

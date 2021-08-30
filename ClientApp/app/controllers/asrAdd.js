@@ -1,6 +1,7 @@
 'use strict';
 app.controller('asrAddController', ['$scope', '$location', 'flightService', 'authService', '$routeParams', '$rootScope', '$window', function ($scope, $location, flightService, authService, $routeParams, $rootScope, $window) {
     $scope.isNew = true;
+    $scope.isEditable = false;
     $scope.isContentVisible = false;
     $scope.isFullScreen = false;
     var detector = new MobileDetect(window.navigator.userAgent);
@@ -34,9 +35,15 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
                             General.ShowNotify(Config.Text_FillRequired, 'error');
                             return;
                         }
-
-                         
+                        //alert($scope.entity.Id);
+                        //db.getCount('ASRs', function (n) {
+                        //    n = n + 1;
+                        //    n = -1 * n;
+                        //    $scope.entity.Id = n;
+                            
+                        //});
                         $scope.entity.User = $rootScope.userTitle;
+
                         $scope.loadingVisible = true;
                         flightService.saveASR($scope.entity).then(function (response2) {
                             $scope.loadingVisible = false;
@@ -45,9 +52,11 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
                                 console.log('ASR', response2.Data);
                                 $scope.popup_add_visible = false;
                             }
-                           
+
 
                         }, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
+                         
+                        
 
 
                     }
@@ -110,7 +119,8 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
             fullScreen: 'isFullScreen',
             title: 'popup_add_title',
             height: 'popup_height',
-            width: 'popup_width'
+            width: 'popup_width',
+            'toolbarItems[0].visible': 'isEditable', 
 
         }
     };
@@ -131,6 +141,8 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
         flightService.epGetFlightLocal($scope.entity.FlightId ).then(function (response) {
 
             $scope.loadingVisible = false;
+            var diff = Math.abs((new Date()).getTime() - (new Date(response.Data.STALocal)).getTime()) / 3600000;
+            $scope.isEditable = (diff <= 24);
             $scope.flight = response.Data;
 
             $scope.loadingVisible = true;

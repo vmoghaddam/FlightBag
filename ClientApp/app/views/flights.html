@@ -929,6 +929,7 @@
                                 <td><div dx-button="btn_jlog"></div></td>
                                 <td style=" padding-left:5px;"><div dx-button="btn_asr"></div></td>
                                 <td style=" padding-left:5px;"><div dx-button="btn_vr"></div></td>
+                                <td style=" padding-left:5px;"><div dx-button="btn_dr"></div></td>
 
                             </tr>
                         </table>
@@ -1246,8 +1247,9 @@
     </div>
 
     <div id="popup_folder" dx-popup="popup_folder" class="no-padding">
-        <div id="scroll_folder" dx-scroll-view="scroll_folder"  >
-            <div style="padding:10px;"  >
+        <div id="scroll_folder" dx-scroll-view="scroll_folder">
+            <div style="padding:10px;">
+
                 <div>
                     <table style="width:100%;border:1px solid #eee; background-color:dimgray;margin-top:5px;" ng-class="getInfoClass(selectedGroup,'TAF')" ng-click="infoClick(selectedGroup.FDPId,'TAF',selectedGroup)">
                         <tr>
@@ -1267,11 +1269,13 @@
                             <td style="text-align:right;padding :10px;font-size:16px;">{{selectedGroup.NOTAM && selectedGroup.NOTAM[0]?formatDateTime( selectedGroup.NOTAM[0].DateCreate) :'-'}}</td>
                         </tr>
                     </table>
-                    <div dx-tabs="tabs_options">
+                    <div dx-tabs="tabs_options" style="margin-top:10px;">
 
                     </div>
                     <div class="tab adds" id="adds">
                         <div style="border :1px solid #eee;padding:10px;font-weight:bold;margin-top:10px" class="folder-item">
+                            
+
                             Significant Weather (SIGWX)
                         </div>
                         <div ng-repeat="item in folderSIGWX" style="padding:5px;">
@@ -1292,7 +1296,7 @@
                         <div style="border :1px solid #eee;padding:10px;font-weight:bold;margin-top:5px;" class="folder-item">
                             Wind and Temperature
                         </div>
-                        <div style="padding:3px;">
+                        <div style="padding:0px;">
                             <table style="width:100%;border:1px solid #ddd" class="wind">
                                 <tr style="background-color:darkgray;color:black">
                                     <td style="width:10%;font-weight:bold;padding:5px 7px 5px 7px !important">Level</td>
@@ -1341,18 +1345,39 @@
                         <div style="border :1px solid #eee;padding:10px;font-weight:bold;margin-top:10px" class="folder-item">
                             Significant Weather (SIGWX)
                         </div>
-                        <div style="padding:3px;">
+                        <div style="padding:0px;">
                             <table style="width:100%;border:1px solid #ddd" class="wind">
                                 <tr style="background-color:darkgray;color:black">
-                                     
+
                                     <td colspan="4" style="font-weight:bold;padding:5px 7px 5px 7px !important">Valid(Z)</td>
                                 </tr>
                                 <tr>
 
-                                    <td style="width:25%" ng-click="showIRIMOSIGWX('00')">00 - 06</td>
-                                    <td style="width:25%" ng-click="showIRIMOSIGWX('06')">06 - 12</td>
-                                    <td style="width:25%" ng-click="showIRIMOSIGWX('12')">12 - 18</td>
-                                    <td style="width:25%" ng-click="showIRIMOSIGWX('18')">18 - 24</td>
+                                    <td style="width:25%" ng-click="showIRIMOSIGWX('00','00 - 06')">00 - 06</td>
+                                    <td style="width:25%" ng-click="showIRIMOSIGWX('06','06 - 12')">06 - 12</td>
+                                    <td style="width:25%" ng-click="showIRIMOSIGWX('12','12 - 18')">12 - 18</td>
+                                    <td style="width:25%" ng-click="showIRIMOSIGWX('18','18 - 24')">18 - 24</td>
+
+                                </tr>
+
+                            </table>
+                        </div>
+                        <div style="border :1px solid #eee;padding:10px;font-weight:bold;margin-top:10px;" class="folder-item">
+                            Wind and Temperature
+                        </div>
+                        <div style="padding:0px;">
+                            <table style="width:100%;border:1px solid #ddd" class="wind">
+                                <tr style="background-color:darkgray;color:black">
+
+                                    <td colspan="4" style="font-weight:bold;padding:5px 7px 5px 7px !important">Valid(Z)</td>
+                                </tr>
+                                <tr>
+
+
+                                    <td style="width:25%" ng-click="showIRIMOFF('06')">06</td>
+                                    <td style="width:25%" ng-click="showIRIMOFF('12')">12</td>
+                                    <td style="width:25%" ng-click="showIRIMOFF('18')">18</td>
+                                    <td style="width:25%" ng-click="showIRIMOFF('00')">24</td>
 
                                 </tr>
 
@@ -1360,26 +1385,26 @@
                         </div>
                         <!--<div ng-repeat="item in folderSIGWX" style="padding:5px;">
 
-        <div style="padding:7px 0 7px 0;border-bottom:1px solid #ddd">
-            <table>
-                <tr>
-                    <td ng-repeat="x in item.items" style="padding-right:10px;">
-                        <div style="width:150px;padding:7px;background-color:gray;border:1px solid #ddd;text-align:center" ng-class="getSIGWXClass(item.source,'SIGWX'+x.no)" ng-click="showImage(x)">{{x.title}}</div>
-                    </td>
-                </tr>
-            </table>
-        </div>
+                            <div style="padding:7px 0 7px 0;border-bottom:1px solid #ddd">
+                                <table>
+                                    <tr>
+                                        <td ng-repeat="x in item.items" style="padding-right:10px;">
+                                            <div style="width:150px;padding:7px;background-color:gray;border:1px solid #ddd;text-align:center" ng-class="getSIGWXClass(item.source,'SIGWX'+x.no)" ng-click="showImage(x)">{{x.title}}</div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
 
-    </div>-->
+                        </div>-->
                     </div>
-                  
+
 
 
 
                 </div>
                 <div style="clear:both"></div>
             </div>
-            
+
         </div>
     </div>
 
@@ -1388,6 +1413,7 @@
     <div ng-include="'app/views/logAdd.html?vx=2'"></div>
     <div ng-include="'app/views/asrAdd.html?vx=2'"></div>
     <div ng-include="'app/views/vrAdd.html?vx=2'"></div>
+    <div ng-include="'app/views/drAdd.html?vx=2'"></div>
     <div ng-include="'app/views/calendar.html?vx=2'"></div>
 
     <div ng-include="'app/views/taf.html?vx=2'"></div>

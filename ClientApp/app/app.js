@@ -1,31 +1,31 @@
 ﻿/// <reference path="views/flight.html" />
 //v83
-var app = angular.module('GriffinClientApp', ['ngRoute', 'LocalStorageModule', 'angular-loading-bar', 'dx', 'ngSanitize', 'ngAnimate' ]).config(['cfpLoadingBarProvider', function (cfpLoadingBarProvider) {
+var app = angular.module('GriffinClientApp', ['ngRoute', 'LocalStorageModule', 'angular-loading-bar', 'dx', 'ngSanitize', 'ngAnimate']).config(['cfpLoadingBarProvider', function (cfpLoadingBarProvider) {
     cfpLoadingBarProvider.includeSpinner = false;
-    
+
 }])
- //.factory("$exceptionHandler", function () {
- //    return function (exception, cause) {
- //        alert(cause);
- //        alert(exception);
- //    };
-    //});
-     
+//.factory("$exceptionHandler", function () {
+//    return function (exception, cause) {
+//        alert(cause);
+//        alert(exception);
+//    };
+//});
+
 
 var routePrefix = "app";
 app.config(function ($routeProvider) {
     //console.log('route');
     //console.log($routeProvider);
-    
+
     $routeProvider.when("/apps", {
         controller: "appsController",
-        templateUrl:routePrefix+ "/views/apps.html?v=20"
+        templateUrl: routePrefix + "/views/apps.html?v=20"
     });
     //$routeProvider.when("/home", {
     //    controller: "homeController",
     //    templateUrl: routePrefix + "/views/home.html"
     //});
-    
+
     $routeProvider.when("/login", {
         controller: "loginController",
         templateUrl: routePrefix + "/views/login.html?vx=2"
@@ -70,7 +70,7 @@ app.config(function ($routeProvider) {
     //$routeProvider.when("/appflight", {
     //    controller: "appFlightController",
     //    templateUrl: routePrefix + "/views/flights.html?v=20"
-        
+
     //});
     $routeProvider.when("/appflight", {
         controller: "epLogBookController",
@@ -281,7 +281,8 @@ var serviceBase = 'http://fleet.flypersia.aero/apiv2/';
 var serviceBase2 = 'https://localhost:5001/api/';
 var serviceBase3 = 'https://fbpocket.ir/service/api/';
 
-var staticFiles = 'https://localhost:5001/Upload/';
+//var staticFiles = 'https://localhost:5001/Upload/';
+var staticFiles = 'https://fbpocket.ir/Upload/';
 //var serviceBase2 = 'https://fleet.caspianairlines.com/fbservicea/api/';
 
 //'http://localhost:58908/';
@@ -303,8 +304,8 @@ app.config(['$httpProvider', function ($httpProvider) {
     $httpProvider.interceptors.push('authInterceptorService');
 }]);
 
-app.run(['authService', 'activityService', '$rootScope', '$location', '$templateCache', 'generalService', 'localStorageService', '$window', function (authService, activityService, $rootScope, $location, $templateCache, generalService, localStorageService, $window) {
-     db.Init();
+app.run(['authService', 'activityService', '$rootScope', '$location', '$templateCache', 'generalService', 'localStorageService', '$window', 'flightService', function (authService, activityService, $rootScope, $location, $templateCache, generalService, localStorageService, $window, flightService) {
+    db.Init();
     //var collection = db.getDb().AppCrewFlights;
 
     //collection.each(function (friend) {
@@ -327,11 +328,24 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
     $rootScope.online = navigator.onLine;
     // alert('INIT ' + $rootScope.online);
     $rootScope.getOnlineStatus = function () {
-       // return true;
+        // return true;
         return navigator.onLine;
     };
 
-    $rootScope.onlineStatusChanged = function () { /*alert($rootScope.online);*/};
+    $rootScope.onlineStatusChanged = function () {
+    /*alert($rootScope.online);*/
+        if ($rootScope.getOnlineStatus()) {
+            flightService.autoSyncLogs(function (data) {
+
+                console.log('Synced Log Result ', data);
+
+            });
+            flightService.autoSyncASR(function (data) { });
+            flightService.autoSyncVR(function (data) { });
+            flightService.autoSyncDR(function (data) { }); 
+            
+        }
+    };
 
     $window.addEventListener("offline", function () {
         $rootScope.$apply(function () {
@@ -395,7 +409,7 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
     $rootScope.position = null;
     $rootScope.positionCode = null;
     $rootScope.hasACTypes = null;
-    
+
     $rootScope.updateUserDataActypes = function (value) {
         var userd = localStorageService.get('userData');
         userd.ACTypes = value;
@@ -557,7 +571,7 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
         return moment(new Date(dt)).format('MMM YY').toUpperCase();
     };
     $rootScope.formatMinutes = function (mm) {
-         
+
         if (!mm)
             return "...";
         return pad(Math.floor(mm / 60)).toString() + ':' + pad(Math.floor(mm % 60)).toString();
@@ -614,7 +628,7 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
     $rootScope.getDuration = function (x) {
         if (!x)
             return "-";
-        return pad(Math.floor(x / 60)).toString() + ':' + pad(x % 60).toString()  ;
+        return pad(Math.floor(x / 60)).toString() + ':' + pad(x % 60).toString();
     };
     $rootScope.getStatusClass = function (item) {
 
@@ -668,8 +682,8 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
             return '-';
         if (!b)
             return $rootScope.getTimeHHMM2(x, 'Landing');
-       // if (b && [3, 15].indexOf(x.FlightStatusId) == -1)
-       //     return '-';
+        // if (b && [3, 15].indexOf(x.FlightStatusId) == -1)
+        //     return '-';
         return $rootScope.getTimeHHMM2(x, 'Landing');
     };
     $rootScope.getSTD = function (x) {
@@ -725,9 +739,9 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
     };
 
     $rootScope.showMVTTime = function (x) {
-      //  if (!x)
-      //      return false;
-      //  return [1, 4].indexOf(x.FlightStatusId) == -1;
+        //  if (!x)
+        //      return false;
+        //  return [1, 4].indexOf(x.FlightStatusId) == -1;
         return true;
     };
     ///////////////////////////////////////
@@ -742,7 +756,7 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
                     version: 4
                 }),
             filter: ['IATA', '<>', '-'],
-            sort: ['SortIndex','IATA'],
+            sort: ['SortIndex', 'IATA'],
         });
     };
     $rootScope.getDatasourcePosition = function () {
@@ -796,7 +810,7 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
                 return -1;
         }
     };
-    $rootScope.getPosition= function (str) {
+    $rootScope.getPosition = function (str) {
         switch (str) {
             case 1160:
                 return 'P1';
@@ -818,7 +832,7 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
             case 1154:
                 return 'Check';
             case 1162:
-              return 'Safety';
+                return 'Safety';
             default:
                 return -1;
         }
@@ -827,7 +841,7 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
         localStorageService.set('fdps', data);
     };
     $rootScope.getFDPS = function () {
-      return  localStorageService.get('fdps');
+        return localStorageService.get('fdps');
     };
     $rootScope.clearcacheFDPS = function () {
         localStorageService.remove('fdps');
@@ -840,8 +854,7 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
     };
     $rootScope.getFTL = function (callback) {
         var ftl = localStorageService.get('ftl');
-        if (ftl)
-        {
+        if (ftl) {
             callback(ftl);
             return;
         }
@@ -855,15 +868,14 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
             }
             //////////////////////
 
-        }, function (err) {   });
+        }, function (err) { });
 
     };
 
 
     $rootScope.getDatasourceEmployeeACTypes = function (callback) {
         var types = localStorageService.get('actypes');
-        if (types)
-        {
+        if (types) {
             callback(types);
         }
         generalService.getUserAcTypes($rootScope.employeeId).then(function (response) {
@@ -874,19 +886,19 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
             localStorageService.set('actypes', types);
             callback(types);
             ////////////////////////
-        }, function (err) {   });
-     
+        }, function (err) { });
+
     };
     $rootScope.getDatasourceAircrafts = function () {
         return new DevExpress.data.DataSource({
             store:
 
-            new DevExpress.data.ODataStore({
-                url: $rootScope.serviceUrl + 'odata/aircrafttypes/all',
-                //  key: "Id",
-                // keyType: "Int32",
-                version: 4
-            }),
+                new DevExpress.data.ODataStore({
+                    url: $rootScope.serviceUrl + 'odata/aircrafttypes/all',
+                    //  key: "Id",
+                    // keyType: "Int32",
+                    version: 4
+                }),
             //filter: ['ParentId', '=', pid],
             sort: ['Manufacturer', 'Type'],
         });
@@ -895,11 +907,11 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
         return [
             { Id: 10, Title: 'FlyPersia' },
             { Id: 9, Title: 'Aseman' },
-           // { Id: 2, Title: 'Caspian' },
-             { Id: 7, Title: 'Mahan' },
-             { Id: 8, Title: 'IranAir' },
-              { Id: 6, Title: 'KishAir' },
-              // { Id: 6, Title: 'ATA' },
+            // { Id: 2, Title: 'Caspian' },
+            { Id: 7, Title: 'Mahan' },
+            { Id: 8, Title: 'IranAir' },
+            { Id: 6, Title: 'KishAir' },
+            // { Id: 6, Title: 'ATA' },
         ];
     };
 
@@ -907,30 +919,30 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
         return [
             { Id: 5000, Title: 'Training' },
             { Id: 5001, Title: 'Office' },
-          
-             { Id: 1167, Title: 'Standby' },
-             { Id: 1170, Title: 'Reserve' },
-              
+
+            { Id: 1167, Title: 'Standby' },
+            { Id: 1170, Title: 'Reserve' },
+
         ];
     };
     $rootScope.getDatasourceCertificate = function () {
         return [
             { Id: 1181, Title: 'Flight Crew Licence' },
-             { Id: 1182, Title: 'Skill Test/Proficiency' },
-             // { Id: 3, Title: 'Skill Test/Proficiency OPC' },
-               { Id: 5007, Title: 'Aircraft Type' },
-                { Id: 1185, Title: 'Medical Certificate' },
-                 { Id: 1186, Title: 'Crew Member Certificate' },
-                  { Id: 1184, Title: 'ICAO LPR' },
-                   { Id: 1187, Title: 'SEPT' },
-                    { Id: 1188, Title: 'Dangerous Goods' },
-                     { Id: 1189, Title: 'CRM' },
-                       { Id: 1190, Title: 'CCRM' },
-                         { Id: 1191, Title: 'SMS' },
-                           { Id: 1192, Title: 'Aviation Security' },
-                             { Id: 1194, Title: 'Cold Weather Operation' },
-                             { Id: 1195, Title: 'Hot Weather Operation' },
-                             { Id: 1202, Title: 'First Aid' },
+            { Id: 1182, Title: 'Skill Test/Proficiency' },
+            // { Id: 3, Title: 'Skill Test/Proficiency OPC' },
+            { Id: 5007, Title: 'Aircraft Type' },
+            { Id: 1185, Title: 'Medical Certificate' },
+            { Id: 1186, Title: 'Crew Member Certificate' },
+            { Id: 1184, Title: 'ICAO LPR' },
+            { Id: 1187, Title: 'SEPT' },
+            { Id: 1188, Title: 'Dangerous Goods' },
+            { Id: 1189, Title: 'CRM' },
+            { Id: 1190, Title: 'CCRM' },
+            { Id: 1191, Title: 'SMS' },
+            { Id: 1192, Title: 'Aviation Security' },
+            { Id: 1194, Title: 'Cold Weather Operation' },
+            { Id: 1195, Title: 'Hot Weather Operation' },
+            { Id: 1202, Title: 'First Aid' },
 
         ];
     };
@@ -939,12 +951,12 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
         return new DevExpress.data.DataSource({
             store:
 
-            new DevExpress.data.ODataStore({
-                url: $rootScope.serviceUrl + 'odata/options/' + pid,
-                //  key: "Id",
-                // keyType: "Int32",
-                // version: 4
-            }),
+                new DevExpress.data.ODataStore({
+                    url: $rootScope.serviceUrl + 'odata/options/' + pid,
+                    //  key: "Id",
+                    // keyType: "Int32",
+                    // version: 4
+                }),
             //filter: ['ParentId', '=', pid],
             sort: ['OrderIndex', 'Title'],
         });
@@ -967,12 +979,12 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
         return new DevExpress.data.DataSource({
             store:
 
-            new DevExpress.data.ODataStore({
-                url: $rootScope.serviceUrl + 'odata/options/personcoursestatus',
-                //  key: "Id",
-                // keyType: "Int32",
-                // version: 4
-            }),
+                new DevExpress.data.ODataStore({
+                    url: $rootScope.serviceUrl + 'odata/options/personcoursestatus',
+                    //  key: "Id",
+                    // keyType: "Int32",
+                    // version: 4
+                }),
             //filter: ['ParentId', '=', pid],
             sort: ['OrderIndex', 'Title'],
         });
@@ -981,12 +993,12 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
         return new DevExpress.data.DataSource({
             store:
 
-            new DevExpress.data.ODataStore({
-                url: $rootScope.serviceUrl + 'odata/cities/country/' + cid,
-                //  key: "Id",
-                // keyType: "Int32",
-                version: 4
-            }),
+                new DevExpress.data.ODataStore({
+                    url: $rootScope.serviceUrl + 'odata/cities/country/' + cid,
+                    //  key: "Id",
+                    // keyType: "Int32",
+                    version: 4
+                }),
             //filter: ['ParentId', '=', pid],
             sort: ['City'],
         });
@@ -1009,12 +1021,12 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
         return new DevExpress.data.DataSource({
             store:
 
-            new DevExpress.data.ODataStore({
-                url: $rootScope.serviceUrl + 'odata/locations/' + Config.CustomerId,
-                //  key: "Id",
-                // keyType: "Int32",
-                // version: 4
-            }),
+                new DevExpress.data.ODataStore({
+                    url: $rootScope.serviceUrl + 'odata/locations/' + Config.CustomerId,
+                    //  key: "Id",
+                    // keyType: "Int32",
+                    // version: 4
+                }),
             //filter: ['ParentId', '=', pid],
             sort: ['FullCode'],
         });
@@ -1023,12 +1035,12 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
         return new DevExpress.data.DataSource({
             store:
 
-            new DevExpress.data.ODataStore({
-                url: $rootScope.serviceUrl + 'odata/aircrafttypes/all',
-                //  key: "Id",
-                // keyType: "Int32",
-                version: 4
-            }),
+                new DevExpress.data.ODataStore({
+                    url: $rootScope.serviceUrl + 'odata/aircrafttypes/all',
+                    //  key: "Id",
+                    // keyType: "Int32",
+                    version: 4
+                }),
             //filter: ['ParentId', '=', pid],
             sort: ['Manufacturer', 'Type'],
         });
@@ -1051,12 +1063,12 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
         return new DevExpress.data.DataSource({
             store:
 
-            new DevExpress.data.ODataStore({
-                url: $rootScope.serviceUrl + 'odata/courses/types',
-                //  key: "Id",
-                // keyType: "Int32",
-                version: 4
-            }),
+                new DevExpress.data.ODataStore({
+                    url: $rootScope.serviceUrl + 'odata/courses/types',
+                    //  key: "Id",
+                    // keyType: "Int32",
+                    version: 4
+                }),
             //filter: ['ParentId', '=', pid],
             sort: ['Title'],
         });
@@ -1065,12 +1077,12 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
         return new DevExpress.data.DataSource({
             store:
 
-            new DevExpress.data.ODataStore({
-                url: $rootScope.serviceUrl + 'odata/base/caotypes',
-                //  key: "Id",
-                // keyType: "Int32",
-                version: 4
-            }),
+                new DevExpress.data.ODataStore({
+                    url: $rootScope.serviceUrl + 'odata/base/caotypes',
+                    //  key: "Id",
+                    // keyType: "Int32",
+                    version: 4
+                }),
             //filter: ['ParentId', '=', pid],
             sort: ['Title'],
         });
@@ -1096,12 +1108,12 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
         return new DevExpress.data.DataSource({
             store:
 
-            new DevExpress.data.ODataStore({
-                url: $rootScope.serviceUrl + 'odata/base/ratingorganization',
-                //  key: "Id",
-                // keyType: "Int32",
-                version: 4
-            }),
+                new DevExpress.data.ODataStore({
+                    url: $rootScope.serviceUrl + 'odata/base/ratingorganization',
+                    //  key: "Id",
+                    // keyType: "Int32",
+                    version: 4
+                }),
             //filter: ['ParentId', '=', pid],
             sort: ['Title'],
         });
@@ -1139,12 +1151,12 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
         return new DevExpress.data.DataSource({
             store:
 
-            new DevExpress.data.ODataStore({
-                url: $rootScope.serviceUrl + 'odata/base/currencies',
-                //  key: "Id",
-                // keyType: "Int32",
-                version: 4
-            }),
+                new DevExpress.data.ODataStore({
+                    url: $rootScope.serviceUrl + 'odata/base/currencies',
+                    //  key: "Id",
+                    // keyType: "Int32",
+                    version: 4
+                }),
             //filter: ['ParentId', '=', pid],
             sort: ['Title'],
         });
@@ -1153,12 +1165,12 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
         return new DevExpress.data.DataSource({
             store:
 
-            new DevExpress.data.ODataStore({
-                url: $rootScope.serviceUrl + 'odata/base/jobgroups/' + Config.CustomerId,
-                //  key: "Id",
-                // keyType: "Int32",
-                version: 4
-            }),
+                new DevExpress.data.ODataStore({
+                    url: $rootScope.serviceUrl + 'odata/base/jobgroups/' + Config.CustomerId,
+                    //  key: "Id",
+                    // keyType: "Int32",
+                    version: 4
+                }),
             //filter: ['ParentId', '=', pid],
             sort: ['FullCode'],
         });

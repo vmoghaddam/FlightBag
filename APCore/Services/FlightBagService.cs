@@ -27,6 +27,10 @@ namespace APCore.Services
         DbSet<ViewEFBASR> GetEFBASRs();
         Task<DataResponse> GetEFBASRViewByFlightId(int flightId);
         Task<DataResponse> GetEFBASRByFlightId(int flightId);
+        Task<DataResponse> GetDRByFlightId(int flightId);
+        Task<DataResponse> GetEFBASRsByFlightIds(List<int> ids);
+        Task<DataResponse> GetDRsByFlightIds(List<int> ids);
+        Task<DataResponse> GetEFBVRsByFlightIds(List<int> ids);
         Task<DataResponse> GetEFBASRById(int Id);
         DbSet<EFBBirdStrikeCAO> GetEFBBirdStrikeCAOs();
         Task<DataResponse> GetEFBBirdStrikeCAOByFlightId(int flightId);
@@ -101,6 +105,49 @@ namespace APCore.Services
 
             };
         }
+        public async Task<DataResponse> GetDRByFlightId(int flightId)
+        {
+            var entity = await _context.EFBDSPReleases.SingleOrDefaultAsync(q => q.FlightId == flightId);
+            return new DataResponse()
+            {
+                Data = entity,
+                IsSuccess = true
+
+            };
+        }
+        public async Task<DataResponse> GetEFBASRsByFlightIds(List<int> ids)
+        {
+            var entity = await _context.EFBASRs.Where(q => ids.Contains(q.FlightId)).ToListAsync();
+            return new DataResponse()
+            {
+                Data = entity,
+                IsSuccess = true
+
+            };
+        }
+        public async Task<DataResponse> GetDRsByFlightIds(List<int> ids)
+        {
+            var _ids = ids.Select(q => (Nullable<int>)q).ToList();
+            var entity = await _context.EFBDSPReleases.Where(q => _ids.Contains(q.FlightId)).ToListAsync();
+            return new DataResponse()
+            {
+                Data = entity,
+                IsSuccess = true
+
+            };
+        }
+
+        public async Task<DataResponse> GetEFBVRsByFlightIds(List<int> ids)
+        {
+            var _ids = ids.Select(q => (Nullable<int>)q).ToList();
+            var entity = await _context.EFBVoyageReports.Where(q => _ids.Contains(q.FlightId)).ToListAsync();
+            return new DataResponse()
+            {
+                Data = entity,
+                IsSuccess = true
+
+            };
+        }
 
         public async Task<DataResponse> GetEFBASRById(int Id)
         {
@@ -160,6 +207,9 @@ namespace APCore.Services
             }
             
         }
+
+
+         
 
         public async Task<DataResponse> GetEFBVoyageReportById(int Id)
         {
@@ -487,13 +537,18 @@ namespace APCore.Services
 
         public async Task<DataResponse> SaveRelease(DSPReleaseViewModel DSPRelease)
         {
-            var release = await _context.EFBDSPReleases.FirstOrDefaultAsync(q => q.Id == DSPRelease.Id);
+            var release = await _context.EFBDSPReleases.FirstOrDefaultAsync(q => q.FlightId == DSPRelease.FlightId);
             if (release == null)
             {
                 release = new EFBDSPRelease();
                 _context.EFBDSPReleases.Add(release);
-                var xxxx = _context.Entry(release).State;
+                
             }
+
+            release.User = DSPRelease.User;
+            release.DateUpdate = DateTime.UtcNow.ToString("yyyyMMddHHmm");
+
+
             release.FlightId = DSPRelease.FlightId;
             release.ActualWXDSP = DSPRelease.ActualWXDSP;
             release.ActualWXCPT = DSPRelease.ActualWXCPT;
@@ -533,7 +588,7 @@ namespace APCore.Services
             release.JeppesenAirwayManualCPTRemark = DSPRelease.JeppesenAirwayManualCPTRemark;
             release.MinFuelRequiredDSP = DSPRelease.MinFuelRequiredDSP;
             release.MinFuelRequiredCPT = DSPRelease.MinFuelRequiredCPT;
-            //release.MinFuelRequiredSFP = DSPRelease.MinFuelRequiredSFP;
+            release.MinFuelRequiredCFP = DSPRelease.MinFuelRequiredCFP;
             release.MinFuelRequiredPilotReq = DSPRelease.MinFuelRequiredPilotReq;
             release.GeneralDeclarationDSP = DSPRelease.GeneralDeclarationDSP;
             release.GeneralDeclarationCPT = DSPRelease.GeneralDeclarationCPT;
@@ -581,11 +636,17 @@ namespace APCore.Services
             release.IPADCPTRemark = DSPRelease.IPADCPTRemark;
             release.DateConfirmed = DSPRelease.DateConfirmed;
             release.DispatcherId = DSPRelease.DispatcherId;
+            
             var saveResult = await _context.SaveAsync();
             if (saveResult.Succeed)
-                return new DataResponse() { IsSuccess = true };
+            {
+
+                return new DataResponse() { IsSuccess = true, Data = release };
+            }
+
             else
                 return new DataResponse() { IsSuccess = false };
+
         }
 
     }

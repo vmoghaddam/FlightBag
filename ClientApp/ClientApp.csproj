@@ -87,6 +87,7 @@
     <Content Include="app\controllers\calendarController.js" />
     <Content Include="app\controllers\cp.js" />
     <Content Include="app\controllers\docviewer.js" />
+    <Content Include="app\controllers\drAdd.js" />
     <Content Include="app\controllers\epLogBook.js" />
     <Content Include="app\controllers\fdpController.js" />
     <Content Include="app\controllers\fdpsController.js" />
@@ -105,6 +106,7 @@
     <Content Include="app\controllers\notam.js" />
     <Content Include="app\controllers\passwordChangeController.js" />
     <Content Include="app\controllers\pdfViewer.js" />
+    <Content Include="app\views\drAdd.html" />
     <Content Include="app\views\imageviewer.html" />
     <Content Include="pdfjsmodule\pdfviewernew.js" />
     <Content Include="app\controllers\profileController.js" />

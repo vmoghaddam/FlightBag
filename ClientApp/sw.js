@@ -1,5 +1,5 @@
-﻿const cacheName = 'cache-v1294';
-const dynamicCache = 'dyn-1095';
+﻿const cacheName = 'cache-v1336';
+const dynamicCache = 'dyn-1107';
 const assets = [
     '/',
     '/pwa.js',
@@ -11,6 +11,7 @@ const assets = [
     'app/views/logAdd.html?vx=2',
     'app/views/vrAdd.html?vx=2',
     'app/views/asrAdd.html?vx=2',
+    'app/views/drAdd.html?vx=2',
     'app/views/taf.html?vx=2',
     'app/views/metar.html?vx=2',
     'app/views/notam.html?vx=2',
@@ -116,6 +117,7 @@ const assets = [
     '/app/controllers/logAdd.js?vx=2',
     '/app/controllers/vrAdd.js?vx=2',
     '/app/controllers/asrAdd.js?vx=2',
+    '/app/controllers/drAdd.js?vx=2',
     '/app/controllers/taf.js?vx=2',
     '/app/controllers/metar.js?vx=2',
     '/app/controllers/notam.js?vx=2',
@@ -210,13 +212,21 @@ function get_url_extension(url) {
 }
 
 self.addEventListener('fetch', evt => {
-
-    var ext = get_url_extension(evt.request.url);
-    if (ext == 'png' && evt.request.url.toLowerCase().includes("upload/")) {
-        console.log('***********************  1007');
+   // console.log('fetch starting ' + evt.request.url);
+    var ext = '';
+    var url2 = null;
+    //if (evt.request.url.toLowerCase().includes("?file=")) {
+    //    url2 = evt.request.url.split('?file=')[1];
+    //    ext = get_url_extension(url2);
+    //}
+    //else
+        ext = get_url_extension(evt.request.url);
+   // console.log('fetch ext ' + ext);
+    if ((ext == 'png' || ext == 'pdf') && evt.request.url.toLowerCase().includes("upload/")) {
+     //   console.log('***********************  1007');
         evt.respondWith(
             fetch(evt.request).then(response => {
-                console.log('png', evt.request.url + '   ' + response.status);
+             //   console.log(ext, evt.request.url + '   ' + response.status);
                 //console.log('response', response);
                 return caches.open(dynamicCache).then(cache => {
                     cache.put(evt.request.url, response.clone());
@@ -225,9 +235,10 @@ self.addEventListener('fetch', evt => {
             }).catch(
                 function () {
                     //offline
-                    console.log('catch error');
-                    return caches.match(evt.request).then(cacheRes => {
-                        console.log('catch req', evt.request); console.log('catch req', cacheRes);
+                  //  console.log('catch error');
+                    var _furl = url2 ? url2 : evt.request; 
+                    return caches.match(_furl).then(cacheRes => {
+                   //     console.log('catch req', _furl); console.log('catch req2', cacheRes);
                         if (cacheRes)
                             return cacheRes;
                         else
@@ -310,8 +321,8 @@ self.addEventListener('_fetch', evt => {
     if (ext == 'png' && evt.request.url.toLowerCase().includes("upload/")) {
         evt.respondWith(
             fetch(evt.request).then(response => {
-                console.log('png', evt.request.url + '   ' + response.status);
-                console.log('response', response);
+               // console.log('png', evt.request.url + '   ' + response.status);
+               // console.log('response', response);
 
                 if (response.status == 200)
                     return caches.open(dynamicCache).then(cache => {
@@ -320,7 +331,7 @@ self.addEventListener('_fetch', evt => {
                     });
                 else
                     return caches.match(evt.request).then(cacheRes => {
-                        console.log('catch req', evt.request); console.log('catch req', cacheRes);
+                     //   console.log('catch req', evt.request); console.log('catch req', cacheRes);
                         if (cacheRes)
                             return cacheRes;
                         else

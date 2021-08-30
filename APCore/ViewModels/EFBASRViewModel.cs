@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 
 namespace APCore.ViewModels
 {
+    public class SimpleDto {
+        public List<int> ids { get;set; }
+    }
     public class EFBASRViewModel
     {
         

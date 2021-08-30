@@ -6,7 +6,7 @@ db.getDb = function () {
     return _db;
 };
 db.Init = function () {
-    _db.version(50).stores({
+    _db.version(61).stores({
         AppCrewFlights: "Id,FlightId,CrewId,FDPId,FDPItemId,DutyType,IsPositioning,PositionId,Position,FlightNumber,STDDay,FlightStatusId,Register,RegisterId,FromAirportIATA,ToAirportIATA,STD,STA,BlockOff,BlockOn,TakeOff,Landing,IStart,IsSynced",
         FlightCrews: "[CrewId+FlightId],FDPItemId,FDPId",
         Calendar: "[Id+Date],DateStart,Legs,Sectors,DutyType,DutyTypeTitle,Year,Month,Day",
@@ -15,8 +15,12 @@ db.Init = function () {
         TAFs: "Id,StationId,FDPId,DateDay",
         METARs: "Id,StationId,FDPId,DateDay",
         NOTAMs: "Id,StationId,FDPId,DateDay",
+        ASRsX: "Id,FlightId,IsSynced",
         ASRs: "Id,FlightId,IsSynced",
-        VRs:"Id,FlightId,IsSynced"
+        ASR:"FlightId,IsSynced",
+        VRs: "Id,FlightId,IsSynced",
+        VR: "FlightId,IsSynced",
+        DR: "FlightId,IsSynced",
          
     });
     _db.open();
@@ -126,7 +130,16 @@ db.GetNOTAMs = function (fdpId, callback) {
 
 db.GetASRByFlightCollection = function (flightId) {
 
-    var collection = _db.ASRs
+    var collection = _db.ASR
+        .filter(function (rec) {
+            return rec.FlightId == flightId;
+        });
+
+    return collection;
+};
+db.GetDRByFlightCollection = function (flightId) {
+
+    var collection = _db.DR
         .filter(function (rec) {
             return rec.FlightId == flightId;
         });
@@ -143,10 +156,19 @@ db.GetASRsByFlightId = function (flightId, callback) {
     });
 };
 
+db.GetDRsByFlightId = function (flightId, callback) {
+    var collection = db.GetDRByFlightCollection(flightId);
+    collection.toArray().then(function (arg) {
+
+
+        callback(arg);
+    });
+};
+
 
 db.GetVRByFlightCollection = function (flightId) {
 
-    var collection = _db.VRs
+    var collection = _db.VR
         .filter(function (rec) {
             return rec.FlightId == flightId;
         });
@@ -261,7 +283,9 @@ db.deSyncedItem = async function (table, key,callback) {
     
 
 };
- 
+db.getCount = function (table, callback) {
+    return _db[table].count(function (e) { callback(e); });
+};
 db.Update =  function (table, key, changes, callback) {
     //db.friends.update(2, { name: "Number 2" }).then(function (updated) {
     //    if (updated)
@@ -296,6 +320,15 @@ db.Delete = function (table, key, callback) {
 
 db.Clear = function (table, callback) {
     _db[table].clear().then(function (e) { callback(e);});
+};
+db.DeleteAsr = function (key, callback) {
+    _db['ASR'].delete(key).then(res => {   callback(); }, rej => {   callback(); });
+};
+db.DeleteDr = function (key, callback) {
+    _db['DR'].delete(key).then(res => { callback(); }, rej => { callback(); });
+};
+db.DeleteVr = function (key, callback) {
+    _db['VR'].delete(key).then(res => { callback(); }, rej => { callback(); });
 };
 
 db.auth = {};
@@ -431,7 +464,7 @@ db.sync.SyncASR = async function (flightId, serverData, callback) {
 
     }).keys();
     if (deleted && deleted.length > 0) {
-        await _db.ASRs.bulkDelete(deleted);
+        await _db.ASR.bulkDelete(deleted);
     }
     var puts = [];
     $.each(serverData, function (_i, _s) {
@@ -442,7 +475,7 @@ db.sync.SyncASR = async function (flightId, serverData, callback) {
         }
     });
 
-    var pts = await _db.ASRs.bulkAdd(puts);
+    var pts = await _db.ASR.bulkAdd(puts);
 
 
 
@@ -464,7 +497,7 @@ db.sync.SyncVR = async function (flightId, serverData, callback) {
 
     }).keys();
     if (deleted && deleted.length > 0) {
-        await _db.VRs.bulkDelete(deleted);
+        await _db.VR.bulkDelete(deleted);
     }
     var puts = [];
     $.each(serverData, function (_i, _s) {
@@ -475,7 +508,7 @@ db.sync.SyncVR = async function (flightId, serverData, callback) {
         }
     });
 
-    var pts = await _db.VRs.bulkAdd(puts);
+    var pts = await _db.VR.bulkAdd(puts);
 
 
 
@@ -561,3 +594,14 @@ db.sync.SyncCrewFlight = async function (flight, callback) {
         });
     });
 }
+//naz
+db.sync.SyncAuto = async function (callback) {
+    //var allRows = await collection.toArray();
+    var flights = await _db.AppCrewFlights
+        .filter(function (flight) {
+            
+            return flight.IsSynced==0;
+        }).toArray();
+
+    callback(flights);
+};

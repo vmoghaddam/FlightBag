@@ -1,6 +1,8 @@
 ﻿'use strict';
 app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$rootScope', 'flightService', 'authService', 'notificationService', '$route', '$window', '$q', '$http', function ($scope, $location, $routeParams, $rootScope, flightService, authService, notificationService, $route, $window, $q, $http) {
 
+
+   
     // var m1=moment().format();     // 2013-02-04T10:35:24-08:00
     // var m2 = moment.utc().format(); // 2013-02-04T18:35:24+00:00
     // console.log(m1);
@@ -78,9 +80,9 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
             $scope.bind();
         }
     };
-    // $scope.dt_from = new Date(2021, 7, 11);
-    // $scope.dt_to = new Date(2021, 7, 11);
-    $scope.dt_from = (new Date());//.addDays(-2);
+   //  $scope.dt_from = new Date(2021, 7, 24);
+   //  $scope.dt_to = new Date(2021, 7, 26);
+    $scope.dt_from = (new Date()); 
     $scope.dt_to = (new Date($scope.dt_from)).addDays(0);
     $scope.date_from = {
         displayFormat: "yy MMM dd",
@@ -165,6 +167,26 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
             disabled: 'IsLegLocked'
         }
     };
+    $scope.btn_dr = {
+        text: 'Disp. Release',
+        type: 'default',
+        //icon: 'search',
+        width: '100%', //37,
+
+        onClick: function (e) {
+            //if (!$rootScope.getOnlineStatus()) {
+            //    alert('You are OFFLINE.Please check your internet connection.');
+            //    return;
+            //}
+            var data = { FlightId: $scope.selectedFlight.FlightId };
+
+            $rootScope.$broadcast('InitDrAdd', data);
+
+        },
+        bindingOptions: {
+            disabled: 'IsLegLocked'
+        }
+    };
     $scope.leftHeight = $(window).height() - 135;
     $scope.scroll_left = {
         width: '100%',
@@ -220,21 +242,13 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
     };
     $scope.clickDay = function (n) {
 
-        // var data = { url: 'document.pdf' };
+        //flightService.autoSync(function (data) {
 
-        // $rootScope.$broadcast('InitPdfViewer', data);
-        //if (n == 1) {
-        //    var data = { url: staticFiles + 'Weather/SIGWX/ADDS/a.png' };
-
-        //    $rootScope.$broadcast('InitImageViewer', data); 
-        //}
-        //else {
-        //    var data = { url: staticFiles + 'Weather/SIGWX/ADDS/b.png' };
-
-        //    $rootScope.$broadcast('InitImageViewer', data);
-        //}
-
-        //return;
+        //    console.log('SUNCED FLIGHTS 2 ', data);
+           
+        //});
+        flightService.autoSyncASR();
+         return;
         var dt = (new Date()).addDays(n);
         $scope.dt_from = dt;
         $scope.dt_to = dt;
@@ -504,10 +518,10 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
     //    return $scope._getTAF(_g);
     //};
     var tabs = [
-        { text: "Source 1", id: 'adds', visible_btn: false },
-        { text: "Source 2", id: 'irimo', visible_btn: false },
+        { text: "AVIATION WEATHER CENTER", id: 'adds', visible_btn: false },
+        { text: "IRIMO (IRAN)", id: 'irimo', visible_btn: false },
     
-    ];
+    ]; 
     $scope.tabs = tabs;
     $scope.selectedTabIndex = 0;
     $scope.$watch("selectedTabIndex", function (newValue) {
@@ -545,7 +559,7 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
     };
 
 
-    $scope.scroll_folder_height = $(window).height() - 400;
+    $scope.scroll_folder_height = $(window).height() - 100;
     $scope.scroll_folder = {
         width: '100%',
         bounceEnabled: false,
@@ -611,6 +625,7 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         onContentReady: function (e) {
 
         },
+        fullScreen: true,
         bindingOptions: {
             visible: 'popup_folder_visible',
 
@@ -625,10 +640,31 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         var _url = staticFiles + 'Weather/WIND/ADDS/' + fn;
         $scope.showImage({ url: _url, caption: 'Wind & Temperature Level: ' + lvl + ' Valid: ' + valid });
     };
+    $scope.showIRIMOSIGWX = function (valid,rem) {
+        //SIGWX_IRIMO_20210824_VALID00LVLIRAN
+        var dt = moment(new Date($scope.selectedGroup.items[0].STADayLocal)).format('YYYYMMDD');
+        var fn = 'SIGWX_IRIMO_' + dt + '_VALID' + valid + 'LVL' + 'IRAN' + '.png';
+        var _url = staticFiles + 'Weather/SIGWX/IRIMO/' + fn;
+        $scope.showImage({ url: _url, caption: 'SIGWX Chart' + ' Valid: ' + rem });
+
+    };
+    $scope.showIRIMOFF = function (valid) {
+        //FF_IRIMO_20210824_VALID00LVLIRAN
+        var dt = moment(new Date($scope.selectedGroup.items[0].STADayLocal)).format('YYYYMMDD');
+        var fn = 'FF_IRIMO_' + dt + '_VALID' + valid + 'LVL' + 'IRAN' + '.pdf';
+        var _url = staticFiles + 'Weather/FF/IRIMO/' + fn;
+        $scope.showPdf({ url: _url, caption: 'Wind & Temperature' + ' Valid: ' + valid });
+    };
     $scope.showImage = function (item) {
         var data = { url: item.url, caption: item.caption };
 
         $rootScope.$broadcast('InitImageViewer', data);
+    };
+    $scope.showPdf = function (item) {
+        var data = { url: item.url, caption: item.caption, hidden: item.hidden };
+
+        $rootScope.$broadcast('InitPdfViewer', data);
+       
     };
     $scope.folderSIGWX = [];
     function replaceAll(str, find, replace) {
@@ -667,7 +703,7 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
                 $.each(valids, function (_j, valid) {
                     var fn = 'WIND_ADDS_' + dt + '_FL' + lvl + '_VALID' + valid + '.png';
                     var _url = staticFiles + 'Weather/WIND/ADDS/' + fn;
-                    $http.get(_url).then(res => { console.log(_url); });
+                    $http.get(_url).then(res => { console.log(_url);  });
 
                 });
             });
@@ -677,6 +713,64 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
 
     }
 
+    function _getIRIMOSigwx(grps) {
+        //SIGWX_IRIMO_20210824_VALID12LVLIRAN
+        var lvls = ['IRAN'];
+        var valids = ['00', '06', '12', '18'];
+        $.each(grps, function (_k, _g) {
+            var dt = moment(new Date(_g.items[0].STADayLocal)).format('YYYYMMDD')
+            $.each(lvls, function (_i, lvl) {
+                $.each(valids, function (_j, valid) {
+                    var fn = 'SIGWX_IRIMO_' + dt  + '_VALID' + valid +'LVL'+lvl+ '.png';
+                    var _url = staticFiles + 'Weather/SIGWX/IRIMO/' + fn;
+                    $http.get(_url).then(res => { console.log(_url); });
+
+                });
+            });
+
+        });
+
+
+    }
+    function _getIRIMOFF(grps) {
+       //FF_IRIMO_20210824_VALID00LVLIRAN
+        //var lvls = ['IRAN'];
+        //var valids = ['00', '06',/* '12', '18'*/  ]; 
+        //$.each(grps, function (_k, _g) {
+        //    var dt = moment(new Date(_g.items[0].STADayLocal)).format('YYYYMMDD')
+        //    $.each(lvls, function (_i, lvl) {
+        //        $.each(valids, function (_j, valid) {
+        //            var fn = 'FF_IRIMO_' + dt + '_VALID' + valid + 'LVL' + lvl + '.pdf';
+        //            var _url = staticFiles + 'Weather/FF/IRIMO/' + fn;
+        //            var _url0 = clientBase + 'pdfjsmodule/viewer.html?file=' + _url;
+        //            $http.get(_url0).then(res => {
+        //                console.log(_url0);  
+        //                if (valid == '06')
+        //                    $scope.showPdf({ url: _url, caption: '', hidden: false });
+        //            });
+
+        //        });
+        //    });
+
+        //});
+
+        //////////////////////////////
+        var _g = grps[0];
+        var dt = moment(new Date(_g.items[0].STADayLocal)).format('YYYYMMDD');
+        var _url1 = clientBase + 'pdfjsmodule/viewer.html?file=' + staticFiles + 'Weather/FF/IRIMO/' + 'FF_IRIMO_' + dt + '_VALID' + '00' + 'LVL' + 'IRAN' + '.pdf';
+        $http.get(_url1)
+            .then(function (res1) {
+                var _url2 = clientBase + 'pdfjsmodule/viewer.html?file=' + staticFiles + 'Weather/FF/IRIMO/' + 'FF_IRIMO_' + dt + '_VALID' + '06' + 'LVL' + 'IRAN' + '.pdf';
+                $http.get(_url2)
+                    .then(function (res2) { $scope.showPdf({ url: _url2, caption: '06', hidden: false }); })
+            }, function (err1) { });
+
+
+        ///////////////////////////////
+
+
+    }
+    
     function _getWeatherCharts(grps) {
 
         // var lastSTA = moment(new Date(_g.items[_g.items.length - 1].STADayLocal)).format('YYYYMMDD');
@@ -891,8 +985,10 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
            
             if (grps && grps.length > 0) {
 
-                _getWeatherCharts(grps);
+                 _getWeatherCharts(grps);
                 _getWindCharts(grps);
+                _getIRIMOSigwx(grps);
+                // _getIRIMOFF(grps);
             }
         }
        
@@ -1042,6 +1138,13 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         $scope.dt_to = date;
 
         $scope.bind();
+    });
+    $scope.$on('COMMAND', function (evt, data) {
+        if (data.title == 'BIND_FLIGHTS') {
+             
+            $scope.bind();
+        };
+        
     });
 
 }]);

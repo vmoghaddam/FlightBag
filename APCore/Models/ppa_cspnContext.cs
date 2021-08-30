@@ -3370,6 +3370,10 @@ namespace APCore.Models
 
                 entity.Property(e => e.DateConfirmed).HasColumnType("date");
 
+                entity.Property(e => e.DateUpdate)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.FlightReportCPTRemark).HasMaxLength(1000);
 
                 entity.Property(e => e.FlightReportDSPRemark).HasMaxLength(1000);
@@ -3425,6 +3429,10 @@ namespace APCore.Models
                 entity.Property(e => e.TOLndCardsCPTRemark).HasMaxLength(1000);
 
                 entity.Property(e => e.TOLndCardsDSPRemark).HasMaxLength(1000);
+
+                entity.Property(e => e.User)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.VoyageReportCPTRemark).HasMaxLength(1000);
 
