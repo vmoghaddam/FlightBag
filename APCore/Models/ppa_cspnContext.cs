@@ -121,6 +121,7 @@ namespace APCore.Models
         public virtual DbSet<Document> Documents { get; set; }
         public virtual DbSet<EFBASR> EFBASRs { get; set; }
         public virtual DbSet<EFBBirdStrikeCAO> EFBBirdStrikeCAOs { get; set; }
+        public virtual DbSet<EFBConfidentialReport> EFBConfidentialReports { get; set; }
         public virtual DbSet<EFBDSPRelease> EFBDSPReleases { get; set; }
         public virtual DbSet<EFBFlightIrregularity> EFBFlightIrregularities { get; set; }
         public virtual DbSet<EFBOccurrenceCAO> EFBOccurrenceCAOs { get; set; }
@@ -282,6 +283,9 @@ namespace APCore.Models
         public virtual DbSet<NiraHistory> NiraHistories { get; set; }
         public virtual DbSet<Notification> Notifications { get; set; }
         public virtual DbSet<NotificationGroup> NotificationGroups { get; set; }
+        public virtual DbSet<OFPImport> OFPImports { get; set; }
+        public virtual DbSet<OFPImportItem> OFPImportItems { get; set; }
+        public virtual DbSet<OFPImportProp> OFPImportProps { get; set; }
         public virtual DbSet<OffItem> OffItems { get; set; }
         public virtual DbSet<OpsCrewPhone> OpsCrewPhones { get; set; }
         public virtual DbSet<Option> Options { get; set; }
@@ -3346,6 +3350,41 @@ namespace APCore.Models
                     .HasColumnType("decimal(18, 0)")
                     .HasColumnName("Speed(IAS)")
                     .HasComment("kt");
+            });
+
+            modelBuilder.Entity<EFBConfidentialReport>(entity =>
+            {
+                entity.ToTable("EFBConfidentialReport", "dbo");
+
+                entity.Property(e => e.ActionTaken).HasMaxLength(2000);
+
+                entity.Property(e => e.Date).HasColumnType("datetime");
+
+                entity.Property(e => e.DateUpdate)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.EventSummary).HasMaxLength(2000);
+
+                entity.Property(e => e.LocalTime).HasColumnType("datetime");
+
+                entity.Property(e => e.Other).HasMaxLength(2000);
+
+                entity.Property(e => e.Resolve).HasMaxLength(2000);
+
+                entity.Property(e => e.SafetyRECO).HasMaxLength(2000);
+
+                entity.Property(e => e.UTCTime).HasColumnType("datetime");
+
+                entity.Property(e => e.User)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.Flight)
+                    .WithMany(p => p.EFBConfidentialReports)
+                    .HasForeignKey(d => d.FlightId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("fk_cr_flight");
             });
 
             modelBuilder.Entity<EFBDSPRelease>(entity =>
@@ -7367,6 +7406,83 @@ namespace APCore.Models
                     .WithMany(p => p.NotificationGroups)
                     .HasForeignKey(d => d.UserId)
                     .HasConstraintName("idx_notgrp_user");
+            });
+
+            modelBuilder.Entity<OFPImport>(entity =>
+            {
+                entity.ToTable("OFPImport", "dbo");
+
+                entity.Property(e => e.DateCreate).HasColumnType("datetime");
+
+                entity.Property(e => e.DateFlight).HasColumnType("date");
+
+                entity.Property(e => e.Destination)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.FileName)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.FlightNo)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Origin)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Text).IsUnicode(false);
+
+                entity.Property(e => e.TextOutput).IsUnicode(false);
+
+                entity.Property(e => e.User)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<OFPImportItem>(entity =>
+            {
+                entity.ToTable("OFPImportItem", "dbo");
+
+                entity.Property(e => e.Line)
+                    .HasMaxLength(2000)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.OFP)
+                    .WithMany(p => p.OFPImportItems)
+                    .HasForeignKey(d => d.OFPId)
+                    .HasConstraintName("fk_ofpl_ofp");
+            });
+
+            modelBuilder.Entity<OFPImportProp>(entity =>
+            {
+                entity.ToTable("OFPImportProp", "dbo");
+
+                entity.Property(e => e.DateUpdate)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.PropName)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.PropType)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.PropValue)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.User)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.OFP)
+                    .WithMany(p => p.OFPImportProps)
+                    .HasForeignKey(d => d.OFPId)
+                    .HasConstraintName("fk_ofpp_ofp");
             });
 
             modelBuilder.Entity<OffItem>(entity =>

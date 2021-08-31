@@ -9,6 +9,7 @@ namespace APCore.Models
     {
         public FlightInformation()
         {
+            EFBConfidentialReports = new HashSet<EFBConfidentialReport>();
             EFBDSPReleases = new HashSet<EFBDSPRelease>();
             FDPItems = new HashSet<FDPItem>();
             FlightCrews = new HashSet<FlightCrew>();
@@ -150,6 +151,7 @@ namespace APCore.Models
         public virtual Ac_MSN Register { get; set; }
         public virtual Airport ToAirport { get; set; }
         public virtual AircraftType Type { get; set; }
+        public virtual ICollection<EFBConfidentialReport> EFBConfidentialReports { get; set; }
         public virtual ICollection<EFBDSPRelease> EFBDSPReleases { get; set; }
         public virtual ICollection<FDPItem> FDPItems { get; set; }
         public virtual ICollection<FlightCrew> FlightCrews { get; set; }
