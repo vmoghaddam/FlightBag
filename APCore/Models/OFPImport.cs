@@ -23,6 +23,7 @@ namespace APCore.Models
         public string Text { get; set; }
         public string User { get; set; }
         public string TextOutput { get; set; }
+        public int? FlightId { get; set; }
 
         public virtual ICollection<OFPImportItem> OFPImportItems { get; set; }
         public virtual ICollection<OFPImportProp> OFPImportProps { get; set; }

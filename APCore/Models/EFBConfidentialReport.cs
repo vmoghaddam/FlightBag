@@ -21,6 +21,9 @@ namespace APCore.Models
         public int? FlightId { get; set; }
         public string User { get; set; }
         public string DateUpdate { get; set; }
+        public string Name { get; set; }
+        public string Phone { get; set; }
+        public int? EmpNo { get; set; }
 
         public virtual FlightInformation Flight { get; set; }
     }

@@ -271,6 +271,7 @@ namespace APCore.Models
         public virtual DbSet<LibraryFolder> LibraryFolders { get; set; }
         public virtual DbSet<LicenseResultBasic> LicenseResultBasics { get; set; }
         public virtual DbSet<Location> Locations { get; set; }
+        public virtual DbSet<LoginInfo> LoginInfos { get; set; }
         public virtual DbSet<MV> MVs { get; set; }
         public virtual DbSet<MVT> MVTs { get; set; }
         public virtual DbSet<MVTAPI> MVTAPIs { get; set; }
@@ -3360,15 +3361,17 @@ namespace APCore.Models
 
                 entity.Property(e => e.Date).HasColumnType("datetime");
 
-                entity.Property(e => e.DateUpdate)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
+                entity.Property(e => e.DateUpdate).HasMaxLength(255);
 
                 entity.Property(e => e.EventSummary).HasMaxLength(2000);
 
                 entity.Property(e => e.LocalTime).HasColumnType("datetime");
 
+                entity.Property(e => e.Name).HasMaxLength(255);
+
                 entity.Property(e => e.Other).HasMaxLength(2000);
+
+                entity.Property(e => e.Phone).HasMaxLength(255);
 
                 entity.Property(e => e.Resolve).HasMaxLength(2000);
 
@@ -3376,9 +3379,7 @@ namespace APCore.Models
 
                 entity.Property(e => e.UTCTime).HasColumnType("datetime");
 
-                entity.Property(e => e.User)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
+                entity.Property(e => e.User).HasMaxLength(255);
 
                 entity.HasOne(d => d.Flight)
                     .WithMany(p => p.EFBConfidentialReports)
@@ -7105,6 +7106,27 @@ namespace APCore.Models
                     .WithMany(p => p.InverseRootLocationNavigation)
                     .HasForeignKey(d => d.RootLocation)
                     .HasConstraintName("FK_LOCATION_ROOT");
+            });
+
+            modelBuilder.Entity<LoginInfo>(entity =>
+            {
+                entity.ToTable("LoginInfo", "dbo");
+
+                entity.Property(e => e.DateCreate).HasColumnType("datetime");
+
+                entity.Property(e => e.IP)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Info).IsUnicode(false);
+
+                entity.Property(e => e.LocationCity)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.User)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<MV>(entity =>
