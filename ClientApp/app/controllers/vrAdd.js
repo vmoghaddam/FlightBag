@@ -2,6 +2,7 @@
 app.controller('vrAddController', ['$scope', '$location', 'flightService', 'authService', '$routeParams', '$rootScope', '$window',   '$http', function ($scope, $location, flightService, authService, $routeParams, $rootScope, $window,   $http) {
     $scope.isNew = true;
     $scope.isEditable = false;
+    $scope.isLockVisible = false;
     $scope.isContentVisible = false;
     $scope.isFullScreen = false;
     var detector = new MobileDetect(window.navigator.userAgent);
@@ -194,7 +195,22 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
         showTitle: true,
 
         toolbarItems: [
+            {
+                widget: 'dxButton', location: 'before', options: {
+                    type: 'default', text: 'Sign', icon: 'fas fa-signature', onClick: function (e) {
+                        if ($rootScope.getOnlineStatus()) {
+                            //$scope.entity.Id
+                            var data = { FlightId: $scope.entity.FlightId, documentType: 'vr' };
 
+                            $rootScope.$broadcast('InitSignAdd', data);
+                        }
+                        else {
+                            General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');
+                        }
+
+                    }
+                }, toolbar: 'bottom'
+            },
             {
                 widget: 'dxButton', location: 'after', options: {
                     type: 'default', text: 'Save', icon: 'check', validationGroup: 'logadd', onClick: function (e) {
@@ -334,11 +350,12 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
         isFullScreen:false,
         bindingOptions: {
             visible: 'popup_add_visible',
-            //fullScreen: 'isFullScreen',
+            fullScreen: 'isFullScreen',
             title: 'popup_add_title',
             height: 'popup_height',
             width: 'popup_width',
-            'toolbarItems[0].visible': 'isEditable', 
+            'toolbarItems[1].visible': 'isEditable', 
+            'toolbarItems[0].visible': 'isLockVisible',
 
         }
     };
@@ -379,19 +396,21 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
     $scope._bind = function () {
         $scope.entity.FlightId = $scope.tempData.FlightId;
 
+       
+
         $scope.loadingVisible = true;
 
         flightService.epGetFlightLocal($scope.entity.FlightId).then(function (response) {
 
             $scope.loadingVisible = false;
             var diff = Math.abs((new Date()).getTime() - (new Date(response.Data.STALocal)).getTime()) / 3600000;
-            $scope.isEditable = (diff <= 24);
+           
             $scope.flight = response.Data;
 
             $scope.loadingVisible = true;
 
             flightService.epGetVRByFlight($scope.entity.FlightId).then(function (response2) {
-
+                $scope.isEditable = (diff <= 24);
                 $scope.loadingVisible = false;
                 if (!response2.Data) {
                     $scope.entity.Id = -1;
@@ -414,9 +433,18 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
 
         }, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
     };
+    $scope.isLockVisible = false;
     $scope.bind = function () {
         $scope.entity.FlightId = $scope.tempData.FlightId;
+        if ($rootScope.getOnlineStatus()) {
 
+            flightService.checkLock($scope.entity.FlightId,'vr').then(function (response) {
+                $scope.isLockVisible = false;
+                if (response.IsSuccess && response.Data.canLock) {
+                    $scope.isLockVisible = true;
+                }
+            }, function (err) { });
+        }
         $scope.loadingVisible = true;
 
         flightService.epGetFlightLocal($scope.entity.FlightId).then(function (response) {
@@ -438,7 +466,12 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
 
                 }
                 else {
-
+                    if (response2.Data.JLSignedBy) {
+                        $scope.isEditable = false;
+                        $scope.url_sign = signFiles + response.Data.PICId + ".jpg";
+                        $scope.PIC = response.Data.PIC;
+                        $scope.signDate = moment(new Date(response.Data.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');
+                    }
                     if (response2.Data.Alert) {
                         General.Confirm("The report updated by " + response2.Data.Alert + ". Would you like to get edited report?", function (res) {
                             if (res) {
@@ -484,7 +517,7 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
         }, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
     };
     ////////////////////////////////
-    $scope.scroll_vradd_height = $(window).height() - 420;
+    $scope.scroll_vradd_height = $(window).height() - 130;
     $scope.scroll_vradd = {
         width: '100%',
         bounceEnabled: false,
@@ -509,6 +542,18 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
     };
     /////////////////////////////////
     $scope.tempData = null;
+    $scope.$on('onSign', function (event, prms) {
+         
+        if (prms.doc == 'vr')
+            flightService.signDocLocal(prms, prms.doc).then(function (response) {
+                $scope.isEditable = false;
+                $scope.isLockVisible = false;
+                $scope.url_sign = signFiles + prms.PICId + ".jpg";
+                $scope.PIC = prms.PIC;
+                $scope.signDate = moment(new Date(prms.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');
+            }, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
+
+    });
     $scope.$on('InitVrAdd', function (event, prms) {
         $scope.tempData = null;
 

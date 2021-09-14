@@ -1,0 +1,17 @@
+﻿<div ng-controller="signAddController">
+    <div id="popup_add" dx-popup="popup_add" class="no-padding">
+        <div style="font-size:18px;padding:20px;text-align:center">
+            The document will be signed and approved by 
+        </div>
+        <div style="font-size:18px;text-align:center;padding:10px;font-weight:bold">
+            {{commander.Name}}
+
+        </div>
+        <div style="text-align:center;padding:10px">
+            <img style="height:auto;display: block; width: 90%;margin:0 auto 0 auto" ng-src="{{url_sign}}"/>
+
+        </div>
+        <div dx-load-panel="loadPanel"></div>
+    </div>
+
+</div>

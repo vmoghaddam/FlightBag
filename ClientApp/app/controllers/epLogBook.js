@@ -48,7 +48,31 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
 
     }
     $scope.prms = $routeParams.prms;
+     
+    $scope.scroll_btns = {
+        direction: 'horizontal',
+        bounceEnabled: false,
+        showScrollbar: 'never',
+        pulledDownText: '',
+        pullingDownText: '',
+        useNative: true,
+        refreshingText: 'Updating...',
+        onPullDown: function (options) {
 
+            options.component.release();
+
+        },
+        onInitialized: function (e) {
+
+
+        },
+        width: '100%',
+        height:'100%',
+        bindingOptions: {
+             
+        }
+
+    };
     $scope.loadingVisible = false;
     $scope.loadPanel = {
         message: 'Please wait...',
@@ -109,7 +133,7 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         text: 'Log',
         type: 'default',
         //icon: 'search',
-        width: '100%', //37,
+        width: 120,
 
         onClick: function (e) {
 
@@ -129,7 +153,7 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         text: 'ASR',
         type: 'default',
         //icon: 'search',
-        width: '100%', //37,
+        width: 120,
 
         onClick: function (e) {
 
@@ -151,7 +175,7 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         text: 'Voyage Report',
         type: 'default',
         //icon: 'search',
-        width: '100%', //37,
+        width: 150,
 
         onClick: function (e) {
             //if (!$rootScope.getOnlineStatus()) {
@@ -171,7 +195,7 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         text: 'Disp. Release',
         type: 'default',
         //icon: 'search',
-        width: '100%', //37,
+        width: 150,
 
         onClick: function (e) {
             //if (!$rootScope.getOnlineStatus()) {
@@ -187,7 +211,27 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
             disabled: 'IsLegLocked'
         }
     };
-    $scope.leftHeight = $(window).height() - 135;
+    $scope.btn_ofp = {
+        text: 'OFP',
+        type: 'default',
+        //icon: 'search',
+        width: 120,
+
+        onClick: function (e) {
+            //if (!$rootScope.getOnlineStatus()) {
+            //    alert('You are OFFLINE.Please check your internet connection.');
+            //    return;
+            //}
+            var data = { FlightId: $scope.selectedFlight.FlightId };
+
+            $rootScope.$broadcast('InitOFPAdd', data);
+
+        },
+        bindingOptions: {
+            disabled: 'IsLegLocked'
+        }
+    };
+    $scope.leftHeight = $(window).height() - 150;
     $scope.scroll_left = {
         width: '100%',
         bounceEnabled: false,
@@ -210,7 +254,7 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         }
 
     };
-    $scope.rightHeight = $(window).height() - 135 - 45;
+    $scope.rightHeight = $(window).height() - 150 - 45;
     $scope.scroll_right = {
         width: '100%',
         bounceEnabled: false,
@@ -242,13 +286,8 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
     };
     $scope.clickDay = function (n) {
 
-        //flightService.autoSync(function (data) {
-
-        //    console.log('SUNCED FLIGHTS 2 ', data);
-           
-        //});
-        flightService.autoSyncASR();
-         return;
+        
+        
         var dt = (new Date()).addDays(n);
         $scope.dt_from = dt;
         $scope.dt_to = dt;
@@ -281,7 +320,7 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
 
         //}, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
 
-
+         
         //if (!detector.tablet()) {
         //    $scope.flight = item;
         //    $scope.popup_flight_visible = true;
@@ -984,6 +1023,25 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
              
            
             if (grps && grps.length > 0) {
+               
+                var grpsFlightIds = [];
+                $.each(grps, function (_i, _g) {
+                    $.each(_g.items, function (_j, _flt) {
+                        grpsFlightIds.push(_flt.FlightId);
+                    });
+                });
+                var _fdto = { ids: grpsFlightIds };
+               
+                
+                //flightService.epGetOFPByFlights(_fdto).then(function (_taf) {
+                    
+
+               // }, function (err) { });
+                
+                flightService.epGetDRsByFlights(_fdto).then(function (_taf) {
+
+
+                }, function (err) { });
 
                  _getWeatherCharts(grps);
                 _getWindCharts(grps);
@@ -1146,5 +1204,10 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         };
         
     });
+    //$scope.$on('_onSign', function (event, prms) {
+
+    //    $rootScope.$broadcast('onSign', prms);
+    //    alert('broadcast');
+    //});
 
 }]);

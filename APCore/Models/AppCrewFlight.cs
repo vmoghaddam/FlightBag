@@ -126,5 +126,11 @@ namespace APCore.Models
         public int? SICId { get; set; }
         public DateTime? JLDatePICApproved { get; set; }
         public DateTime? IStart { get; set; }
+        public string JLSignedBy { get; set; }
+        public string ALT1 { get; set; }
+        public string ALT2 { get; set; }
+        public string ALT3 { get; set; }
+        public string ALT4 { get; set; }
+        public string ALT5 { get; set; }
     }
 }

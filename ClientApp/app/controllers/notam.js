@@ -213,6 +213,10 @@ app.controller('notamController', ['$scope', '$location', 'flightService', 'auth
         $.each($scope.fdp.items, function (_i, _d) {
             $scope.stations.push(_d.FromAirportIATA);
             $scope.stations.push(_d.ToAirportIATA);
+            if (_d.ALT1)
+                $scope.stations.push(_d.ALT1);
+            if (_d.ALT2)
+                $scope.stations.push(_d.ALT2);
 
         });
         $scope.stations = Enumerable.From($scope.stations).Distinct().ToArray();

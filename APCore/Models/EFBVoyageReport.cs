@@ -26,6 +26,10 @@ namespace APCore.Models
         public int? DepDelay { get; set; }
         public string DateUpdate { get; set; }
         public string User { get; set; }
+        public string JLSignedBy { get; set; }
+        public DateTime? JLDatePICApproved { get; set; }
+        public int? PICId { get; set; }
+        public string PIC { get; set; }
 
         public virtual ICollection<EFBFlightIrregularity> EFBFlightIrregularities { get; set; }
         public virtual ICollection<EFBReason> EFBReasons { get; set; }

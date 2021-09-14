@@ -201,7 +201,13 @@
     .hasInfo {
         background-color: darkslategray !important;
     }
-    .wind td {border:1px solid #ddd; text-align:center;padding:10px;}
+
+    .wind td {
+        border: 1px solid #ddd;
+        text-align: center;
+        padding: 10px;
+    }
+
     .folder-item {
         background: darkslategray;
     }
@@ -218,7 +224,8 @@
         <div class="rowx content" style="clear:both;  ">
             <div class="hidden visible-md visible-lg visible-sm visible-xs" style="color:white">
                 <div class="dx-border" style="padding:5px 5px 5px 5px;border-bottom:1px solid #eee">
-                    <table style="width:100%" class="dx-border">
+
+                    <table class="dx-border" style="width:100%">
                         <tr>
                             <!-- <td style="width:60px"><div class="main-button" ng-click="clickCalendar()"><i class="fa fa-calendar"></i></div></td>-->
                             <td style="width:60px;padding-left:2px"><div class="main-button" ng-click="clickDay(1)">TMR</div></td>
@@ -235,9 +242,12 @@
 
                         </tr>
                     </table>
+
                 </div>
                 <div class="col-lg-5 col-md-5 col-sm-5 col-xs-6 padding-0" style="border-right:1px solid #eee;">
                     <div id="leftColumn" dx-scroll-view="scroll_left" style="padding:5px;padding-top:0">
+
+
                         <!--<img  ng-src="{{imgurl}}" style="width:200px;" />-->
                         <div ng-repeat="g in groupedFlights" style="border-bottom:1px dotted #eee;padding-bottom:0px;padding-top:5px">
                             <div ng-repeat="x in g.items">
@@ -355,6 +365,7 @@
                                             <!--<i ng-class="getStatusClass(x)"></i>-->
                                             <!--<span style="display:inline-block;margin-left:2px;color:#eee">{{getStatus(x.FlightStatus)}}</span>-->
                                         </div>
+
                                         <div style="float:right;width:70%;text-align:right;padding-right:5px">
 
                                             <i style="display:inline-block;color:#d24dff" class="fas fa-user-tag" ng-show="x.IsPositioning"></i>
@@ -545,7 +556,11 @@
                                             <!--<span style="display:inline-block;margin-left:3px;">({{getSTDLocal(selectedFlight)}})</span>-->
                                         </td>
 
+
+
                                         <td>
+
+
 
                                             STA
                                         </td>
@@ -923,16 +938,19 @@
                         </div>
 
                     </div>
-                    <div ng-show="selectedFlight.DutyType==1165" style="padding:5px;border-top:1px solid #eee">
-                        <table style="width:100%">
-                            <tr>
-                                <td><div dx-button="btn_jlog"></div></td>
-                                <td style=" padding-left:5px;"><div dx-button="btn_asr"></div></td>
-                                <td style=" padding-left:5px;"><div dx-button="btn_vr"></div></td>
-                                <td style=" padding-left:5px;"><div dx-button="btn_dr"></div></td>
+                    <div ng-show="selectedFlight.DutyType==1165" style="padding:5px;border-top:1px solid #eee" class="thin-scroll0">
+                        <div dx-scroll-view="scroll_btns">
+                            <table>
+                                <tr>
+                                    <td style="width:150px"><div dx-button="btn_jlog"></div></td>
+                                    <td style=" padding-left:5px;width:150px"><div dx-button="btn_ofp"></div></td>
+                                    <td style=" padding-left:5px;width:150px"><div dx-button="btn_asr"></div></td>
+                                    <td style=" padding-left:5px;width:150px"><div dx-button="btn_vr"></div></td>
+                                    <td style=" padding-left:5px;width:150px;"><div dx-button="btn_dr"></div></td>
 
-                            </tr>
-                        </table>
+                                </tr>
+                            </table>
+                        </div>
                     </div>
 
                 </div>
@@ -1274,7 +1292,7 @@
                     </div>
                     <div class="tab adds" id="adds">
                         <div style="border :1px solid #eee;padding:10px;font-weight:bold;margin-top:10px" class="folder-item">
-                            
+
 
                             Significant Weather (SIGWX)
                         </div>
@@ -1414,6 +1432,8 @@
     <div ng-include="'app/views/asrAdd.html?vx=2'"></div>
     <div ng-include="'app/views/vrAdd.html?vx=2'"></div>
     <div ng-include="'app/views/drAdd.html?vx=2'"></div>
+    <div ng-include="'app/views/ofpAdd.html?vx=2'"></div>
+    <div ng-include="'app/views/signAdd.html?vx=2'"></div>
     <div ng-include="'app/views/calendar.html?vx=2'"></div>
 
     <div ng-include="'app/views/taf.html?vx=2'"></div>

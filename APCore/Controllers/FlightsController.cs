@@ -120,6 +120,19 @@ namespace APCore.Controllers
 
         [HttpGet]
         [Authorize]
+        [Route("api/flight/commanders/{flightId}")]
+        public async Task<IActionResult> GetFlightCommanders(int flightId)
+        {
+            // var userData = User.FindFirst(ClaimTypes.UserData).Value;
+            //var crewId = Objects.AuthDataHelper.GetEmployeeId(userData);
+            var result = await _flightService.GetFlightCommanders(flightId);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Authorize]
         [Route("api/flight/{flightId}")]
         public async Task<IActionResult> GetFlight(int flightId)
         {
@@ -155,6 +168,24 @@ namespace APCore.Controllers
             return Ok(result);
         }
 
+        [HttpPost]
+        [Authorize]
+        [Route("api/flight/sign")]
+        public async Task<IActionResult> SaveSign(dynamic dto)
+        {
+            var userData = User.FindFirst(ClaimTypes.UserData).Value;
+            var crewId = Objects.AuthDataHelper.GetEmployeeId(userData);
+            int flightId = Convert.ToInt32(dto.flightId);
+            string doc = Convert.ToString(dto.doc);
+            int pic = Convert.ToInt32(dto.pic);
+            string picStr = Convert.ToString(dto.picStr);
+            string user = Convert.ToString(dto.user);
+            var result = await _flightService.SaveSign(flightId,pic,picStr, doc, crewId.ToString());
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+        }
+
         [HttpPost] 
         [Authorize]
         [Route("api/flight/log/check")]
@@ -165,7 +196,107 @@ namespace APCore.Controllers
             return Ok(result);
         }
 
+        [HttpGet]
+       // [Authorize]
+        [Route("api/check/lock/{flightId}/{doc}")]
+        public async Task<IActionResult> CheckLock(int flightId,string doc)
+        {
+            var result = await _flightService.CheckLock(flightId,doc);
 
+            return Ok(result);
+        }
+
+
+        [HttpGet]
+        [Authorize]
+        [Route("api/ofp/flight/{flightId}")]
+        public async Task<IActionResult> GetFlightOFP(int flightId)
+        {
+            // var userData = User.FindFirst(ClaimTypes.UserData).Value;
+            //var crewId = Objects.AuthDataHelper.GetEmployeeId(userData);
+            var result = await _flightService.GetOFP(flightId);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+        }
+
+       
+
+        [HttpPost]
+        [Route("api/ofp/props/ids")]
+        public async Task<IActionResult> PostGetOFPPropsByIds(SimpleDto dto)
+        {
+
+            var result = await _flightService.GetOFPPropsByIds(dto.ids);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Route("api/ofp/flights")]
+        public async Task<IActionResult> PostGetOFPsByFlightIds(SimpleDto dto)
+        {
+            var _ids = dto.ids.Select(q => (Nullable<int>)q).ToList();
+            var result = await _flightService.GetOFPsByFlightIds(_ids);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+        }
+
+
+        [HttpGet]
+        [Authorize]
+        [Route("api/ofp/props/{ofpId}")]
+        public async Task<IActionResult> GeOFPProps(int ofpId)
+        {
+            // var userData = User.FindFirst(ClaimTypes.UserData).Value;
+            //var crewId = Objects.AuthDataHelper.GetEmployeeId(userData);
+            var result = await _flightService.GetOFPProps(ofpId);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        [Route("api/ofp/prop/save")]
+        public async Task<IActionResult> SaveOFPProp(dynamic dto)
+        {
+            //SaveOFPProp(int ofpId, string propName, string propValue, string user)
+            int ofpId = Convert.ToInt32(dto.OFPId);
+            string propName = Convert.ToString(dto.PropName);
+            string propValue = Convert.ToString(dto.PropValue);
+            string user = Convert.ToString(dto.User);
+            var result = await _flightService.SaveOFPProp(ofpId, propName, propValue, user);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        [Route("api/ofp/props/save")]
+        public async Task<IActionResult> SaveOFPProps(List<OFPPropViewModel> props)
+        {
+            //SaveOFPProp(int ofpId, string propName, string propValue, string user)
+             
+            var result = await _flightService.SaveOFPProps(props);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Route("api/drs")]
+        public async Task<IActionResult> PostGetDRsByFlightIds(SimpleDto dto)
+        {
+            var _ids = dto.ids.Select(q => (Nullable<int>)q).ToList();
+            var result = await _flightService.GetDRsByFlightIds(_ids);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+        }
         //GET: api/Airports
         //[HttpGet]
         //[Route("api/airports")]

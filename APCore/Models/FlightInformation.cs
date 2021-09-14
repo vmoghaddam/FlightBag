@@ -140,6 +140,12 @@ namespace APCore.Models
         public string SIC { get; set; }
         public int? SICId { get; set; }
         public DateTime? JLDatePICApproved { get; set; }
+        public string JLSignedBy { get; set; }
+        public string ALT1 { get; set; }
+        public string ALT2 { get; set; }
+        public string ALT3 { get; set; }
+        public string ALT4 { get; set; }
+        public string ALT5 { get; set; }
 
         public virtual Organization AirlineOperators { get; set; }
         public virtual Box Box { get; set; }

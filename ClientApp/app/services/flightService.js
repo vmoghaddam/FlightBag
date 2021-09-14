@@ -430,7 +430,19 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
     };
 
+    var _epGetFlightCommanders = function (flightId) {
+        var deferred = $q.defer();
+        $http.get($rootScope.apiUrl + 'flight/commanders/' + flightId).then(function (response) {
+            
+             deferred.resolve(response.data);
+             
 
+        }, function (err, status) {
+
+            deferred.reject(Exceptions.getMessage(err));
+        });
+        return deferred.promise;
+    };
     var _epGetFlightCrews = function (flightId) {
         //db.sync.SyncFlightCrews
         var deferred = $q.defer();
@@ -558,6 +570,69 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
         return deferred.promise;
 
 
+    };
+    var _signDoc = function (entity) {
+        var deferred = $q.defer();
+
+        $http.post($rootScope.apiUrl + 'flight/sign', entity).then(function (response) {
+            deferred.resolve(response.data);
+        }, function (err, status) {
+
+            deferred.reject(Exceptions.getMessage(err));
+        });
+
+        return deferred.promise;
+    };
+    var _signDocLocal = function (entity, doc) {
+        var deferred = $q.defer();
+        var table = '';
+        var fid = entity.FlightId;
+        switch (doc) {
+            case 'log':
+                table = 'AppCrewFlights';
+                fid = entity.ID;
+                break;
+            case 'vr':
+                table = 'VR';
+                break;
+            case 'dr':
+                table = 'DR';
+                break;
+            case 'asr':
+                table = 'ASR';
+                break;
+            case 'ofp':
+                table = 'OFP';
+                break;
+            default:
+                deferred.reject('wrong document type'); 
+                return;
+        }
+        var _db = db.getDb();
+        _db[table]
+            .filter(function (rec) {
+
+                return rec.FlightId == fid
+            }).first(function (item) {
+                if (!item) {
+                    deferred.reject('no record found');
+                    return;
+                }
+                
+                item.PICId = entity.PICId;
+                item.PIC = entity.PIC;
+                item.JLSignedBy = entity.JLSignedBy;
+                item.JLDatePICApproved = entity.JLDatePICApproved;
+                _db[table].put(item).then(
+                    function (suc) { deferred.resolve(suc);},
+                    function (err) { deferred.reject('update failed');}
+                );
+
+            });
+
+        
+
+        return deferred.promise;
     };
     var _epSaveLog = function (entity) {
         var deferred = $q.defer();
@@ -856,9 +931,34 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
         });
         return deferred.promise;
     };
+    var _epReplaceOFP = function (item) {
+        var deferred = $q.defer();
+        //db.Clear("ASR", function () {
+        db.DeleteOFP(item.FlightId, function () {
+            item.IsSynced = 1;
+            item.Alert = null;
+            item.server = null;
+            db.Put('OFP', item.Id, item, function (dbitem) {
+                deferred.resolve(dbitem);
+            });
+        });
+        return deferred.promise;
+    };
+    var _epReplaceOFPProp = function (item) {
+        var deferred = $q.defer();
+
+        db.DeleteOFPPropById(item.Id, function () {
+            item.IsSynced = 1;
+
+            db.PutOFPPropById(item.Id, item, function (dbitem) {
+                deferred.resolve(dbitem);
+            });
+        });
+        return deferred.promise;
+    };
     var _epGetASRByFlight = function (flightId) {
         var deferred = $q.defer();
-        
+
         db.GetASRsByFlightId(flightId, function (_dbitem) {
             var dbitem = _dbitem && _dbitem.length > 0 ? _dbitem[0] : null;
             if ($rootScope.getOnlineStatus()) {
@@ -872,9 +972,9 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                             //update local
 
                             //db.Clear("ASR", function () {
-                            
+
                             db.DeleteAsr(flightId, function () {
-                                
+
                                 response.data.Data.IsSynced = 1;
                                 db.Put('ASR', response.data.Data.FlightId, response.data.Data, function (dbitem) {
                                     deferred.resolve(response.data);
@@ -963,8 +1063,8 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
         var pk = entity.FlightId;
         var deferred = $q.defer();
         entity.IsSynced = 1;
-        
-        entity.DateUpdate= momentUtcNowString();
+
+        entity.DateUpdate = momentUtcNowString();
         db.Put('ASR', entity.FlightId, entity, function (row) {
             if ($rootScope.getOnlineStatus()) {
                 entity.OccurrenceDate = moment(new Date(entity.OccurrenceDate)).format('YYYY-MM-DD-HH-mm');
@@ -1012,10 +1112,10 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
         var pk = entity.FlightId;
         var deferred = $q.defer();
         entity.IsSynced = 1;
-        
+
         entity.DateUpdate = momentUtcNowString();
         db.Put('DR', entity.FlightId, entity, function (row) {
-           
+
             if ($rootScope.getOnlineStatus()) {
                 entity.OccurrenceDate = moment(new Date(entity.OccurrenceDate)).format('YYYY-MM-DD-HH-mm');
                 $http.post($rootScope.apiUrl + 'dr/save', entity).then(function (response) {
@@ -1039,23 +1139,149 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                 });
             }
             else {
-                
+
                 row.IsSynced = 0;
                 db.deSyncedItem('DR', entity.FlightId, function () {
-                    
+
                     deferred.resolve({ Data: row, IsSuccess: 1 });
                 });
             }
         });
         return deferred.promise;
 
-         
+
+    };
+
+
+
+
+    var _saveOFPProp = function (entity) {
+        var pk = entity.OFPId;
+        var deferred = $q.defer();
+        entity.IsSynced = 1;
+       
+        db.GetOFPPropByName(entity.OFPId, entity.PropName, function (_result) {
+            
+            if (!_result) {
+                deferred.reject("no property found in local db");
+                return;
+            }
+            entity.Id = _result.Id;
+            entity.DateUpdate = momentUtcNowString();
+            db.PutOFPProp(entity.OFPId, entity.PropName, entity, function (row) {
+
+                if ($rootScope.getOnlineStatus()) {
+                   
+                    $http.post($rootScope.apiUrl + 'ofp/prop/save', entity).then(function (response) {
+                        if (response.data.IsSuccess) {
+                            //deferred.resolve(response.data);
+                            var item = response.data.Data;
+                            item.IsSynced = 1;
+                            db.DeleteOFPProp(item.OFPId, item.PropName, function () {
+                                db.PutOFPProp(item.OFPId, item.PropName, item, function (dbitem) {
+                                    deferred.resolve({ Data: dbitem, IsSuccess: 1 });
+                                });
+                            });
+
+                        }
+                        else
+                            deferred.resolve(response.data);
+
+                    }, function (err, status) {
+
+                        deferred.reject(Exceptions.getMessage(err));
+                    });
+                }
+                else {
+
+                    row.IsSynced = 0
+
+                    db.deSyncedOFPProp(entity.OFPId, entity.PropName, function () {
+
+                        deferred.resolve({ Data: row, IsSuccess: 1 });
+                    });
+                }
+            });
+
+
+        });
+
+
+
+        return deferred.promise;
+
+
+    };
+
+
+    var _saveOFPPropBulk = function (objs) {
+        var deferred = $q.defer();
+        $.each(objs, function (_w, entity) {
+            entity.IsSynced = 1;
+            db.GetOFPPropByName(entity.OFPId, entity.PropName, function (_result) {
+
+                if (!_result) {
+                    deferred.reject("no property found in local db :" + entity.PropName);
+                    return;
+                }
+                entity.Id = _result.Id;
+                entity.DateUpdate = momentUtcNowString();
+                db.PutOFPProp(entity.OFPId, entity.PropName, entity, function (row) {
+
+                    if ($rootScope.getOnlineStatus()) {
+
+                        $http.post($rootScope.apiUrl + 'ofp/prop/save', entity).then(function (response) {
+                            if (response.data.IsSuccess) {
+                                //deferred.resolve(response.data);
+                                var item = response.data.Data;
+                                item.IsSynced = 1;
+                                db.DeleteOFPProp(item.OFPId, item.PropName, function () {
+                                    db.PutOFPProp(item.OFPId, item.PropName, item, function (dbitem) {
+                                        deferred.resolve({ Data: dbitem, IsSuccess: 1 });
+                                    });
+                                });
+
+                            }
+                            else
+                                deferred.resolve(response.data);
+
+                        }, function (err, status) {
+
+                            deferred.reject(Exceptions.getMessage(err));
+                        });
+                    }
+                    else {
+
+                        row.IsSynced = 0
+
+                        db.deSyncedOFPProp(entity.OFPId, entity.PropName, function () {
+
+                            deferred.resolve({ Data: row, IsSuccess: 1 });
+                        });
+                    }
+                });
+
+
+            });
+        });
+
+        //var pk = entity.OFPId;
+        
+        //entity.IsSynced = 1;
+
+       
+
+
+
+        return deferred.promise;
+
+
     };
     ////////////////////////////////////////
     var _epGetDRByFlight = function (flightId) {
         var deferred = $q.defer();
 
-        db.GetDRsByFlightId(flightId, function (_dbitem) { 
+        db.GetDRsByFlightId(flightId, function (_dbitem) {
             var dbitem = _dbitem && _dbitem.length > 0 ? _dbitem[0] : null;
             if ($rootScope.getOnlineStatus()) {
 
@@ -1069,7 +1295,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
                             //db.Clear("ASR", function () {
 
-                            db.DeleteAsr(flightId, function () {
+                            db.DeleteDr(flightId, function () {
 
                                 response.data.Data.IsSynced = 1;
                                 db.Put('DR', response.data.Data.FlightId, response.data.Data, function (dbitem) {
@@ -1103,6 +1329,270 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
             }
             else {
                 var data = { IsSuccess: 1, Data: dbitem };
+
+                deferred.resolve(data);
+            }
+        });
+
+        return deferred.promise;
+    };
+    //gool
+    var _epGetDRsByFlights = async function (dto) {
+        var deferred = $q.defer();
+        $http.post($rootScope.apiUrl + 'drs', dto).then(sr => {
+            if (sr.data.IsSuccess) {
+                var serverProps = sr.data.Data;
+                var _db = db.getDb();
+                _db.DR
+                    .filter(function (asr) {
+
+                        return dto.ids.indexOf(Number(asr.FlightId)) != -1;
+                    }).toArray(function (localProps) {
+                        var _deletedKeys = [];
+                        var _putList = [];
+                        $.each(serverProps, function (_i, serverProp) {
+
+                            var localProp = Enumerable.From(localProps).Where('$.FlightId==' + serverProp.FlightId).FirstOrDefault();
+
+                            var _localDate = localProp ? Number(localProp.DateUpdate) : -1;
+                            var _serverDate = Number(serverProp.DateUpdate);
+                            // if (serverProp.Id == 136) {
+                            //alert('local: ' + _localDate + '   server:' + _serverDate);
+                            // }
+                            if (localProp && localProp.IsSynced == 0 && _localDate >= _serverDate) {
+
+                            }
+                            else if (_serverDate > _localDate) {
+                                //if (serverProp.Id == 136) {
+                                //alert('replace 136');
+                                //}
+                                serverProp.IsSynced = 1;
+                                //_epReplaceOFPProp(serverProp).then(rp => { });
+                                _deletedKeys.push(serverProp.Id);
+                                _putList.push(serverProp);
+                            }
+
+                        });
+
+                        if (_deletedKeys.length > 0)
+                            db.DeleteDrByIds(_deletedKeys, function () {
+                                _db.DR.bulkPut(_putList).then(bpres => { });
+                            });
+                        deferred.resolve(sr.data);
+                    });
+                //////////////////////////////
+            }
+            else {
+                deferred.reject('error in getting drs from server');
+            }
+        });
+
+
+        
+        return deferred.promise;
+    };
+    var _epGetOFPByFlights = async function (dto) {
+        var deferred = $q.defer();
+        // var dto = { ids: flightIds };
+
+        $http.post($rootScope.apiUrl + 'ofp/flights', dto).then(sr => {
+            var serverOFPs = sr.data.Data.ofps;
+            var serverProps = sr.data.Data.ofpProps;
+            $.each(serverOFPs, function (_i, serverOFP) {
+                db.DeleteOFP(serverOFP.FlightId, function () {
+                     
+                    serverOFP.IsSynced = 1;
+                    db.Put('OFP', serverOFP.FlightId, serverOFP, function (dbitem) {
+                        //deferred.resolve(response.data);
+                    });
+
+
+
+                });
+
+
+            });
+
+            ////PROPS
+            var pids = Enumerable.From(serverProps).Select('Number($.Id)').ToArray();
+            console.log('PROP IDS:', pids);
+            var _db = db.getDb();
+            _db.OFPProp
+                .filter(function (asr) {
+
+                    return pids.indexOf(Number(asr.Id)) != -1;
+                }).toArray(function (localProps) {
+                    var _deletedKeys = [];
+                    var _putList = [];
+                    $.each(serverProps, function (_i, serverProp) {
+
+                        var localProp = Enumerable.From(localProps).Where('$.Id==' + serverProp.Id).FirstOrDefault();
+
+                        var _localDate = localProp ? Number(localProp.DateUpdate) : -1;
+                        var _serverDate = Number(serverProp.DateUpdate);
+                        // if (serverProp.Id == 136) {
+                        //alert('local: ' + _localDate + '   server:' + _serverDate);
+                        // }
+                        if (localProp && localProp.IsSynced == 0 && _localDate >= _serverDate) {
+
+                        }
+                        else if (_serverDate > _localDate) {
+                            //if (serverProp.Id == 136) {
+                            //alert('replace 136');
+                            //}
+                            serverProp.IsSynced = 1;
+                            //_epReplaceOFPProp(serverProp).then(rp => { });
+                            _deletedKeys.push(serverProp.Id);
+                            _putList.push(serverProp);
+                        }
+
+                    });
+
+                    if (_deletedKeys.length > 0)
+                        db.DeleteOFPPropByIds(_deletedKeys, function () {
+                            _db.OFPProp.bulkPut(_putList).then(bpres => { });
+                        });
+                    deferred.resolve(sr.data);
+                });
+
+
+
+
+        });
+        return deferred.promise;
+    };
+    var _epGetOFPByFlight = function (flightId) {
+        var deferred = $q.defer();
+
+        db.GetOFPsByFlightId(flightId, function (_dbitem) {
+            var dbitem = _dbitem && _dbitem.length > 0 ? _dbitem[0] : null;
+            if ($rootScope.getOnlineStatus()) {
+
+                $http.get($rootScope.apiUrl + 'ofp/flight/' + flightId).then(function (response) {
+                    if (response.data.IsSuccess && response.data.Data) {
+                        response.data.Data.IsSynced = 1;
+                        db.DeleteOFP(flightId, function () {
+
+                            response.data.Data.IsSynced = 1;
+                            db.Put('OFP', response.data.Data.FlightId, response.data.Data, function (dbitem) {
+                                deferred.resolve(response.data);
+                            });
+                        });
+                        //var _dbdate = !dbitem ? 0 : Number(dbitem.DateUpdate);
+                        //var _serverdate = Number(response.data.Data.DateUpdate);
+
+                        //if (!dbitem || (dbitem.IsSynced == 1 && _serverdate >= _dbdate)) {
+
+
+                        //    db.DeleteOFP(flightId, function () {
+
+                        //        response.data.Data.IsSynced = 1;
+                        //        db.Put('OFP', response.data.Data.FlightId, response.data.Data, function (dbitem) {
+                        //            deferred.resolve(response.data);
+                        //        });
+                        //    });
+                        //}
+                        //else if (dbitem.IsSynced == 0 && _serverdate > _dbdate) {
+
+                        //    dbitem.Alert = response.data.Data.User;
+                        //    dbitem.server = response.data.Data;
+                        //    deferred.resolve({ IsSuccess: 1, Data: dbitem });
+                        //}
+                        //else if (dbitem.IsSynced == 0 && _serverdate <= _dbdate) {
+
+                        //    deferred.resolve({ IsSuccess: 1, Data: dbitem });
+                        //}
+                        //else {
+
+                        //    deferred.resolve({ IsSuccess: 1, Data: dbitem });
+                        //}
+
+                    }
+                    else
+                        deferred.resolve({ IsSuccess: 1, Data: dbitem });
+                });
+
+
+
+            }
+            else {
+                var data = { IsSuccess: 1, Data: dbitem };
+
+                deferred.resolve(data);
+            }
+        });
+
+        return deferred.promise;
+    };
+    var _epGetOFPProps = function (ofpId) {
+        var deferred = $q.defer();
+
+        db.GetOFPProps(ofpId, function (_dbitem) {
+            //var dbitem = _dbitem && _dbitem.length > 0 ? _dbitem[0] : null;
+            if ($rootScope.getOnlineStatus()) {
+                $http.get($rootScope.apiUrl + 'ofp/props/' + ofpId).then(function (response) {
+                    if (response.data.IsSuccess && response.data.Data) {
+                        //deferred.resolve({ IsSuccess: 1, Data: response.data.Data }); 
+                        var dbRows = response.data.Data;
+
+                        var output = [];
+                        var upd = 1;
+
+                        $.each(dbRows, function (_i, _dbRow) {
+                            var localRow = Enumerable.From(_dbitem).Where('$.Id==' + _dbRow.Id).FirstOrDefault();
+                            var _dbdate = !localRow ? 0 : Number(localRow.DateUpdate);
+                            var _serverdate = Number(_dbRow.DateUpdate);
+                            if (!localRow || _serverdate > _dbdate) {
+                                _dbRow.IsSynced = 1;
+                                output.push(_dbRow);
+                                db.DeleteOFPPropById(_dbRow.Id, function () {
+
+
+                                    db.PutOFPPropById(_dbRow.Id, _dbRow, function (row) {
+
+                                        // output.push(row);
+                                        upd++;
+                                        //if (upd == dbRows.length)
+                                        //   deferred.resolve({ IsSuccess: 1, Data: output });
+                                    });
+
+                                });
+                            }
+
+                            else if (localRow.IsSynced == 0 && _serverdate <= _dbdate) {
+
+
+                                output.push(localRow);
+                                // upd++;
+                                //if (upd == dbRows.length)
+                                //    deferred.resolve({ IsSuccess: 1, Data: output });
+                            }
+                            else {
+
+
+                                output.push(localRow);
+                                // upd++;
+                                //if (upd == dbRows.length)
+                                //    deferred.resolve({ IsSuccess: 1, Data: output });
+                            }
+
+                        });
+                        deferred.resolve({ IsSuccess: 1, Data: output });
+                    }
+                    else
+                        deferred.resolve({ IsSuccess: 1, Data: dbitem });
+
+
+                });
+
+
+
+
+
+
+            }
+            else {
+                var data = { IsSuccess: 1, Data: _dbitem };
 
                 deferred.resolve(data);
             }
@@ -1174,7 +1664,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
             }
             else {
                 var data = { IsSuccess: 1, Data: dbitem };
-                
+
                 deferred.resolve(data);
             }
         });
@@ -1341,7 +1831,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
         dto.CommanderNote = flt.CommanderNote;
 
         dto.AttRepositioning1 = flt.AttRepositioning1;
-        dto.AttRepositioning1 = flt.AttRepositioning1;
+        dto.AttRepositioning2 = flt.AttRepositioning2;
 
 
         ///////////////
@@ -1499,15 +1989,15 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                     _local.OccurrenceDate = moment(new Date(_local.OccurrenceDate)).format('YYYY-MM-DD-HH-mm');
                     $http.post($rootScope.apiUrl + 'asr/save', _local).then(function (response1) {
                         if (response1.data.IsSuccess) {
-                           
+
                             var item = response1.data.Data;
                             item.IsSynced = 1;
                             db.Delete('ASR', _local.FlightId, function () {
-                                db.Put('ASR', item.FlightId, item, function (dbitem) {});
+                                db.Put('ASR', item.FlightId, item, function (dbitem) { });
                             });
 
                         }
-                         
+
 
                     });
                     /////////END UPDATE SERVER ////////////////////////////
@@ -1523,7 +2013,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                         ////////////////END UPDATE LOCAL //////////////////
                     }
                     else {
-                        console.log(_serverDate+'   local: '+ _localDate);
+                        console.log(_serverDate + '   local: ' + _localDate);
                         console.log('update server 1 ' + _local.FlightId);
                         /////////////////UPDATE SERVER //////////////////////////
                         _local.User = $rootScope.userTitle
@@ -1540,14 +2030,14 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                             }
 
 
-                        }); 
+                        });
                         ////////////////END UPDATE SERVER //////////////////////
                     }
                 }
 
             });
 
-            
+
         });
 
         //var promises = [];
@@ -1614,7 +2104,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                         console.log('update local ' + _local.FlightId);
                         ///////////////// UPDATE LOCAL ///////////////////
                         _epReplaceVR(_server).then(rp => { });
-                        
+
                         ////////////////END UPDATE LOCAL //////////////////
                     }
                     else {
@@ -1645,7 +2135,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
         });
 
-     
+
 
 
     };
@@ -1671,7 +2161,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
         var logResult = { total: asrs.length };
         var flightIds = Enumerable.From(asrs).Select('$.FlightId').ToArray();
         var dto = { ids: flightIds };
-        $http.post($rootScope.apiUrl + 'vr/flights', dto).then(sr => {
+        $http.post($rootScope.apiUrl + 'dr/flights', dto).then(sr => {
             console.log('dr server result', sr);
             var resps = sr.data.Data;
 
@@ -1681,7 +2171,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                     console.log('update server 0 ' + _local.FlightId);
                     ////// UPDATE SERVER /////////////////////
                     _local.User = $rootScope.userTitle
-                    
+
                     $http.post($rootScope.apiUrl + 'dr/save', _local).then(function (response1) {
                         if (response1.data.IsSuccess) {
 
@@ -1704,7 +2194,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                     if (_serverDate >= _localDate) {
                         console.log('update local ' + _local.FlightId);
                         ///////////////// UPDATE LOCAL ///////////////////
-                        _epReplaceVR(_server).then(rp => { });
+                        _epReplaceDR(_server).then(rp => { });
 
                         ////////////////END UPDATE LOCAL //////////////////
                     }
@@ -1740,21 +2230,303 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
 
     };
+
+
+    var _autoSyncOFP = async function (callback) {
+        var _db = db.getDb();
+        var asrs = await _db.OFP
+            .filter(function (asr) {
+
+                return asr.IsSynced == 0;
+            }).toArray();
+
+        if (!asrs || asrs.length == 0) {
+            callback({
+                total: 0,
+                synced: 0,
+                remark: 'no ofps found',
+            });
+            return;
+        }
+        var logResult = { total: asrs.length };
+        var flightIds = Enumerable.From(asrs).Select('$.FlightId').ToArray();
+        var dto = { ids: flightIds };
+        $http.post($rootScope.apiUrl + 'ofp/flights', dto).then(sr => {
+            console.log('ofp server result', sr);
+            var resps = sr.data.Data;
+
+            $.each(asrs, function (_i, _local) {
+                var _server = Enumerable.From(resps).Where('$.FlightId==' + _local.FlightId).FirstOrDefault();
+                if (!_server) {
+                    console.log('update server 0 ' + _local.FlightId);
+                    ////// UPDATE SERVER /////////////////////
+                    _local.User = $rootScope.userTitle
+
+                    $http.post($rootScope.apiUrl + 'ofp/save', _local).then(function (response1) {
+                        if (response1.data.IsSuccess) {
+
+                            var item = response1.data.Data;
+                            item.IsSynced = 1;
+                            db.Delete('OFP', _local.FlightId, function () {
+                                db.Put('OFP', item.FlightId, item, function (dbitem) { });
+                            });
+
+                        }
+
+
+                    });
+                    /////////END UPDATE SERVER ////////////////////////////
+
+
+                } else {
+                    var _localDate = Number(_local.DateUpdate);
+                    var _serverDate = Number(_server.DateUpdate);
+                    if (_serverDate >= _localDate) {
+                        console.log('update local ' + _local.FlightId);
+                        ///////////////// UPDATE LOCAL ///////////////////
+                        _epReplaceOFP(_server).then(rp => { });
+
+                        ////////////////END UPDATE LOCAL //////////////////
+                    }
+                    else {
+                        console.log(_serverDate + '   local: ' + _localDate);
+                        console.log('update server 1 ' + _local.FlightId);
+                        /////////////////UPDATE SERVER //////////////////////////
+                        _local.User = $rootScope.userTitle
+                        _local.OccurrenceDate = moment(new Date(_local.OccurrenceDate)).format('YYYY-MM-DD-HH-mm');
+                        $http.post($rootScope.apiUrl + 'ofp/save', _local).then(function (response1) {
+                            if (response1.data.IsSuccess) {
+
+                                var item = response1.data.Data;
+                                item.IsSynced = 1;
+                                db.Delete('OFP', _local.FlightId, function () {
+                                    db.Put('OFP', item.FlightId, item, function (dbitem) { });
+                                });
+
+                            }
+
+
+                        });
+                        ////////////////END UPDATE SERVER //////////////////////
+                    }
+                }
+
+            });
+
+
+        });
+
+
+
+
+    };
+
+
+
+
+    var _autoSyncOFPProp = async function (callback) {
+
+        var _db = db.getDb();
+        var asrs = await _db.OFPProp
+            .filter(function (asr) {
+
+                return asr.IsSynced == 0;
+            }).toArray();
+
+        if (!asrs || asrs.length == 0) {
+
+            callback({
+                total: 0,
+                synced: 0,
+                remark: 'no ofp props found',
+            });
+            return;
+        }
+        var logResult = { total: asrs.length };
+        var flightIds = Enumerable.From(asrs).Select('$.Id').ToArray();
+
+        var dto = { ids: flightIds };
+
+        $http.post($rootScope.apiUrl + 'ofp/props/ids', dto).then(sr => {
+
+            var resps = sr.data.Data;
+            var serverUpdates = [];
+            $.each(asrs, function (_i, _local) {
+                var _server = Enumerable.From(resps).Where('$.Id==' + _local.Id).FirstOrDefault();
+                if (_server) {
+                    var _localDate = Number(_local.DateUpdate);
+                    var _serverDate = Number(_server.DateUpdate);
+                    if (_serverDate >= _localDate) {
+                        ///////////////// UPDATE LOCAL ///////////////////
+                        _epReplaceOFPProp(_server).then(rp => { });
+                        ////////////////END UPDATE LOCAL //////////////////
+                    }
+                    else {
+
+
+                        _local.User = $rootScope.userTitle
+                        serverUpdates.push(_local);
+
+
+                    }
+
+
+
+
+                }
+
+            });
+
+            if (serverUpdates.length > 0) {
+                /////////////////UPDATE SERVER //////////////////////////
+                $http.post($rootScope.apiUrl + 'ofp/props/save', serverUpdates).then(function (response1) {
+                    if (response1.data.IsSuccess && response1.data.Data && response1.data.Data.length > 0) {
+                        $.each(response1.data.Data, function (_i, _r) {
+                            _r.IsSynced = 1;
+                            db.DeleteOFPPropById(_r.Id, function () {
+                                db.PutOFPPropById(_r.Id, _r, function (dbitem) { });
+                            });
+                        });
+                    }
+                });
+                ////////////////END UPDATE SERVER //////////////////////
+            }
+
+
+
+        });
+
+
+
+
+
+
+    };
+
+    var _syncOFPProps =   function (ofpId,overwrite,callback) {
+
+        var _db = db.getDb();
+       _db.OFPProp
+            .filter(function (asr) {
+
+                return asr.OFPId == ofpId;
+            }).toArray(function (asrs) {
+                /////// BEGIN ///////////////////
+                if (!asrs || asrs.length == 0) {
+
+                    callback({
+                        total: 0,
+                        synced: 0,
+                        remark: 'no ofp props found',
+                    });
+                    return;
+                }
+                var logResult = { total: asrs.length };
+                var flightIds = Enumerable.From(asrs).Select('$.Id').ToArray();
+
+                var dto = { ids: flightIds };
+
+                $http.post($rootScope.apiUrl + 'ofp/props/ids', dto).then(sr => {
+
+                    var resps = sr.data.Data;
+                    var serverUpdates = [];
+                    $.each(asrs, function (_i, _local) {
+                        var _server = Enumerable.From(resps).Where('$.Id==' + _local.Id).FirstOrDefault();
+                        if (_server) {
+                            var _localDate = Number(_local.DateUpdate);
+                            var _serverDate = Number(_server.DateUpdate);
+                            if (_serverDate >= _localDate && !overwrite) {
+                                ///////////////// UPDATE LOCAL ///////////////////
+                                _epReplaceOFPProp(_server).then(rp => { });
+                                ////////////////END UPDATE LOCAL //////////////////
+                            }
+                            else {
+
+
+                                _local.User = $rootScope.userTitle
+                                serverUpdates.push(_local);
+
+
+                            }
+
+
+
+
+                        }
+
+                    });
+
+                    if (serverUpdates.length > 0) {
+                        /////////////////UPDATE SERVER //////////////////////////
+                        $http.post($rootScope.apiUrl + 'ofp/props/save', serverUpdates).then(function (response1) {
+                            if (response1.data.IsSuccess && response1.data.Data && response1.data.Data.length > 0) {
+                                $.each(response1.data.Data, function (_i, _r) {
+                                    _r.IsSynced = 1;
+                                    db.DeleteOFPPropById(_r.Id, function () {
+                                        db.PutOFPPropById(_r.Id, _r, function (dbitem) { });
+                                    });
+                                });
+                            }
+                        });
+                        ////////////////END UPDATE SERVER //////////////////////
+                    }
+
+
+
+                });
+
+
+
+                /////// END  ///////////////////////
+            });
+
+        
+
+
+
+
+    };
+
+    var _checkLock = function (flightId,doc) {
+        
+        var deferred = $q.defer();
+
+        $http.get($rootScope.apiUrl + 'check/lock/' + flightId+'/'+doc).then(function (response) {
+            deferred.resolve(response.data);
+        }, function (err, status) {
+
+            //deferred.reject(Exceptions.getMessage(err));
+            deferred.resolve("error");
+        });
+
+        return deferred.promise;
+    };
     //////////////////////////////////
+    serviceFactory.checkLock = _checkLock;
     serviceFactory.autoSyncLogs = _autoSyncLogs;
     serviceFactory.autoSyncASR = _autoSyncASR;
     serviceFactory.autoSyncVR = _autoSyncVR;
     serviceFactory.autoSyncDR = _autoSyncDR;
+    serviceFactory.autoSyncOFP = _autoSyncOFP;
+    serviceFactory.autoSyncOFPProp = _autoSyncOFPProp;
+    serviceFactory.syncOFPProps = _syncOFPProps;
     serviceFactory.epGetDRByFlight = _epGetDRByFlight;
+    serviceFactory.epGetDRsByFlights = _epGetDRsByFlights;
+    serviceFactory.epGetOFPByFlight = _epGetOFPByFlight;
+    serviceFactory.epGetOFPByFlights = _epGetOFPByFlights;
+    serviceFactory.epGetOFPProps = _epGetOFPProps;
     serviceFactory.epGetASRByFlight = _epGetASRByFlight;
     serviceFactory.saveASR = _saveASR;
     serviceFactory.saveDR = _saveDR;
+    serviceFactory.saveOFPProp = _saveOFPProp;
+    serviceFactory.saveOFPPropBulk = _saveOFPPropBulk;
     serviceFactory.epGetVRByFlight = _epGetVRByFlight;
     serviceFactory.saveVR = _saveVR;
     serviceFactory.epReplaceASR = _epReplaceASR;
     serviceFactory.epReplaceVR = _epReplaceVR;
     serviceFactory.epReplaceDR = _epReplaceDR;
-
+    serviceFactory.epReplaceOFP = _epReplaceOFP;
+    serviceFactory.epReplaceOFPProp = _epReplaceOFPProp;
 
     serviceFactory.updateTAFs = _updateTAFs;
     serviceFactory.updateMETARs = _updateMETARs;
@@ -1765,10 +2537,13 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
     serviceFactory.epGetCrewFlights = _epGetCrewFlights;
 
     serviceFactory.epGetFlightCrews = _epGetFlightCrews;
+    serviceFactory.epGetFlightCommanders = _epGetFlightCommanders;
     serviceFactory.epGetFlight = _epGetFlight;
     serviceFactory.epGetFlightLocal = _epGetFlightLocal;
     serviceFactory.epGetFlightDelays = _epGetFlightDelays;
     serviceFactory.epSaveLog = _epSaveLog;
+    serviceFactory.signDoc = _signDoc;
+    serviceFactory.signDocLocal = _signDocLocal;
     serviceFactory.epCheckLog = _epCheckLog;
     serviceFactory.epSyncFlight = _epSyncFlight;
     serviceFactory.epSaveLogOverwriteServer = _epSaveLogOverwriteServer;

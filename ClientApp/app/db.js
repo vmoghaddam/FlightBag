@@ -6,7 +6,7 @@ db.getDb = function () {
     return _db;
 };
 db.Init = function () {
-    _db.version(61).stores({
+    _db.version(72).stores({
         AppCrewFlights: "Id,FlightId,CrewId,FDPId,FDPItemId,DutyType,IsPositioning,PositionId,Position,FlightNumber,STDDay,FlightStatusId,Register,RegisterId,FromAirportIATA,ToAirportIATA,STD,STA,BlockOff,BlockOn,TakeOff,Landing,IStart,IsSynced",
         FlightCrews: "[CrewId+FlightId],FDPItemId,FDPId",
         Calendar: "[Id+Date],DateStart,Legs,Sectors,DutyType,DutyTypeTitle,Year,Month,Day",
@@ -21,6 +21,8 @@ db.Init = function () {
         VRs: "Id,FlightId,IsSynced",
         VR: "FlightId,IsSynced",
         DR: "FlightId,IsSynced",
+        OFP: "FlightId,IsSynced",
+        OFPProp:"Id,OFPId,PropName,IsSynced",
          
     });
     _db.open();
@@ -147,6 +149,36 @@ db.GetDRByFlightCollection = function (flightId) {
     return collection;
 };
 
+db.GetOFPByFlightCollection = function (flightId) {
+
+    var collection = _db.OFP
+        .filter(function (rec) {
+            return rec.FlightId == flightId;
+        });
+
+    return collection;
+};
+ 
+
+db.GetOFPPropCollection = function (ofpId) {
+
+    var collection = _db.OFPProp
+        .filter(function (rec) {
+            return rec.OFPId == ofpId;
+        });
+
+    return collection;
+};
+db.GetOFPPropCollectionByName = function (ofpId,name) {
+
+    var collection = _db.OFPProp
+        .filter(function (rec) {
+            return rec.OFPId == ofpId && rec.PropName==name;
+        });
+
+    return collection;
+}
+
 db.GetASRsByFlightId = function (flightId, callback) {
     var collection = db.GetASRByFlightCollection(flightId);
     collection.toArray().then(function (arg) {
@@ -163,6 +195,31 @@ db.GetDRsByFlightId = function (flightId, callback) {
 
         callback(arg);
     });
+};
+
+db.GetOFPsByFlightId = function (flightId, callback) {
+    var collection = db.GetOFPByFlightCollection(flightId);
+    collection.toArray().then(function (arg) {
+
+
+        callback(arg);
+    });
+};
+
+ 
+
+db.GetOFPProps = function (ofpId, callback) {
+    var collection = db.GetOFPPropCollection(ofpId);
+    collection.toArray().then(function (arg) {
+
+
+        callback(arg);
+    });
+};
+
+db.GetOFPPropByName = function (ofpId, name, callback) {
+    _db.OFPProp.filter(function (row) { return row.OFPId == ofpId && row.PropName == name; })
+        .first(function (item) { callback(item); });
 };
 
 
@@ -283,6 +340,13 @@ db.deSyncedItem = async function (table, key,callback) {
     
 
 };
+//db.friends.where("shoeSize").aboveOrEqual(47).modify({isBigfoot: 1});
+db.deSyncedOFPProp = async function (ofpId,name, callback) {
+
+    //_db[table].update(key, { IsSynced: 0 }).then(function (upd) { callback(); });
+    _db.OFPProp.filter(function (row) { return row.OFPId == ofpId && row.PropName == name; }).modify({ IsSynced: 0 }).then(function () {   callback(); });
+
+};
 db.getCount = function (table, callback) {
     return _db[table].count(function (e) { callback(e); });
 };
@@ -314,6 +378,26 @@ db.Put = function (table, key, item, callback) {
         });
     });
 };
+db.PutOFPProp = function (ofpId,name,   item, callback) {
+
+    _db["OFPProp"].put(item).then(function (upd) {
+       
+        _db.OFPProp.filter(function (row) { return row.OFPId == ofpId && row.PropName == name; })
+            .first(function (item) { callback(item); });
+              
+    });
+};
+
+db.PutOFPPropById = function (id, item, callback) {
+
+    _db["OFPProp"].put(item).then(function (upd) {
+
+        _db.OFPProp.filter(function (row) { return row.Id == id ; })
+            .first(function (item) { callback(item); });
+
+    });
+};
+
 db.Delete = function (table, key, callback) {
     _db[table].delete(key).then(function (e) { callback(e); });
 };
@@ -327,8 +411,51 @@ db.DeleteAsr = function (key, callback) {
 db.DeleteDr = function (key, callback) {
     _db['DR'].delete(key).then(res => { callback(); }, rej => { callback(); });
 };
+db.DeleteOFP = function (key, callback) {
+    _db['OFP'].delete(key).then(res => { callback(); }, rej => { callback(); });
+};
 db.DeleteVr = function (key, callback) {
     _db['VR'].delete(key).then(res => { callback(); }, rej => { callback(); });
+};
+
+db.DeleteOFPProps = function (ofpId, callback) {
+    //_db['OFPProp'].delete(key).then(res => { callback(); }, rej => { callback(); });
+    _db.OFPProp.filter(function (row) { return row.OFPId == ofpId  ; })
+        .delete()
+        .then(function (deleteCount) {
+            callback(deleteCount);
+        }); 
+};
+//cool
+db.DeleteOFPProp = function (ofpId, name, callback) {
+        _db.OFPProp.filter(function (row) { return row.OFPId == ofpId && row.PropName == name; })
+        .delete()
+        .then(function (deleteCount) {
+            callback(deleteCount);
+        }); 
+
+   // _db['OFPProp'].delete(key).then(res => { callback(); }, rej => { callback(); });
+};
+
+db.DeleteOFPPropById = function (id,   callback) {
+    _db.OFPProp.filter(function (row) { return row.Id == id ; })
+        .delete()
+        .then(function (deleteCount) {
+            callback(deleteCount);
+        });
+
+    // _db['OFPProp'].delete(key).then(res => { callback(); }, rej => { callback(); });
+};
+
+db.DeleteOFPPropByIds = function (keys, callback) {
+    _db['OFPProp'].bulkDelete(keys).then(res => { callback(); });
+
+    // _db['OFPProp'].delete(key).then(res => { callback(); }, rej => { callback(); });
+};
+db.DeleteDrByIds = function (keys, callback) {
+    _db['DR'].bulkDelete(keys).then(res => { callback(); });
+
+    // _db['OFPProp'].delete(key).then(res => { callback(); }, rej => { callback(); });
 };
 
 db.auth = {};

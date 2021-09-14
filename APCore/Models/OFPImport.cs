@@ -24,6 +24,13 @@ namespace APCore.Models
         public string User { get; set; }
         public string TextOutput { get; set; }
         public int? FlightId { get; set; }
+        public string DateUpdate { get; set; }
+        public DateTime? DateConfirmed { get; set; }
+        public string UserConfirmed { get; set; }
+        public int? PICId { get; set; }
+        public DateTime? JLDatePICApproved { get; set; }
+        public string JLSignedBy { get; set; }
+        public string PIC { get; set; }
 
         public virtual ICollection<OFPImportItem> OFPImportItems { get; set; }
         public virtual ICollection<OFPImportProp> OFPImportProps { get; set; }

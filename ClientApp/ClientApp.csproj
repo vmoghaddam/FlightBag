@@ -104,10 +104,14 @@
     <Content Include="app\controllers\loginController.js" />
     <Content Include="app\controllers\metar.js" />
     <Content Include="app\controllers\notam.js" />
+    <Content Include="app\controllers\ofpAdd.js" />
     <Content Include="app\controllers\passwordChangeController.js" />
     <Content Include="app\controllers\pdfViewer.js" />
+    <Content Include="app\controllers\signAdd.js" />
     <Content Include="app\views\drAdd.html" />
     <Content Include="app\views\imageviewer.html" />
+    <Content Include="app\views\ofpAdd.html" />
+    <Content Include="app\views\signAdd.html" />
     <Content Include="pdfjsmodule\pdfviewernew.js" />
     <Content Include="app\controllers\profileController.js" />
     <Content Include="app\controllers\refreshController.js" />

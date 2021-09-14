@@ -92,5 +92,9 @@ namespace APCore.Models
         public int? BSTurningId { get; set; }
         public string DateUpdate { get; set; }
         public string User { get; set; }
+        public string JLSignedBy { get; set; }
+        public DateTime? JLDatePICApproved { get; set; }
+        public int? PICId { get; set; }
+        public string PIC { get; set; }
     }
 }

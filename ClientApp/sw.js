@@ -1,5 +1,5 @@
-﻿const cacheName = 'cache-v1336';
-const dynamicCache = 'dyn-1107';
+﻿const cacheName = 'cache-v1337';
+const dynamicCache = 'dyn-1108';
 const assets = [
     '/',
     '/pwa.js',
@@ -12,6 +12,7 @@ const assets = [
     'app/views/vrAdd.html?vx=2',
     'app/views/asrAdd.html?vx=2',
     'app/views/drAdd.html?vx=2',
+    'app/views/ofpAdd.html?vx=2',
     'app/views/taf.html?vx=2',
     'app/views/metar.html?vx=2',
     'app/views/notam.html?vx=2',
@@ -118,6 +119,7 @@ const assets = [
     '/app/controllers/vrAdd.js?vx=2',
     '/app/controllers/asrAdd.js?vx=2',
     '/app/controllers/drAdd.js?vx=2',
+    '/app/controllers/ofpAdd.js?vx=2',
     '/app/controllers/taf.js?vx=2',
     '/app/controllers/metar.js?vx=2',
     '/app/controllers/notam.js?vx=2',

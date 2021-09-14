@@ -225,7 +225,7 @@
 
 
                     </table>
-                    
+
                     <table style="margin-top:10px;border:1px solid #eee;width:100%;color:lightgray" class="dx-border">
 
 
@@ -235,7 +235,7 @@
                             <td style=" padding:5px;padding-right:15px;padding-top:12px;padding-bottom:12px;width:100px">  <div dx-check-box="chb_rep2"></div></td>
 
                         </tr>
-                        
+
 
 
                     </table>
@@ -249,6 +249,24 @@
                         <tr style="border-bottom:0px dotted #eee;text-align:left">
                             <td style="width:94px;padding-left:7px;border-right:0px dotted #eee;padding-top:12px;padding:0">
                                 <div dx-text-area="note"></div>
+                            </td>
+
+
+                        </tr>
+                    </table>
+
+                    <table style="margin-top:10px;border:1px solid #eee;width:100%;color:lightgray" class="dx-border">
+                        <tr>
+                            <td style="background-color:lightgray;padding:7px;text-align:left;color:black;font-weight:bold">
+                                COMMANDER'S SIGNATURE
+                            </td>
+                        </tr>
+                        <tr style="border-bottom:0px dotted #eee;text-align:left">
+                            <td style="width:94px;padding-left:7px;border-right:0px dotted #eee;padding-top:12px;padding:10px;text-align:center;">
+                                <div ng-show="url_sign" style="text-align:center;font-size:16px;padding:5px;">The document signed and approved by</div>
+                                <div ng-show="url_sign" style="text-align:center;font-size:18px;padding:5px;">{{PIC}}</div>
+                                <div ng-show="url_sign" style="text-align:center;font-size:16px;padding:5px;">{{signDate}}</div>
+                                <img style="height:auto;display: block; width: 70%;margin:0 auto 0 auto" ng-show="url_sign" ng-src="{{url_sign}}" />
                             </td>
 
 

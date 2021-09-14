@@ -106,6 +106,10 @@ namespace APCore.Controllers
             {
                 _stations.Add(f.FromAirportIATA);
                 _stations.Add(f.ToAirportIATA);
+                if (!string.IsNullOrEmpty(f.ALT1))
+                    _stations.Add(f.ALT1);
+                if (!string.IsNullOrEmpty(f.ALT2))
+                    _stations.Add(f.ALT2);
             }
             _stations = _stations.Distinct().ToList();
             _stations.Add("OIIX");

@@ -279,10 +279,12 @@ var reportBase = 'http://report.crewpocket.ir/';
 
 var serviceBase = 'http://fleet.flypersia.aero/apiv2/';
 var serviceBase2 = 'https://localhost:5001/api/';
-var serviceBase3 = 'https://fbpocket.ir/service/api/';
+//var serviceBase3 = 'https://fbpocket.ir/service/api/';
+var serviceBase3 = 'https://localhost:5001/api/';
 
 //var staticFiles = 'https://localhost:5001/Upload/';
 var staticFiles = 'https://fbpocket.ir/Upload/';
+var signFiles = 'upload/signs/';
 //var serviceBase2 = 'https://fleet.caspianairlines.com/fbservicea/api/';
 
 //'http://localhost:58908/';
@@ -343,6 +345,7 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
             flightService.autoSyncASR(function (data) { });
             flightService.autoSyncVR(function (data) { });
             flightService.autoSyncDR(function (data) { }); 
+            flightService.autoSyncOFPProp(function (data) { });
             
         }
     };

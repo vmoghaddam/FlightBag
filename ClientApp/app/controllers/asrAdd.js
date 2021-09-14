@@ -2,6 +2,7 @@
 app.controller('asrAddController', ['$scope', '$location', 'flightService', 'authService', '$routeParams', '$rootScope', '$window', function ($scope, $location, flightService, authService, $routeParams, $rootScope, $window) {
     $scope.isNew = true;
     $scope.isEditable = false;
+    $scope.isLockVisible = false;
     $scope.isContentVisible = false;
     $scope.isFullScreen = false;
     var detector = new MobileDetect(window.navigator.userAgent);
@@ -24,6 +25,22 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
         showTitle: true,
 
         toolbarItems: [
+            {
+                widget: 'dxButton', location: 'before', options: {
+                    type: 'default', text: 'Sign', icon: 'fas fa-signature', onClick: function (e) {
+                        if ($rootScope.getOnlineStatus()) {
+                            //$scope.entity.Id
+                            var data = { FlightId: $scope.entity.FlightId, documentType: 'asr' };
+
+                            $rootScope.$broadcast('InitSignAdd', data);
+                        }
+                        else {
+                            General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');
+                        }
+
+                    }
+                }, toolbar: 'bottom'
+            },
 
             {
                 widget: 'dxButton', location: 'after', options: {
@@ -120,7 +137,8 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
             title: 'popup_add_title',
             height: 'popup_height',
             width: 'popup_width',
-            'toolbarItems[0].visible': 'isEditable', 
+            'toolbarItems[0].visible': 'isLockVisible',
+            'toolbarItems[1].visible': 'isEditable', 
 
         }
     };
@@ -133,8 +151,19 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
     $scope.fill = function (data) {
         $scope.entity = data;
     };
+    $scope.isLockVisible = false;
     $scope.bind = function () {
         $scope.entity.FlightId = $scope.tempData.FlightId;
+
+        if ($rootScope.getOnlineStatus()) {
+
+            flightService.checkLock($scope.entity.FlightId,'asr').then(function (response) {
+                $scope.isLockVisible = false;
+                if (response.IsSuccess && response.Data.canLock) {
+                    $scope.isLockVisible = true;
+                }
+            }, function (err) { });
+        }
 
         $scope.loadingVisible = true;
          
@@ -142,7 +171,7 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
 
             $scope.loadingVisible = false;
             var diff = Math.abs((new Date()).getTime() - (new Date(response.Data.STALocal)).getTime()) / 3600000;
-            $scope.isEditable = (diff <= 24);
+             
             $scope.flight = response.Data;
 
             $scope.loadingVisible = true;
@@ -150,7 +179,7 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
             flightService.epGetASRByFlight($scope.entity.FlightId).then(function (response2) {
                
                 $scope.loadingVisible = false;
-
+                $scope.isEditable = (diff <= 24);
                 
 
                 if (!response2.Data) {
@@ -160,7 +189,12 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
 
                 }
                 else {
-                       
+                    if (response2.Data.JLSignedBy) {
+                        $scope.isEditable = false;
+                        $scope.url_sign = signFiles + response.Data.PICId + ".jpg";
+                        $scope.PIC = response.Data.PIC;
+                        $scope.signDate = moment(new Date(response.Data.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');
+                    }
                     if (response2.Data.Alert) {
                         General.Confirm("The report updated by " + response2.Data.Alert+". Would you like to get edited report?", function (res) {
                             if (res) {
@@ -1207,6 +1241,18 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
 
     ////////////////////////////////
     $scope.tempData = null;
+    $scope.$on('onSign', function (event, prms) {
+        
+        if (prms.doc == 'asr')
+            flightService.signDocLocal(prms, prms.doc).then(function (response) {
+                $scope.isEditable = false;
+                $scope.isLockVisible = false;
+                $scope.url_sign = signFiles + prms.PICId + ".jpg";
+                $scope.PIC = prms.PIC;
+                $scope.signDate = moment(new Date(prms.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');
+            }, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
+
+    });
     $scope.$on('InitAsrAdd', function (event, prms) {
 
 

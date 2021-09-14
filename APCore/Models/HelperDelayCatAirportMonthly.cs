@@ -12,7 +12,7 @@ namespace APCore.Models
         public int? PMonth { get; set; }
         public string ICategory { get; set; }
         public int? ICategoryId { get; set; }
-        public int? FromAirport { get; set; }
+        public int FromAirport { get; set; }
         public string FromAirportIATA { get; set; }
         public int Delay { get; set; }
         public int Count { get; set; }

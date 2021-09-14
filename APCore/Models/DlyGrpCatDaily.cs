@@ -22,5 +22,13 @@ namespace APCore.Models
         public int? Delay120180 { get; set; }
         public int? DelayOver180 { get; set; }
         public int? DelayOver240 { get; set; }
+        public int DelayUnder30Time { get; set; }
+        public int DelayOver30Time { get; set; }
+        public int Delay3060Time { get; set; }
+        public int Delay60120Time { get; set; }
+        public int Delay120180Time { get; set; }
+        public int DelayOver180Time { get; set; }
+        public int DelayOver240Time { get; set; }
+        public int Count { get; set; }
     }
 }

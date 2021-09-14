@@ -1,8 +1,8 @@
-﻿<div  class="app-headerx-client theme-orange" id="_header">
-    <div  >
+﻿<div class="app-headerx-client theme-orange" id="_header">
+    <div>
         <table style="width:100%;z-index:2;position:relative">
             <tr>
-                 
+
                 <td style="text-align:center;width:40px;z-index:10">
                     <a style="text-decoration:none; color:white" href="" data-ng-click="menu()">
                         <!--   <img src="../../content/images/menu.png" style="width:40px;" />-->
@@ -14,7 +14,16 @@
 
                     <div class="app-remark" style="position:relative; font-weight:bold; font-size:15px;text-align:center">{{page_title}}</div>
                 </td>
-               
+                <td style="text-align:center;width:40px;z-index:10">
+                    <span class='fa-stack fa-lg' ng-show="online">
+                        <i class='fas fa-circle fa-stack-2x'></i>
+                        <i class='fas fa-wifi fa-stack-1x fa-inverse' style="color:green;font-size:18px;"></i>
+                    </span>
+                    <span class='fa-stack fa-lg' ng-show="!online">
+                        <i class='fas fa-circle fa-stack-2x'></i>
+                        <i class='fas fa-wifi fa-stack-1x fa-inverse' style="color:red;font-size:18px;"></i>
+                    </span>
+                </td>
                 <!--<td style="text-align:center;width:65px;z-index:10">
                     <a style="text-decoration:none;color:white" href="" data-ng-click="logOut()">
                         <i class="icon ion-md-log-out" style="font-size:32px"></i>
@@ -23,6 +32,6 @@
             </tr>
         </table>
     </div>
-   
-  
+
+
 </div>

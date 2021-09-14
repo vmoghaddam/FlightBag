@@ -101,6 +101,7 @@ namespace APCore.Models
         public virtual DbSet<DelayAvgByRegisterCategory> DelayAvgByRegisterCategories { get; set; }
         public virtual DbSet<DelayCode> DelayCodes { get; set; }
         public virtual DbSet<DelayCodeCategory> DelayCodeCategories { get; set; }
+        public virtual DbSet<DelayNotified> DelayNotifieds { get; set; }
         public virtual DbSet<DlyGrp> DlyGrps { get; set; }
         public virtual DbSet<DlyGrpAirport> DlyGrpAirports { get; set; }
         public virtual DbSet<DlyGrpAirportAb> DlyGrpAirportAbs { get; set; }
@@ -176,6 +177,7 @@ namespace APCore.Models
         public virtual DbSet<GrpDelayCategory> GrpDelayCategories { get; set; }
         public virtual DbSet<GrpFlight> GrpFlights { get; set; }
         public virtual DbSet<GrpFlightAirport> GrpFlightAirports { get; set; }
+        public virtual DbSet<GrpFlightAirportDaily> GrpFlightAirportDailies { get; set; }
         public virtual DbSet<GrpFlightCal> GrpFlightCals { get; set; }
         public virtual DbSet<GrpFlightDaily> GrpFlightDailies { get; set; }
         public virtual DbSet<GrpFlightReg> GrpFlightRegs { get; set; }
@@ -266,6 +268,7 @@ namespace APCore.Models
         public virtual DbSet<IdeaSessionUpdateError> IdeaSessionUpdateErrors { get; set; }
         public virtual DbSet<IdeaUnique> IdeaUniques { get; set; }
         public virtual DbSet<ImportPlan> ImportPlans { get; set; }
+        public virtual DbSet<IrimoFlightFolderHistory> IrimoFlightFolderHistories { get; set; }
         public virtual DbSet<JobGroup> JobGroups { get; set; }
         public virtual DbSet<Journal> Journals { get; set; }
         public virtual DbSet<LibraryFolder> LibraryFolders { get; set; }
@@ -371,6 +374,7 @@ namespace APCore.Models
         public virtual DbSet<RptFuelMonthlyTypeCal> RptFuelMonthlyTypeCals { get; set; }
         public virtual DbSet<RptNoFDP> RptNoFDPs { get; set; }
         public virtual DbSet<RptNoFDPMonthlyPersian> RptNoFDPMonthlyPersians { get; set; }
+        public virtual DbSet<SMSGroup> SMSGroups { get; set; }
         public virtual DbSet<SMSHistory> SMSHistories { get; set; }
         public virtual DbSet<State> States { get; set; }
         public virtual DbSet<SumActiveCourse> SumActiveCourses { get; set; }
@@ -669,6 +673,7 @@ namespace APCore.Models
         public virtual DbSet<XDaily> XDailies { get; set; }
         public virtual DbSet<XFlight> XFlights { get; set; }
         public virtual DbSet<XInit> XInits { get; set; }
+        public virtual DbSet<_CSPN> _CSPNs { get; set; }
         public virtual DbSet<_CabinJSON> _CabinJSONs { get; set; }
         public virtual DbSet<_CrewsJSON> _CrewsJSONs { get; set; }
         public virtual DbSet<_DayGP> _DayGPs { get; set; }
@@ -905,6 +910,26 @@ namespace APCore.Models
 
                 entity.ToView("AppCrewFlight", "dbo");
 
+                entity.Property(e => e.ALT1)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ALT2)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ALT3)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ALT4)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ALT5)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.Airline).HasMaxLength(1000);
 
                 entity.Property(e => e.BlockOff).HasColumnType("datetime");
@@ -979,6 +1004,10 @@ namespace APCore.Models
 
                 entity.Property(e => e.JLNo)
                     .HasMaxLength(200)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.JLSignedBy)
+                    .HasMaxLength(500)
                     .IsUnicode(false);
 
                 entity.Property(e => e.JLUser).HasMaxLength(1001);
@@ -1240,6 +1269,26 @@ namespace APCore.Models
 
                 entity.ToView("AppLeg", "dbo");
 
+                entity.Property(e => e.ALT1)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ALT2)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ALT3)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ALT4)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ALT5)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.AircraftType).HasMaxLength(255);
 
                 entity.Property(e => e.Airline).HasMaxLength(1000);
@@ -1330,6 +1379,10 @@ namespace APCore.Models
 
                 entity.Property(e => e.JLNo)
                     .HasMaxLength(200)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.JLSignedBy)
+                    .HasMaxLength(500)
                     .IsUnicode(false);
 
                 entity.Property(e => e.JLUser).HasMaxLength(1001);
@@ -2848,6 +2901,11 @@ namespace APCore.Models
                     .HasMaxLength(500);
             });
 
+            modelBuilder.Entity<DelayNotified>(entity =>
+            {
+                entity.ToTable("DelayNotified", "dbo");
+            });
+
             modelBuilder.Entity<DlyGrp>(entity =>
             {
                 entity.HasNoKey();
@@ -2881,9 +2939,13 @@ namespace APCore.Models
 
                 entity.ToView("DlyGrpAirportCat", "dbo");
 
-                entity.Property(e => e.FromAirportIATA).HasMaxLength(255);
+                entity.Property(e => e.FromAirportIATA)
+                    .IsRequired()
+                    .HasMaxLength(255);
 
-                entity.Property(e => e.ICategory).HasMaxLength(500);
+                entity.Property(e => e.ICategory)
+                    .IsRequired()
+                    .HasMaxLength(500);
 
                 entity.Property(e => e.PMonthName).HasMaxLength(255);
             });
@@ -2894,7 +2956,9 @@ namespace APCore.Models
 
                 entity.ToView("DlyGrpAirportDaily", "dbo");
 
-                entity.Property(e => e.FromAirportIATA).HasMaxLength(255);
+                entity.Property(e => e.FromAirportIATA)
+                    .IsRequired()
+                    .HasMaxLength(255);
 
                 entity.Property(e => e.PDate).HasMaxLength(500);
 
@@ -2959,7 +3023,9 @@ namespace APCore.Models
 
                 entity.ToView("DlyGrpCatDaily", "dbo");
 
-                entity.Property(e => e.ICategory).HasMaxLength(500);
+                entity.Property(e => e.ICategory)
+                    .IsRequired()
+                    .HasMaxLength(500);
 
                 entity.Property(e => e.PDate).HasMaxLength(500);
 
@@ -2976,7 +3042,9 @@ namespace APCore.Models
 
                 entity.Property(e => e.AircraftType).HasMaxLength(255);
 
-                entity.Property(e => e.ICategory).HasMaxLength(500);
+                entity.Property(e => e.ICategory)
+                    .IsRequired()
+                    .HasMaxLength(500);
 
                 entity.Property(e => e.PMonthName).HasMaxLength(255);
 
@@ -3089,9 +3157,7 @@ namespace APCore.Models
 
                 entity.Property(e => e.FromAirportIATA).HasMaxLength(255);
 
-                entity.Property(e => e.ICategory)
-                    .HasMaxLength(500)
-                    .IsUnicode(false);
+                entity.Property(e => e.ICategory).HasMaxLength(500);
 
                 entity.Property(e => e.Landing).HasColumnType("datetime");
 
@@ -3232,6 +3298,12 @@ namespace APCore.Models
                     .HasColumnType("decimal(18, 0)")
                     .HasComment("KGs/Lbs");
 
+                entity.Property(e => e.JLDatePICApproved).HasColumnType("datetime");
+
+                entity.Property(e => e.JLSignedBy)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.LOCAirport).HasMaxLength(255);
 
                 entity.Property(e => e.LOCGEOAltitude).HasMaxLength(255);
@@ -3247,6 +3319,10 @@ namespace APCore.Models
                     .HasComment("Date of Occurrence & UTCTime");
 
                 entity.Property(e => e.OthersInfo).HasMaxLength(2000);
+
+                entity.Property(e => e.PIC)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.PICDate).HasColumnType("date");
 
@@ -3434,6 +3510,12 @@ namespace APCore.Models
 
                 entity.Property(e => e.IPADDSPRemark).HasMaxLength(1000);
 
+                entity.Property(e => e.JLDatePICApproved).HasColumnType("datetime");
+
+                entity.Property(e => e.JLSignedBy)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.JeppesenAirwayManualCPTRemark).HasMaxLength(1000);
 
                 entity.Property(e => e.JeppesenAirwayManualDSPRemark).HasMaxLength(1000);
@@ -3453,6 +3535,10 @@ namespace APCore.Models
                 entity.Property(e => e.OperationEngineeringCPTRemark).HasMaxLength(1000);
 
                 entity.Property(e => e.OperationEngineeringDSPRemark).HasMaxLength(1000);
+
+                entity.Property(e => e.PIC)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.PIFCPTRemark).HasMaxLength(1000);
 
@@ -3568,6 +3654,16 @@ namespace APCore.Models
 
                 entity.Property(e => e.DateUpdate)
                     .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.JLDatePICApproved).HasColumnType("datetime");
+
+                entity.Property(e => e.JLSignedBy)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.PIC)
+                    .HasMaxLength(500)
                     .IsUnicode(false);
 
                 entity.Property(e => e.Route).HasMaxLength(255);
@@ -4320,6 +4416,26 @@ namespace APCore.Models
 
                 entity.HasIndex(e => e.RegisterID, "idx_flt_registerid");
 
+                entity.Property(e => e.ALT1)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ALT2)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ALT3)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ALT4)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ALT5)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.ArrivalRemark).HasMaxLength(2000);
 
                 entity.Property(e => e.BlockH).HasComment("Actual Time Hours");
@@ -4417,6 +4533,10 @@ namespace APCore.Models
                 entity.Property(e => e.JLOffBlock).HasColumnType("datetime");
 
                 entity.Property(e => e.JLOnBlock).HasColumnType("datetime");
+
+                entity.Property(e => e.JLSignedBy)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.JLTakeOff).HasColumnType("datetime");
 
@@ -4930,7 +5050,9 @@ namespace APCore.Models
 
                 entity.ToView("GrpAirport", "dbo");
 
-                entity.Property(e => e.FromAirportIATA).HasMaxLength(255);
+                entity.Property(e => e.FromAirportIATA)
+                    .IsRequired()
+                    .HasMaxLength(255);
             });
 
             modelBuilder.Entity<GrpDelayCategory>(entity =>
@@ -4939,7 +5061,9 @@ namespace APCore.Models
 
                 entity.ToView("GrpDelayCategory", "dbo");
 
-                entity.Property(e => e.ICategory).HasMaxLength(500);
+                entity.Property(e => e.ICategory)
+                    .IsRequired()
+                    .HasMaxLength(500);
             });
 
             modelBuilder.Entity<GrpFlight>(entity =>
@@ -4956,6 +5080,17 @@ namespace APCore.Models
                 entity.HasNoKey();
 
                 entity.ToView("GrpFlightAirport", "dbo");
+
+                entity.Property(e => e.FromAirportIATA).HasMaxLength(255);
+
+                entity.Property(e => e.PMonthName).HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<GrpFlightAirportDaily>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("GrpFlightAirportDaily", "dbo");
 
                 entity.Property(e => e.FromAirportIATA).HasMaxLength(255);
 
@@ -5386,6 +5521,8 @@ namespace APCore.Models
 
                 entity.ToView("HelperDelayAirportDaily", "dbo");
 
+                entity.Property(e => e.CountPerLeg).HasColumnType("numeric(24, 12)");
+
                 entity.Property(e => e.DelayPerBL).HasColumnType("numeric(24, 12)");
 
                 entity.Property(e => e.DelayPerLeg).HasColumnType("numeric(24, 12)");
@@ -5394,7 +5531,9 @@ namespace APCore.Models
 
                 entity.Property(e => e.DelayedFlightsPerOnTime).HasColumnType("numeric(26, 12)");
 
-                entity.Property(e => e.FromAirportIATA).HasMaxLength(255);
+                entity.Property(e => e.FromAirportIATA)
+                    .IsRequired()
+                    .HasMaxLength(255);
 
                 entity.Property(e => e.PDate).HasMaxLength(500);
 
@@ -5497,9 +5636,13 @@ namespace APCore.Models
 
                 entity.Property(e => e.DelayedFlightsPerOnTime).HasColumnType("numeric(26, 12)");
 
-                entity.Property(e => e.FromAirportIATA).HasMaxLength(255);
+                entity.Property(e => e.FromAirportIATA)
+                    .IsRequired()
+                    .HasMaxLength(255);
 
-                entity.Property(e => e.ICategory).HasMaxLength(500);
+                entity.Property(e => e.ICategory)
+                    .IsRequired()
+                    .HasMaxLength(500);
 
                 entity.Property(e => e.PMonthName).HasMaxLength(255);
             });
@@ -5510,6 +5653,8 @@ namespace APCore.Models
 
                 entity.ToView("HelperDelayCatDaily", "dbo");
 
+                entity.Property(e => e.CountPerLeg).HasColumnType("numeric(24, 12)");
+
                 entity.Property(e => e.DelayPerBL).HasColumnType("numeric(24, 12)");
 
                 entity.Property(e => e.DelayPerLeg).HasColumnType("numeric(24, 12)");
@@ -5518,7 +5663,9 @@ namespace APCore.Models
 
                 entity.Property(e => e.DelayedFlightsPerOnTime).HasColumnType("numeric(26, 12)");
 
-                entity.Property(e => e.ICategory).HasMaxLength(500);
+                entity.Property(e => e.ICategory)
+                    .IsRequired()
+                    .HasMaxLength(500);
 
                 entity.Property(e => e.PDate).HasMaxLength(500);
 
@@ -5593,7 +5740,9 @@ namespace APCore.Models
 
                 entity.Property(e => e.DelayedFlightsPerOnTime).HasColumnType("numeric(26, 12)");
 
-                entity.Property(e => e.ICategory).HasMaxLength(500);
+                entity.Property(e => e.ICategory)
+                    .IsRequired()
+                    .HasMaxLength(500);
 
                 entity.Property(e => e.PMonthName).HasMaxLength(255);
 
@@ -5617,6 +5766,36 @@ namespace APCore.Models
                 entity.Property(e => e.DelayedFlightsPerOnTime).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.DelayedPaxPerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelay120180PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelay120180PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelay3060PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelay3060PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelay60120PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelay60120PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver180PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver180PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver240PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver240PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver30PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver30PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayUnder30PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayUnder30PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.OnTimeFlightsPerAll).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.PDate).HasMaxLength(500);
 
@@ -6993,6 +7172,27 @@ namespace APCore.Models
                 entity.Property(e => e.Type).HasMaxLength(255);
             });
 
+            modelBuilder.Entity<IrimoFlightFolderHistory>(entity =>
+            {
+                entity.ToTable("IrimoFlightFolderHistory", "dbo");
+
+                entity.Property(e => e.DT)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.FL)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.FileName)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.VT)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
             modelBuilder.Entity<JobGroup>(entity =>
             {
                 entity.ToTable("JobGroup", "dbo");
@@ -7434,9 +7634,15 @@ namespace APCore.Models
             {
                 entity.ToTable("OFPImport", "dbo");
 
+                entity.Property(e => e.DateConfirmed).HasColumnType("datetime");
+
                 entity.Property(e => e.DateCreate).HasColumnType("datetime");
 
                 entity.Property(e => e.DateFlight).HasColumnType("date");
+
+                entity.Property(e => e.DateUpdate)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.Destination)
                     .HasMaxLength(255)
@@ -7450,8 +7656,18 @@ namespace APCore.Models
                     .HasMaxLength(255)
                     .IsUnicode(false);
 
+                entity.Property(e => e.JLDatePICApproved).HasColumnType("datetime");
+
+                entity.Property(e => e.JLSignedBy)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.Origin)
                     .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.PIC)
+                    .HasMaxLength(500)
                     .IsUnicode(false);
 
                 entity.Property(e => e.Text).IsUnicode(false);
@@ -7460,6 +7676,10 @@ namespace APCore.Models
 
                 entity.Property(e => e.User)
                     .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.UserConfirmed)
+                    .HasMaxLength(500)
                     .IsUnicode(false);
             });
 
@@ -8879,6 +9099,8 @@ namespace APCore.Models
 
                 entity.ToView("RptDelayAirportDaily", "dbo");
 
+                entity.Property(e => e.CountPerLeg).HasColumnType("numeric(24, 12)");
+
                 entity.Property(e => e.DelayPerBL).HasColumnType("numeric(24, 12)");
 
                 entity.Property(e => e.DelayPerLeg).HasColumnType("numeric(24, 12)");
@@ -8887,13 +9109,17 @@ namespace APCore.Models
 
                 entity.Property(e => e.DelayedFlightsPerOnTime).HasColumnType("numeric(26, 12)");
 
-                entity.Property(e => e.FromAirportIATA).HasMaxLength(255);
+                entity.Property(e => e.FromAirportIATA)
+                    .IsRequired()
+                    .HasMaxLength(255);
 
                 entity.Property(e => e.PDate).HasMaxLength(500);
 
                 entity.Property(e => e.PDayName).HasMaxLength(255);
 
                 entity.Property(e => e.PMonthName).HasMaxLength(255);
+
+                entity.Property(e => e.PreCountPerLeg).HasColumnType("numeric(24, 12)");
 
                 entity.Property(e => e.PreDelayPerBL).HasColumnType("numeric(24, 12)");
 
@@ -8916,19 +9142,43 @@ namespace APCore.Models
 
                 entity.Property(e => e.AFlightTimeDiff).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.Airport)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
                 entity.Property(e => e.BlockTimeDiff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.CountDiff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.CountPerLeg).HasColumnType("numeric(24, 12)");
+
+                entity.Property(e => e.CountPerLegDiff).HasColumnType("numeric(38, 9)");
 
                 entity.Property(e => e.Delay120180Diff).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.Delay120180TimeDiff).HasColumnType("numeric(26, 12)");
+
                 entity.Property(e => e.Delay3060Diff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.Delay3060TimeDiff).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.Delay60120Diff).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.Delay60120TimeDiff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.DelayDiff).HasColumnType("numeric(26, 12)");
+
                 entity.Property(e => e.DelayOver180Diff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.DelayOver180TimeDiff).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.DelayOver240Diff).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.DelayOver240TimeDiff).HasColumnType("numeric(26, 12)");
+
                 entity.Property(e => e.DelayOver30Diff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.DelayOver30TimeDiff).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.DelayPerBL).HasColumnType("numeric(24, 12)");
 
@@ -8939,6 +9189,8 @@ namespace APCore.Models
                 entity.Property(e => e.DelayPerLegDiff).HasColumnType("numeric(38, 9)");
 
                 entity.Property(e => e.DelayUnder30Diff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.DelayUnder30TimeDiff).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.DelayedFlightsPerAll).HasColumnType("numeric(26, 12)");
 
@@ -8966,7 +9218,7 @@ namespace APCore.Models
 
                 entity.Property(e => e.FltDelayUnder30Diff).HasColumnType("numeric(26, 12)");
 
-                entity.Property(e => e.FromAirportIATA).HasMaxLength(255);
+                entity.Property(e => e.MonthName).HasMaxLength(255);
 
                 entity.Property(e => e.OnTimeFlightCountDiff).HasColumnType("numeric(26, 12)");
 
@@ -8974,7 +9226,7 @@ namespace APCore.Models
 
                 entity.Property(e => e.PDayName).HasMaxLength(255);
 
-                entity.Property(e => e.PMonthName).HasMaxLength(255);
+                entity.Property(e => e.PreCountPerLeg).HasColumnType("numeric(24, 12)");
 
                 entity.Property(e => e.PreDelayPerBL).HasColumnType("numeric(24, 12)");
 
@@ -8983,6 +9235,10 @@ namespace APCore.Models
                 entity.Property(e => e.PreDelayedFlightsPerAll).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.PreDelayedFlightsPerOnTime).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.YearMonth)
+                    .HasMaxLength(201)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<RptDelayAirportMonthly>(entity =>
@@ -9257,9 +9513,13 @@ namespace APCore.Models
 
                 entity.Property(e => e.DelayedFlightsPerOnTime).HasColumnType("numeric(26, 12)");
 
-                entity.Property(e => e.FromAirportIATA).HasMaxLength(255);
+                entity.Property(e => e.FromAirportIATA)
+                    .IsRequired()
+                    .HasMaxLength(255);
 
-                entity.Property(e => e.ICategory).HasMaxLength(500);
+                entity.Property(e => e.ICategory)
+                    .IsRequired()
+                    .HasMaxLength(500);
 
                 entity.Property(e => e.PMonthName).HasMaxLength(255);
 
@@ -9389,6 +9649,8 @@ namespace APCore.Models
 
                 entity.ToView("RptDelayCatDaily", "dbo");
 
+                entity.Property(e => e.CountPerLeg).HasColumnType("numeric(24, 12)");
+
                 entity.Property(e => e.DelayPerBL).HasColumnType("numeric(24, 12)");
 
                 entity.Property(e => e.DelayPerLeg).HasColumnType("numeric(24, 12)");
@@ -9397,13 +9659,17 @@ namespace APCore.Models
 
                 entity.Property(e => e.DelayedFlightsPerOnTime).HasColumnType("numeric(26, 12)");
 
-                entity.Property(e => e.ICategory).HasMaxLength(500);
+                entity.Property(e => e.ICategory)
+                    .IsRequired()
+                    .HasMaxLength(500);
 
                 entity.Property(e => e.PDate).HasMaxLength(500);
 
                 entity.Property(e => e.PDayName).HasMaxLength(255);
 
                 entity.Property(e => e.PMonthName).HasMaxLength(255);
+
+                entity.Property(e => e.PreCountPerLeg).HasColumnType("numeric(24, 12)");
 
                 entity.Property(e => e.PreDelayPerBL).HasColumnType("numeric(24, 12)");
 
@@ -9428,17 +9694,37 @@ namespace APCore.Models
 
                 entity.Property(e => e.BlockTimeDiff).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.CountDiff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.CountPerLeg).HasColumnType("numeric(24, 12)");
+
+                entity.Property(e => e.CountPerLegDiff).HasColumnType("numeric(38, 9)");
+
                 entity.Property(e => e.Delay120180Diff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.Delay120180TimeDiff).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.Delay3060Diff).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.Delay3060TimeDiff).HasColumnType("numeric(26, 12)");
+
                 entity.Property(e => e.Delay60120Diff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.Delay60120TimeDiff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.DelayDiff).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.DelayOver180Diff).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.DelayOver180TimeDiff).HasColumnType("numeric(26, 12)");
+
                 entity.Property(e => e.DelayOver240Diff).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.DelayOver240TimeDiff).HasColumnType("numeric(26, 12)");
+
                 entity.Property(e => e.DelayOver30Diff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.DelayOver30TimeDiff).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.DelayPerBL).HasColumnType("numeric(24, 12)");
 
@@ -9449,6 +9735,8 @@ namespace APCore.Models
                 entity.Property(e => e.DelayPerLegDiff).HasColumnType("numeric(38, 9)");
 
                 entity.Property(e => e.DelayUnder30Diff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.DelayUnder30TimeDiff).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.DelayedFlightsPerAll).HasColumnType("numeric(26, 12)");
 
@@ -9476,7 +9764,9 @@ namespace APCore.Models
 
                 entity.Property(e => e.FltDelayUnder30Diff).HasColumnType("numeric(26, 12)");
 
-                entity.Property(e => e.ICategory).HasMaxLength(500);
+                entity.Property(e => e.ICategory)
+                    .IsRequired()
+                    .HasMaxLength(500);
 
                 entity.Property(e => e.MonthName).HasMaxLength(255);
 
@@ -9486,6 +9776,8 @@ namespace APCore.Models
 
                 entity.Property(e => e.PDayName).HasMaxLength(255);
 
+                entity.Property(e => e.PreCountPerLeg).HasColumnType("numeric(24, 12)");
+
                 entity.Property(e => e.PreDelayPerBL).HasColumnType("numeric(24, 12)");
 
                 entity.Property(e => e.PreDelayPerLeg).HasColumnType("numeric(24, 12)");
@@ -9493,6 +9785,12 @@ namespace APCore.Models
                 entity.Property(e => e.PreDelayedFlightsPerAll).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.PreDelayedFlightsPerOnTime).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.YearMonth)
+                    .HasMaxLength(201)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.YearMonthCat).HasMaxLength(702);
             });
 
             modelBuilder.Entity<RptDelayCatMonthly>(entity =>
@@ -9769,8 +10067,7 @@ namespace APCore.Models
 
                 entity.Property(e => e.ICategory)
                     .IsRequired()
-                    .HasMaxLength(500)
-                    .IsUnicode(false);
+                    .HasMaxLength(500);
 
                 entity.Property(e => e.PMonthName).HasMaxLength(255);
 
@@ -9879,8 +10176,7 @@ namespace APCore.Models
 
                 entity.Property(e => e.ICategory)
                     .IsRequired()
-                    .HasMaxLength(500)
-                    .IsUnicode(false);
+                    .HasMaxLength(500);
 
                 entity.Property(e => e.MonthName).HasMaxLength(255);
 
@@ -9917,6 +10213,36 @@ namespace APCore.Models
 
                 entity.Property(e => e.DelayedPaxPerAll).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.FltDelay120180PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelay120180PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelay3060PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelay3060PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelay60120PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelay60120PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver180PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver180PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver240PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver240PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver30PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver30PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayUnder30PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayUnder30PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.OnTimeFlightsPerAll).HasColumnType("numeric(26, 12)");
+
                 entity.Property(e => e.PDate).HasMaxLength(500);
 
                 entity.Property(e => e.PMonthName).HasMaxLength(255);
@@ -9930,6 +10256,36 @@ namespace APCore.Models
                 entity.Property(e => e.PreDelayedFlightsPerOnTime).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.PreDelayedPaxPerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelay120180PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelay120180PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelay3060PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelay3060PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelay60120PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelay60120PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelayOver180PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelayOver180PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelayOver240PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelayOver240PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelayOver30PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelayOver30PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelayUnder30PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelayUnder30PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreOnTimeFlightsPerAll).HasColumnType("numeric(26, 12)");
             });
 
             modelBuilder.Entity<RptDelayDailyCal>(entity =>
@@ -9952,15 +10308,29 @@ namespace APCore.Models
 
                 entity.Property(e => e.Delay120180Diff).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.Delay120180TimeDiff).HasColumnType("numeric(26, 12)");
+
                 entity.Property(e => e.Delay3060Diff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.Delay3060TimeDiff).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.Delay60120Diff).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.Delay60120TimeDiff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.DelayDiff).HasColumnType("numeric(26, 12)");
+
                 entity.Property(e => e.DelayOver180Diff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.DelayOver180TimeDiff).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.DelayOver240Diff).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.DelayOver240TimeDiff).HasColumnType("numeric(26, 12)");
+
                 entity.Property(e => e.DelayOver30Diff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.DelayOver30TimeDiff).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.DelayPerBL).HasColumnType("numeric(24, 12)");
 
@@ -9971,6 +10341,8 @@ namespace APCore.Models
                 entity.Property(e => e.DelayPerLegDiff).HasColumnType("numeric(38, 9)");
 
                 entity.Property(e => e.DelayUnder30Diff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.DelayUnder30TimeDiff).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.DelayedFlightsPerAll).HasColumnType("numeric(26, 12)");
 
@@ -9990,23 +10362,67 @@ namespace APCore.Models
 
                 entity.Property(e => e.FltDelay120180Diff).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.FltDelay120180PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelay120180PerAllDiff).HasColumnType("numeric(38, 7)");
+
+                entity.Property(e => e.FltDelay120180PerDelayed).HasColumnType("numeric(26, 12)");
+
                 entity.Property(e => e.FltDelay3060Diff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelay3060PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelay3060PerAllDiff).HasColumnType("numeric(38, 7)");
+
+                entity.Property(e => e.FltDelay3060PerDelayed).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.FltDelay60120Diff).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.FltDelay60120PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelay60120PerAllDiff).HasColumnType("numeric(38, 7)");
+
+                entity.Property(e => e.FltDelay60120PerDelayed).HasColumnType("numeric(26, 12)");
+
                 entity.Property(e => e.FltDelayOver180Diff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver180PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver180PerAllDiff).HasColumnType("numeric(38, 7)");
+
+                entity.Property(e => e.FltDelayOver180PerDelayed).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.FltDelayOver240Diff).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.FltDelayOver240PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver240PerDelayed).HasColumnType("numeric(26, 12)");
+
                 entity.Property(e => e.FltDelayOver30Diff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver30PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayOver30PerAllDiff).HasColumnType("numeric(38, 7)");
+
+                entity.Property(e => e.FltDelayOver30PerDelayed).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.FltDelayUnder30Diff).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.FltDelayUnder30PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.FltDelayUnder30PerAllDiff).HasColumnType("numeric(38, 7)");
+
+                entity.Property(e => e.FltDelayUnder30PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.MonthName).HasMaxLength(255);
+
                 entity.Property(e => e.OnTimeFlightCountDiff).HasColumnType("numeric(26, 12)");
 
-                entity.Property(e => e.PDate).HasMaxLength(500);
+                entity.Property(e => e.OnTimeFlightsPerAll).HasColumnType("numeric(26, 12)");
 
-                entity.Property(e => e.PMonthName).HasMaxLength(255);
+                entity.Property(e => e.OnTimeFlightsPerAllDiff).HasColumnType("numeric(38, 7)");
+
+                entity.Property(e => e.PDate).HasMaxLength(500);
 
                 entity.Property(e => e.PaxDelay120180Diff).HasColumnType("numeric(26, 12)");
 
@@ -10017,6 +10433,8 @@ namespace APCore.Models
                 entity.Property(e => e.PaxDelayOver180Diff).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.PaxDelayOver240Diff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PaxDelayOver30).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.PaxDelayOver30Diff).HasColumnType("numeric(26, 12)");
 
@@ -10030,9 +10448,41 @@ namespace APCore.Models
 
                 entity.Property(e => e.PreDelayedPaxPerAll).HasColumnType("numeric(26, 12)");
 
+                entity.Property(e => e.PreFltDelay120180PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelay120180PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelay3060PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelay3060PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelay60120PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelay60120PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelayOver180PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelayOver180PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelayOver240PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelayOver30PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelayOver30PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelayUnder30PerAll).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreFltDelayUnder30PerDelayed).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.PreOnTimeFlightsPerAll).HasColumnType("numeric(26, 12)");
+
                 entity.Property(e => e.TotalPaxAllDiff).HasColumnType("numeric(26, 12)");
 
                 entity.Property(e => e.TotalPaxDiff).HasColumnType("numeric(26, 12)");
+
+                entity.Property(e => e.YearMonth)
+                    .HasMaxLength(201)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<RptDelayLeg>(entity =>
@@ -12349,6 +12799,19 @@ namespace APCore.Models
 
                 entity.Property(e => e.ScheduleName)
                     .HasMaxLength(500)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<SMSGroup>(entity =>
+            {
+                entity.ToTable("SMSGroup", "dbo");
+
+                entity.Property(e => e.Name)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Phone)
+                    .HasMaxLength(255)
                     .IsUnicode(false);
             });
 
@@ -26246,6 +26709,13 @@ namespace APCore.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.InitStart).HasColumnType("datetime");
+            });
+
+            modelBuilder.Entity<_CSPN>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("_CSPN", "dbo");
             });
 
             modelBuilder.Entity<_CabinJSON>(entity =>
