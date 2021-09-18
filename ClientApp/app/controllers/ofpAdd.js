@@ -343,7 +343,7 @@ app.controller('ofpAddController', ['$scope', '$location', 'flightService', 'aut
             flightService.epGetOFPByFlight($scope.entity.FlightId).then(function (response2) {
                 $scope.isEditable = (diff <= 24);
                 
-                if (response2.Data.JLSignedBy) {
+                if (response2.Data && response2.Data.JLSignedBy) {
                    // $scope.isEditable = false;
                     $scope.url_sign = signFiles + response.Data.PICId + ".png";
                     $scope.PIC = response.Data.PIC;

@@ -206,6 +206,23 @@ namespace APCore.Controllers
             return Ok(result);
         }
 
+        [Route("api/weather/taf/adds/all")]
+        public async Task<ActionResult> GetTAFADDS_All( )
+        {
+            var result = await _weatherService.GetTAF_ADDS_All();
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+        }
+        [Route("api/weather/metar/adds/all")]
+        public async Task<ActionResult> GetMETARADDS_All()
+        {
+            var result = await _weatherService.GetMETAR_ADDS_ALL();
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+        }
+       
         [Route("api/weather/taf/adds/FDP/{fdpId}")]
         public async Task<ActionResult> GetTAFADDS_DateHistoryByFDPId(int fdpId)
         {
@@ -257,12 +274,73 @@ namespace APCore.Controllers
 
 
         }
+
+
+
+        [Route("api/weather/taf/adds/archive/FDP/{fdpId}")]
+        public async Task<ActionResult> GetTAFADDS_DateHistoryByFDPIdFromArchive(int fdpId)
+        {
+            var _flights = await _flightService.GetFDPFlights(fdpId);
+            var flights = (_flights.Data as List<AppCrewFlight>).OrderBy(q => q.STD).ToList();
+            var _stations = new List<string>();
+            foreach (var f in flights)
+            {
+                _stations.Add(f.FromAirportIATA);
+                _stations.Add(f.ToAirportIATA);
+                if (!string.IsNullOrEmpty(f.ALT1))
+                    _stations.Add(f.ALT1);
+                if (!string.IsNullOrEmpty(f.ALT2))
+                    _stations.Add(f.ALT2);
+            }
+            _stations = _stations.Distinct().ToList();
+            var stations = string.Join(',', _stations);
+            var result = await _weatherService.GetTAF_ADDS_FromArchive(stations, DateTime.Now);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+
+        }
+        [Route("api/weather/metar/adds/archive/FDP/{fdpId}")]
+        public async Task<ActionResult> GetMETARADDS_DateHistoryFromArchive(int fdpId)
+        {
+            //"2021-08-10T00:00:00+0430"
+            var _flights = await _flightService.GetFDPFlights(fdpId);
+            if (!_flights.IsSuccess || _flights.Data==null)
+                return NotFound(new List<string>() { "Flights Not Found." });
+
+            var flights = (_flights.Data as List<AppCrewFlight>).OrderBy(q => q.STD).ToList();
+            
+
+            var _stations = new List<string>();
+            foreach (var f in flights)
+            {
+                _stations.Add(f.FromAirportIATA);
+                _stations.Add(f.ToAirportIATA);
+                if (!string.IsNullOrEmpty(f.ALT1))
+                    _stations.Add(f.ALT1);
+                if (!string.IsNullOrEmpty(f.ALT2))
+                    _stations.Add(f.ALT2);
+            }
+            _stations = _stations.Distinct().ToList();
+            var stations = string.Join(',', _stations);
+            var result = await _weatherService.GetMETAR_ADDS_FromArchive(stations, DateTime.Now);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+            
+
+
+           
+        }
+
+
+
         [Route("api/weather/metar/adds/FDP/{fdpId}")]
         public async Task<ActionResult> GetMETARADDS_DateHistory(int fdpId)
         {
             //"2021-08-10T00:00:00+0430"
             var _flights = await _flightService.GetFDPFlights(fdpId);
-            if (!_flights.IsSuccess || _flights.Data==null)
+            if (!_flights.IsSuccess || _flights.Data == null)
                 return NotFound(new List<string>() { "Flights Not Found." });
 
             var flights = (_flights.Data as List<AppCrewFlight>).OrderBy(q => q.STD).ToList();
@@ -298,9 +376,9 @@ namespace APCore.Controllers
             var stations = string.Join(',', _stations);
 
             var nowUTC = DateTime.UtcNow.Date;
-            if (nowUTC==firstDate || nowUTC==lastDate)
+            if (nowUTC == firstDate || nowUTC == lastDate)
             {
-                 
+
                 var result = await _weatherService.GetMETAR_ADDS(stations, "24");
                 if (!result.IsSuccess)
                     return NotFound(result.Errors);
@@ -317,7 +395,7 @@ namespace APCore.Controllers
             }
 
 
-           
+
         }
 
         [Route("api/weather/metar/adds/now/hitory/{stations}/{period}")]

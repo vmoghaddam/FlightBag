@@ -94,6 +94,19 @@ namespace APCore.Controllers
         }
         [HttpGet]
         //[Authorize]
+        [Route("api/airport/notam/all")]
+        public async Task<IActionResult> GetAirportNotamAll()
+        {
+            var result = await _airportService.GetAirportNotamAll();
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+
+
+
+        }
+        [HttpGet]
+        //[Authorize]
         [Route("api/airport/notam/FDP/{fdpId}")]
         public async Task<IActionResult> GetAirportNotamByFDP(int fdpId)
         {
@@ -116,6 +129,38 @@ namespace APCore.Controllers
             var stations = string.Join(',', _stations);
 
             var result = await _airportService.GetAirportNotam(stations);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+
+
+
+        }
+
+        [HttpGet]
+        //[Authorize]
+        [Route("api/airport/notam/archive/FDP/{fdpId}")]
+        public async Task<IActionResult> GetAirportNotamByFDPFromArchive(int fdpId)
+        {
+            var _flights = await _flightService.GetFDPFlights(fdpId);
+            if (!_flights.IsSuccess || _flights.Data == null)
+                return NotFound(new List<string>() { "Flights Not Found." });
+            var flights = (_flights.Data as List<AppCrewFlight>).OrderBy(q => q.STD).ToList();
+            var _stations = new List<string>();
+            foreach (var f in flights)
+            {
+                _stations.Add(f.FromAirportIATA);
+                _stations.Add(f.ToAirportIATA);
+                if (!string.IsNullOrEmpty(f.ALT1))
+                    _stations.Add(f.ALT1);
+                if (!string.IsNullOrEmpty(f.ALT2))
+                    _stations.Add(f.ALT2);
+            }
+            _stations = _stations.Distinct().ToList();
+            _stations.Add("OIIX");
+            
+
+            var result = await _airportService.GetAirportNotamArchive(_stations);
             if (!result.IsSuccess)
                 return NotFound(result.Errors);
             return Ok(result);

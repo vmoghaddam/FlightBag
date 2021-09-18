@@ -3533,6 +3533,51 @@ app.controller('drAddController', ['$scope', '$location', 'flightService', 'auth
     $scope.flight = null;
     $scope.fill = function (data) {
         $scope.entity = data;
+
+        $scope.entity.ActualWXDSP = true;
+
+        $scope.entity.WXForcastDSP = true;
+
+
+        $scope.entity.SigxWXDSP = true;
+
+        $scope.entity.WindChartDSP = true;
+
+        $scope.entity.NotamDSP = true;
+
+        $scope.entity.ComputedFligthPlanDSP = true;
+
+        $scope.entity.ATCFlightPlanDSP = true;
+
+        $scope.entity.PermissionsDSP = true;
+
+        $scope.entity.JeppesenAirwayManualDSP = true;
+
+        $scope.entity.MinFuelRequiredDSP = true;
+
+        $scope.entity.GeneralDeclarationDSP = true;
+
+        $scope.entity.FlightReportDSP = true;
+
+        $scope.entity.TOLndCardsDSP = true;
+
+        $scope.entity.LoadSheetDSP = true;
+
+        $scope.entity.FlightSafetyReportDSP = true;
+
+        $scope.entity.AVSECIncidentReportDSP = true;
+
+        $scope.entity.OperationEngineeringDSP = true;
+
+        $scope.entity.VoyageReportDSP = true;
+
+        $scope.entity.PIFDSP = true;
+
+        $scope.entity.GoodDeclarationDSP = true;
+
+        $scope.entity.IPADDSP = true;
+
+
     };
     $scope.isLockVisible = false;
     $scope.bind = function () {
@@ -3570,48 +3615,48 @@ app.controller('drAddController', ['$scope', '$location', 'flightService', 'auth
                     $scope.isNew = true;
                     $scope.entity = {
                         Id: -1,
-                        ActualWXDSP: false,
+                        ActualWXDSP: true,
                         ActualWXCPT: false,
-                        WXForcastDSP: false,
+                        WXForcastDSP: true,
 
                         WXForcastCPT: false,
-                        SigxWXDSP: false,
+                        SigxWXDSP: true,
                         SigxWXCPT: false,
-                        WindChartDSP: false,
+                        WindChartDSP: true,
                         WindChartCPT: false,
-                        NotamDSP: false,
+                        NotamDSP: true,
                         NotamCPT: false,
-                        ComputedFligthPlanDSP: false,
+                        ComputedFligthPlanDSP: true,
                         ComputedFligthPlanCPT: false,
-                        ATCFlightPlanDSP: false,
+                        ATCFlightPlanDSP: true,
                         ATCFlightPlanCPT: false,
-                        PermissionsDSP: false,
+                        PermissionsDSP: true,
                         PermissionsCPT: false,
-                        JeppesenAirwayManualDSP: false,
+                        JeppesenAirwayManualDSP: true,
                         JeppesenAirwayManualCPT: false,
-                        MinFuelRequiredDSP: false,
+                        MinFuelRequiredDSP: true,
                         MinFuelRequiredCPT: false,
-                        GeneralDeclarationDSP: false,
+                        GeneralDeclarationDSP: true,
                         GeneralDeclarationCPT: false,
-                        FlightReportDSP: false,
+                        FlightReportDSP: true,
                         FlightReportCPT: false,
-                        TOLndCardsDSP: false,
+                        TOLndCardsDSP: true,
                         TOLndCardsCPT: false,
-                        LoadSheetDSP: false,
+                        LoadSheetDSP: true,
                         LoadSheetCPT: false,
-                        FlightSafetyReportDSP: false,
+                        FlightSafetyReportDSP: true,
                         FlightSafetyReportCPT: false,
-                        AVSECIncidentReportDSP: false,
+                        AVSECIncidentReportDSP: true,
                         AVSECIncidentReportCPT: false,
-                        OperationEngineeringDSP: false,
+                        OperationEngineeringDSP: true,
                         OperationEngineeringCPT: false,
-                        VoyageReportDSP: false,
+                        VoyageReportDSP: true,
                         VoyageReportCPT: false,
-                        PIFDSP: false,
+                        PIFDSP: true,
                         PIFCPT: false,
-                        GoodDeclarationDSP: false,
+                        GoodDeclarationDSP: true,
                         GoodDeclarationCPT: false,
-                        IPADDSP: false,
+                        IPADDSP: true,
                         IPADCPT: false,
                     };
                     $scope.entity.FlightId = $scope.tempData.FlightId;

@@ -738,7 +738,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
     var _updateTAFs = function (fdpId) {
         var deferred = $q.defer();
-        $http.get($rootScope.apiUrlExt + 'weather/taf/adds/FDP/' + fdpId).then(function (response) {
+        $http.get($rootScope.apiUrlExt + 'weather/taf/adds/archive/FDP/' + fdpId).then(function (response) {
             if (!response.data.IsSuccess) { deferred.reject("TAF ERROR"); alert('error2'); }
             db.sync.SyncTAF(fdpId, response.data.Data, function (dbData) {
                 deferred.resolve(dbData);
@@ -752,7 +752,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
     };
     var _updateMETARs = function (fdpId) {
         var deferred = $q.defer();
-        $http.get($rootScope.apiUrlExt + 'weather/metar/adds/FDP/' + fdpId).then(function (response) {
+        $http.get($rootScope.apiUrlExt + 'weather/metar/adds/archive/FDP/' + fdpId).then(function (response) {
             if (!response.data.IsSuccess)
                 deferred.reject("METAR ERROR");
             db.sync.SyncMETAR(fdpId, response.data.Data, function (dbData) {
@@ -767,7 +767,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
     };
     var _updateNOTAMs = function (fdpId) {
         var deferred = $q.defer();
-        $http.get($rootScope.apiUrlExt + 'airport/notam/FDP/' + fdpId).then(function (response) {
+        $http.get($rootScope.apiUrlExt + 'airport/notam/archive/FDP/' + fdpId).then(function (response) {
             if (!response.data.IsSuccess)
                 deferred.reject("NOTAM ERROR");
             db.sync.SyncNOTAM(fdpId, response.data.Data, function (dbData) {
@@ -789,7 +789,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                 result.IsSuccess = 0;
 
                 if ($rootScope.getOnlineStatus()) {
-                    $http.get($rootScope.apiUrlExt + 'weather/taf/adds/FDP/' + fdpId).then(function (response) {
+                    $http.get($rootScope.apiUrlExt + 'weather/taf/adds/archive/FDP/' + fdpId).then(function (response) {
                         if (!response.data.IsSuccess) { deferred.reject("TAF ERROR"); alert('error2'); }
                         db.sync.SyncTAF(fdpId, response.data.Data, function (dbData) {
                             deferred.resolve(dbData);
@@ -825,7 +825,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                 result.IsSuccess = 0;
 
                 if ($rootScope.getOnlineStatus()) {
-                    $http.get($rootScope.apiUrlExt + 'weather/metar/adds/FDP/' + fdpId).then(function (response) {
+                    $http.get($rootScope.apiUrlExt + 'weather/metar/adds/archive/FDP/' + fdpId).then(function (response) {
                         if (!response.data.IsSuccess)
                             deferred.reject("METAR ERROR");
                         db.sync.SyncMETAR(fdpId, response.data.Data, function (dbData) {
@@ -874,7 +874,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                 result.IsSuccess = 0;
 
                 if ($rootScope.getOnlineStatus()) {
-                    $http.get($rootScope.apiUrlExt + 'airport/notam/FDP/' + fdpId).then(function (response) {
+                    $http.get($rootScope.apiUrlExt + 'airport/notam/archive/FDP/' + fdpId).then(function (response) {
                         if (!response.data.IsSuccess)
                             deferred.reject("NOTAM ERROR");
                         db.sync.SyncNOTAM(fdpId, response.data.Data, function (dbData) {

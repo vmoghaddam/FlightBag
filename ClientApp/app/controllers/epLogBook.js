@@ -1018,8 +1018,12 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         });
 
         _tafcnt = 0;
+
+        //9-18
         _getTAF(_grps[0], _grps);
-        if ($rootScope.getOnlineStatus()) {
+
+
+        if ($rootScope.getOnlineStatus() && 1==2) {
              
            
             if (grps && grps.length > 0) {
