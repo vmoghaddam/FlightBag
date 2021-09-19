@@ -344,7 +344,7 @@ namespace APCore.Services
                     else
                         return new DataResponse { IsSuccess = true, Data = null };
                 case "asr":
-                    var asr = await _context.EFBDSPReleases.SingleOrDefaultAsync(q => q.FlightId == flightId);
+                    var asr = await _context.EFBASRs.SingleOrDefaultAsync(q => q.FlightId == flightId);
                     if (asr != null)
                     {
                         asr.JLSignedBy = user;
