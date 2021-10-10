@@ -1,4 +1,28 @@
-﻿Date.prototype.yyyymmdd = function() {
+﻿function CreateDate(s) {
+    // s = "2021-10-05T05:10:00";
+   // console.log(s);
+    if (!s || s == 'undefined' || typeof s === 'undefined' || s === undefined)
+        return null;
+    try {
+        if (!s)
+            return null;
+        s = s.toString();
+        s = s.replace(" ", "T");
+        var prts = s.split('T');
+        var dts = prts[0].split('-');
+        var tms = prts[1].split(':');
+        var dt = new Date(dts[0], dts[1] - 1, dts[2], tms[0], tms[1], tms[2]);
+        // var b = s.split(/\D+/);
+        // return new Date(Date.UTC(b[0], --b[1], b[2], b[3], b[4], b[5], b[6]));
+        return dt;
+    }
+    catch (e) {
+        return new Date(s);
+    }
+   
+}
+
+Date.prototype.yyyymmdd = function () {
   var mm = this.getMonth() + 1; // getMonth() is zero-based
   var dd = this.getDate();
 
@@ -151,18 +175,151 @@ var getTimeForSync = function (d) {
 var momentUtcNow = function () {
     return moment.utc().format();
 };
+//goodie
+var _padLeft = function (s) {
+    var str = s.toString();
+    return String("00" + str).slice(-2);
+};
 var momentFromatFroServerUTC = function (date) {
+    
     if (!date)
         return null;
     date = new Date(date);
-    
-    return moment.utc([date.getFullYear(), date.getMonth(), date.getDate(),date.getHours(),date.getMinutes(),0]).format();
+    var result = moment.utc([date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes(), 0]).format();
+    if (result.toLowerCase().startsWith('invalid')) {
+        return null;
+    }
+    return result
 };
+
+var momentFromatFroServerUTCObj = function (date) {
+     
+    if (!date)
+        return {
+            result: null,
+            err: date,
+        };
+    
+    var orgdate = date;
+    date = new Date(date);
+    if (isNaN(date.getTime())) {
+        return {
+            result: null,
+            err: orgdate, 
+        };
+    }
+    
+    var res = moment.utc([date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes(),  0]).format();
+     
+    var error = '';
+    if (res.toLowerCase().startsWith('invalid')) {
+        var temp = "-";
+        try {
+            temp = date.getFullYear() + '-' + _padLeft(date.getMonth() + 1) + '-' + _padLeft(date.getDate()) + 'T' + _padLeft(date.getHours()) + ':' + _padLeft(date.getMinutes()) + ':00Z';
+            
+        }
+        catch (e) {
+            temp = "-";
+        }
+
+        var _tempDate = new Date(temp);
+         
+        if (!isNaN(_tempDate.getTime()))
+            return {
+                result: temp,
+                err: '',
+            }
+        
+
+        return {
+            result: null,
+            err: orgdate,
+        };
+    }
+    return {
+        result: res,
+        err:'',
+    }
+};
+//goodie
 var momentFromatLocalUTC = function (date) {
     if (!date)
         return null;
+    var result = moment.utc(date).format('YYYY-MM-DDTHH:mm:ss');
+    if (result.toLowerCase().startsWith('invalid')) {
+        return null;
+    }
+
     return moment.utc(date).format('YYYY-MM-DDTHH:mm:ss');
 };
+
+function parseISOString(s) {
+    
+    var b = s.split(/\D+/);
+    return new Date(Date.UTC(b[0], --b[1], b[2], b[3], b[4], b[5], b[6]));
+}
+//goodie2
+var momentFromatLocalUTCObj = function (date) {
+    
+    if (!date)
+        return {
+            result: null,
+            err: date,
+        };
+    var orgdate = date;
+    date = date.toString().replace(" ", "T");
+    if (!date.includes("Z"))
+        date = date + "Z";
+    
+
+    var _cdate = new Date(date);
+     
+    
+    if (isNaN(_cdate.getTime()) && moment.utc(date).format('YYYY-MM-DDTHH:mm:ss').toLowerCase().startsWith('invalid')) {
+        return {
+            result: null,
+            err: orgdate+'     DT: '+date,
+        };
+    }
+     
+    
+
+    var res = moment.utc(date).format('YYYY-MM-DDTHH:mm:ss');
+   
+    if (res.toLowerCase().startsWith('invalid')) {
+         
+        //var _stemp = "-";
+        //var temp = "-";
+        //try {
+        //    _stemp = _cdate.getFullYear() + '-' + _padLeft(_cdate.getMonth() + 1) + '-' + _padLeft(_cdate.getDate()) + 'T' + _padLeft(_cdate.getHours()) + ':' + _padLeft(_cdate.getMinutes()) + ':00Z';
+        //    temp = _cdate.getFullYear() + '-' + _padLeft(_cdate.getMonth() + 1) + '-' + _padLeft(_cdate.getDate()) + 'T' + _padLeft(_cdate.getHours()) + ':' + _padLeft(_cdate.getMinutes()) + ':00';
+        //}
+        //catch (e) {
+        //    _stemp = "-";
+        //}
+
+        //var _stempDate = new Date(_stemp);
+        //if (!isNaN(_stempDate.getTime()))
+        //    return {
+        //        result: temp,
+        //        err: '',
+        //    }
+
+
+
+        return {
+            result: null,
+            err: orgdate,
+        };
+    }
+
+    return {
+        result: res,
+        err: '',
+    };
+};
+
+
 var DateToNumber = function (date) {
     if (!date)
         return -1;
@@ -510,6 +667,18 @@ General.ShowNotify = function (str, t) {
         },
         type: t,
         displayTime: 3000,
+    });
+};
+General.ShowNotifyBottom = function (str, t) {
+    //'info' | 'warning' | 'error' | 'success' | 'custom'
+    DevExpress.ui.notify({
+        message: str,
+        position: {
+            my: "center bottom",
+            at: "center bottom"
+        },
+        type: t,
+        displayTime: 5000,
     });
 };
 General.Confirm = function (str, callback) {

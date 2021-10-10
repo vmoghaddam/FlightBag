@@ -1,16 +1,17 @@
 ﻿'use strict';
-app.controller('logAddController', ['$scope', '$location', 'flightService', 'authService', '$routeParams', '$rootScope', '$window','$q', function ($scope, $location, flightService, authService, $routeParams, $rootScope, $window,$q) {
+app.controller('logAddController', ['$scope', '$location', 'flightService', 'authService', '$routeParams', '$rootScope', '$window', '$q', function ($scope, $location, flightService, authService, $routeParams, $rootScope, $window, $q) {
     $scope.isEditable = false;
     $scope.isLockVisible = false;
-    
+     
+
     $scope.isNew = true;
     $scope.isContentVisible = false;
     $scope.isFullScreen = false;
     var detector = new MobileDetect(window.navigator.userAgent);
-    
+
     if (detector.mobile() && !detector.tablet())
         $scope.isFullScreen = true;
-    
+
 
     ///////////////////////////
     $scope.updateServer = function () {
@@ -22,6 +23,38 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
                 General.ShowNotify(Config.Text_SavedOk, 'success');
                 $rootScope.$broadcast('onFlightLocgSaved', response.Data);
                 $scope.popup_add_visible = false;
+            }
+        }, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
+    };
+    $scope.updateServerNew = function (inline) {
+        if (!inline)
+            $scope.loadingVisible = true;
+        flightService.epSaveLogNew($scope.dto).then(function (response) {
+            if (!inline)
+                $scope.loadingVisible = false;
+
+            if (response.IsSuccess) {
+                if (!inline) {
+                    General.ShowNotify(Config.Text_SavedOk, 'success');
+                    $rootScope.$broadcast('onFlightLocgSaved', response.Data);
+                    $scope.popup_add_visible = false;
+                }
+            }
+        }, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
+    };
+    $scope.updateLocalNew = function (inline) {
+        $scope.dto.Server = false;
+        if (!inline)
+        $scope.loadingVisible = true;
+        flightService.epSaveLogNew($scope.dto).then(function (response) {
+            $scope.loadingVisible = false;
+
+            if (response.IsSuccess) {
+                if (!inline) {
+                    General.ShowNotify(Config.Text_SavedOk, 'success');
+                    $rootScope.$broadcast('onFlightLocgSaved', response.Data);
+                    $scope.popup_add_visible = false;
+                }
             }
         }, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
     };
@@ -51,18 +84,55 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         }, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
     };
     ///////////////////////
-    $scope.scrollStyle = {}; 
+    $scope.scrollStyle = {};
 
     $scope._saveServer = function () { };
     $scope._saveLocal = function () { };
     ////////////////////////
+    var momentUtcNowStringSecond = function () {
+        return moment.utc().format('YYYYMMDDHHmmss');
+    };
     $scope.popup_add_visible = false;
     $scope.popup_add_title = 'New';
     $scope.popup_instance = null;
     $scope.popup_width = 500;
-    $scope.popup_height = 750;
+    $scope.popup_height = 700;
     $scope.dto = null;
-    $scope.popup_add = { 
+    $scope.proccessTimes = function () {
+        if ($scope.blockOff) {
+            var str = $scope.blockOff.toString();
+            if (str.length > 20) {
+                $scope.blockOff = moment($scope.blockOff).format('YYYY-MM-DDTHH:mm:ss');
+                 
+            }
+        }
+
+        if ($scope.blockOn) {
+            var str = $scope.blockOn.toString();
+            if (str.length > 20) {
+                $scope.blockOn = moment($scope.blockOn).format('YYYY-MM-DDTHH:mm:ss');
+
+            }
+        }
+
+        if ($scope.takeOff) {
+            var str = $scope.takeOff.toString();
+            if (str.length > 20) {
+                $scope.takeOff = moment($scope.takeOff).format('YYYY-MM-DDTHH:mm:ss');
+
+            }
+        }
+
+        if ($scope.landing) {
+            var str = $scope.landing.toString();
+            if (str.length > 20) {
+                $scope.landing = moment($scope.landing).format('YYYY-MM-DDTHH:mm:ss');
+
+            }
+        }
+        
+    };
+    $scope.popup_add = {
 
 
         showTitle: true,
@@ -72,7 +142,7 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
             //{
             //    widget: 'dxButton', location: 'after', options: {
             //        type: 'default', visible: false, text: 'Local Save', icon: 'check', validationGroup: 'logadd'
-                   
+
             //        , onClick: function (e) {
             //            //var result = e.validationGroup.validate();
 
@@ -137,7 +207,7 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
             //            $scope.dto.JLDate = momentUtcNow();
             //            $scope.dto.JLUserId = $scope.entity.CrewId;
             //            $scope.dto.Version = $scope.entity.Version + 1;
-                         
+
             //             $scope.updateLocal();
 
 
@@ -146,12 +216,12 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
             //        }
             //    }, toolbar: 'bottom'
             //},
-            { 
+            {
                 widget: 'dxButton', location: 'before', options: {
-                    type: 'default', text: 'Sign', icon: 'fas fa-signature',   onClick: function (e) {
+                    type: 'default', text: 'Sign', icon: 'fas fa-signature', onClick: function (e) {
                         if ($rootScope.getOnlineStatus()) {
                             //$scope.entity.Id
-                            var data = { FlightId: $scope.entity.Id, documentType:'log' };
+                            var data = { FlightId: $scope.entity.Id, documentType: 'log' };
 
                             $rootScope.$broadcast('InitSignAdd', data);
                         }
@@ -165,103 +235,397 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
             {
                 widget: 'dxButton', location: 'after', options: {
                     type: 'default', text: 'Save', icon: 'check', validationGroup: 'logadd', onClick: function (e) {
-                        //var result = e.validationGroup.validate();
-
-                        // if (!result.isValid) {
-                        //     General.ShowNotify(Config.Text_FillRequired, 'error');
-                        //     General.ShowNotify(Config.Text_FillRequired, 'error');
-                        //     return;
-                        // }
-                         
-                       
-                        $scope.dto = {Server:true};
+                        //magu
+                        $scope.proccessTimes();
+                        var changed = false;
+                        $scope.dto = { Server: true };
                         $scope.dto.FlightId = $scope.entity.FlightId;
                         $scope.dto.CrewId = $scope.entity.CrewId;
-                       
                         $scope.dto.DelayBlockOff = null;
                         $scope.dto.BlockTime = null;
                         $scope.dto.FlightTime = null;
-                        if ($scope.blockOff) {
-                            $scope.dto.BlockOffDate = momentFromatFroServerUTC((new Date($scope.blockOff)).combineDate(new Date($scope.entity.STDDay), $scope.blockOffD));
-                           
-                            $scope.dto.DelayBlockOff = getMinutesDiff($scope.entity.STD, $scope.blockOff);
-                        }
-                        if ($scope.blockOn)
-                            $scope.dto.BlockOnDate = momentFromatFroServerUTC((new Date($scope.blockOn)).combineDate(new Date($scope.entity.STDDay), $scope.blockOnD));
-                        if ($scope.takeOff)
-                            $scope.dto.TakeOffDate = momentFromatFroServerUTC((new Date($scope.takeOff)).combineDate(new Date($scope.entity.STDDay), $scope.takeOffD));
-                        if ($scope.landing)
-                            $scope.dto.LandingDate = momentFromatFroServerUTC((new Date($scope.landing)).combineDate(new Date($scope.entity.STDDay), $scope.landingD));
+                        var nowstring = momentUtcNowStringSecond();
+                        try {
+                             
+                            if ($scope.blockOff) {
+                                //if ($rootScope.employeeId == 3529 && ($scope.entity.FlightNumber == '0048' || $scope.entity.FlightNumber == '6919')) {
 
-                        if ($scope.blockOff && $scope.blockOn) {
-                            $scope.dto.BlockTime = getMinutesDiff($scope.blockOff, $scope.blockOn);
-                        }
-                        if ($scope.takeOff && $scope.landing) {
-                            $scope.dto.FlightTime = getMinutesDiff($scope.takeOff, $scope.landing);
-                        }
+                                //    alert($scope.blockOff
+                                //        + "    M2 " + CreateDate($scope.blockOff)
+                                //        + "    M3 " + momentFromatFroServerUTC(CreateDate($scope.blockOff))
+                                //        + "    M4 " + momentFromatFroServerUTC(CreateDate($scope.blockOff).combineDate(CreateDate($scope.entity.STDDay), $scope.blockOffD))
 
-                        $scope.dto.FuelRemaining = $scope.entity.FuelRemaining;
-                        $scope.dto.FuelUplift = $scope.entity.FuelUplift;
-                        $scope.dto.FuelUsed = $scope.entity.FuelUsed;
-                        $scope.dto.FuelDensity = $scope.entity.FuelDensity;
-                        $scope.dto.FuelTotal = $scope.entity.FuelRemaining && $scope.entity.FuelUplift ? $scope.entity.FuelRemaining + $scope.entity.FuelUplift : null;
+                                //    );
+                                    
+                                    
+                                //}
+                               // var t = new Date();
+                               // alert(t);
+                               // alert(momentFromatFroServerUTC(t));
+                                
+                                var boff1 = /*momentFromatFroServerUTC*/(CreateDate($scope.blockOff).combineDate(CreateDate($scope.entity.STDDay), $scope.blockOffD));
+                                var boff2 = /*momentFromatFroServerUTC*/(CreateDate($scope.entity.BlockOff));
+                                if ($scope.blockOff && boff1 != boff2) {
+                                    changed = true;
+                                    
+                                    //goodi 
+                                     
+                                    var boffdt = momentFromatFroServerUTCObj(CreateDate($scope.blockOff).combineDate(CreateDate($scope.entity.STDDay), $scope.blockOffD));
+                                     
+                                    $scope.dto.BlockOffDate = boffdt.result;
+                                    if ($scope.dto.BlockOffDate) {
 
-                        $scope.dto.PaxAdult = $scope.entity.PaxAdult;
-                        $scope.dto.PaxChild = $scope.entity.PaxChild;
-                        $scope.dto.PaxInfant = $scope.entity.PaxInfant;
-                        $scope.dto.PaxTotal = $scope.entity.PaxTotal;
-
-                        $scope.dto.BaggageWeight = $scope.entity.BaggageWeight;
-                        $scope.dto.CargoWeight = $scope.entity.CargoWeight;
-
-                        $scope.dto.SerialNo = $scope.entity.SerialNo;
-                        $scope.dto.LTR = $scope.entity.LTR;
-                        $scope.dto.PF = $scope.entity.PF;
-
-                        $scope.dto.RVSM_GND_CPT = $scope.entity.RVSM_GND_CPT;
-                        $scope.dto.RVSM_GND_STBY = $scope.entity.RVSM_GND_STBY;
-                        $scope.dto.RVSM_GND_FO = $scope.entity.RVSM_GND_FO;
-
-                        $scope.dto.RVSM_FLT_CPT = $scope.entity.RVSM_FLT_CPT;
-                        $scope.dto.RVSM_FLT_STBY = $scope.entity.RVSM_FLT_STBY;
-                        $scope.dto.RVSM_FLT_FO = $scope.entity.RVSM_FLT_FO;
-
-                        $scope.dto.CommanderNote = $scope.entity.CommanderNote; 
-                        $scope.dto.AttRepositioning1 = $scope.entity.AttRepositioning1;
-                        $scope.dto.AttRepositioning2 = $scope.entity.AttRepositioning2;
-
-                        $scope.dto.JLDate = momentUtcNow();
-                        // $scope.dto.JLUserId = $scope.entity.CrewId;
-                        $scope.dto.Version = $scope.entity.Version + 1;
+                                        $scope.dto.BlockOffDateDt = nowstring;
+                                        $scope.dto.DelayBlockOff = getMinutesDiff($scope.entity.STD, $scope.blockOff);
+                                    }
+                                    else {
+                                        alert('Error in converting BLOCKOFF date. Please report the error value to the application administrator. ERROR VALUE: ' + boffdt.err);
+                                    }
+                                   
+                                }
+                            }
+                             
 
 
-                        if ($rootScope.getOnlineStatus()) {
-                            var dtoCheck = { JLDate: $scope.dto.JLDate, CrewId: $scope.dto.CrewId, FlightId: $scope.dto.FlightId };
-                            $scope.loadingVisible = true;
-                            flightService.epCheckLog(dtoCheck,'log').then(function (response) {
-                                $scope.loadingVisible = false;
-                                $scope.checkResult = response.Data;
+                            //if ($scope.blockOn)
+                            //    $scope.dto.BlockOnDate = momentFromatFroServerUTC((new Date($scope.blockOn)).combineDate(new Date($scope.entity.STDDay), $scope.blockOnD));
+                            if ($scope.blockOn) {
+                                var bon1 = /*momentFromatFroServerUTC*/(CreateDate($scope.blockOn).combineDate(CreateDate($scope.entity.STDDay), $scope.blockOnD));
+                                var bon2 = /*momentFromatFroServerUTC*/(CreateDate($scope.entity.BlockOn));
+                                if ($scope.blockOn && bon1 != bon2) {
+                                    changed = true;
+                                    var boffdt = momentFromatFroServerUTCObj(CreateDate($scope.blockOn).combineDate(CreateDate($scope.entity.STDDay), $scope.blockOnD)); 
+
+                                    $scope.dto.BlockOnDate = boffdt.result;
+                                    if ($scope.dto.BlockOnDate) {
+
+                                        $scope.dto.BlockOnDateDt = nowstring;
+                                        
+                                    }
+                                    else {
+                                        alert('Error in converting BLOCKON date. Please report the error value to the application administrator. ERROR VALUE: ' + boffdt.err);
+                                    }
 
 
-                                if (($scope.checkResult.JLUserId && $scope.checkResult.JLUserId != $scope.entity.JLUserId)
-                                    || ($scope.checkResult.JLUserId && getTimeForSync($scope.checkResult.JLDate) > getTimeForSync($scope.entity.JLDate))
-                                ) {
-                                    $scope.checkResult.JLDate2 = moment($scope.checkResult.JLDate).format('YYYY-MMM-DD');
-                                    $scope.popup_check_visible = true;
+                                  //  $scope.dto.BlockOnDateDt = nowstring;
+                                  //  $scope.dto.BlockOnDate = momentFromatFroServerUTC(CreateDate($scope.blockOn).combineDate(CreateDate($scope.entity.STDDay), $scope.blockOnD));
+                                  
+
+                                }
+                            }
+
+
+                            //if ($scope.takeOff)
+                            //    $scope.dto.TakeOffDate = momentFromatFroServerUTC((new Date($scope.takeOff)).combineDate(new Date($scope.entity.STDDay), $scope.takeOffD));
+                            if ($scope.takeOff) {
+                                var bto1 = /*momentFromatFroServerUTC*/(CreateDate($scope.takeOff).combineDate(CreateDate($scope.entity.STDDay), $scope.takeOffD));
+                                var bto2 = /*momentFromatFroServerUTC*/(CreateDate($scope.entity.TakeOff));
+                                if ($scope.takeOff && bto1 != bto2) {
+                                    changed = true;
+                                    var boffdt = momentFromatFroServerUTCObj(CreateDate($scope.takeOff).combineDate(CreateDate($scope.entity.STDDay), $scope.takeOffD));
+
+                                    $scope.dto.TakeOffDate = boffdt.result;
+                                    if ($scope.dto.TakeOffDate) {
+
+                                        $scope.dto.TakeOffDateDt = nowstring;
+
+                                    }
+                                    else {
+                                        alert('Error in converting TAKEOFF date. Please report the error value to the application administrator. ERROR VALUE: ' + boffdt.err);
+                                    }
+
+
+                                    //$scope.dto.TakeOffDateDt = nowstring;
+                                    //$scope.dto.TakeOffDate = momentFromatFroServerUTC(CreateDate($scope.takeOff).combineDate(CreateDate($scope.entity.STDDay), $scope.takeOffD));
+
+                                }
+                            }
+                             
+
+                            //if ($scope.landing)
+                            //    $scope.dto.LandingDate = momentFromatFroServerUTC((new Date($scope.landing)).combineDate(new Date($scope.entity.STDDay), $scope.landingD));
+
+                            if ($scope.landing) {
+                                var bla1 = /*momentFromatFroServerUTC*/(CreateDate($scope.landing).combineDate(CreateDate($scope.entity.STDDay), $scope.landingD));
+                                var bla2 = /*momentFromatFroServerUTC*/(CreateDate($scope.entity.Landing));
+                                if ($scope.landing && bla1 != bla2) {
+                                    changed = true;
+                                    var boffdt = momentFromatFroServerUTCObj(CreateDate($scope.landing).combineDate(CreateDate($scope.entity.STDDay), $scope.landingD));
+
+                                    $scope.dto.LandingDate = boffdt.result;
+                                    if ($scope.dto.LandingDate) {
+
+                                        $scope.dto.LandingDateDt = nowstring;
+
+                                    }
+                                    else {
+                                        alert('Error in converting LANDING date. Please report the error value to the application administrator. ERROR VALUE: ' + boffdt.err);
+                                    } 
+
+                                    //$scope.dto.LandingDateDt = nowstring;
+                                    //$scope.dto.LandingDate = momentFromatFroServerUTC(CreateDate($scope.landing).combineDate(CreateDate($scope.entity.STDDay), $scope.landingD));
+
+                                }
+                            }
+
+                            if ($scope.blockOff && $scope.blockOn) {
+                                $scope.dto.BlockTime = getMinutesDiff($scope.blockOff, $scope.blockOn);
+                            }
+                            if ($scope.takeOff && $scope.landing) {
+                                $scope.dto.FlightTime = getMinutesDiff($scope.takeOff, $scope.landing);
+                            }
+                            //boz
+                            //$scope.dto.FuelRemaining = $scope.entity.FuelRemaining;
+                            if (($scope.entity.FuelRemaining || $scope.entity.FuelRemaining === 0) && $scope.entity.FuelRemaining != $scope.org.FuelRemaining) {
+                                changed = true;
+                                $scope.dto.FuelRemainingDt = nowstring;
+                                $scope.dto.FuelRemaining = $scope.entity.FuelRemaining;
+                            }
+                            //$scope.dto.FuelUplift = $scope.entity.FuelUplift;
+                            if (($scope.entity.FuelUplift || $scope.entity.FuelUplift === 0) && $scope.entity.FuelUplift != $scope.org.FuelUplift) {
+                                changed = true;
+                                $scope.dto.FuelUpliftDt = nowstring;
+                                $scope.dto.FuelUplift = $scope.entity.FuelUplift;
+                            }
+                            //$scope.dto.FuelUsed = $scope.entity.FuelUsed;
+
+                            if (($scope.entity.FuelUsed || $scope.entity.FuelUsed === 0) && $scope.entity.FuelUsed != $scope.org.FuelUsed) {
+                                changed = true;
+                                $scope.dto.FuelUsedDt = nowstring;
+                                $scope.dto.FuelUsed = $scope.entity.FuelUsed;
+                            }
+
+                            //$scope.dto.FuelDensity = $scope.entity.FuelDensity;
+                            if ($scope.entity.FuelDensity && $scope.entity.FuelDensity != $scope.org.FuelDensity) {
+                                changed = true;
+                                $scope.dto.FuelDensityDt = nowstring;
+                                $scope.dto.FuelDensity = $scope.entity.FuelDensity;
+                            }
+                            $scope.dto.FuelTotal = $scope.entity.FuelRemaining && $scope.entity.FuelUplift ? $scope.entity.FuelRemaining + $scope.entity.FuelUplift : null;
+
+                            //$scope.dto.PaxAdult = $scope.entity.PaxAdult;
+                            if (($scope.entity.PaxAdult || $scope.entity.PaxAdult === 0) && $scope.entity.PaxAdult != $scope.org.PaxAdult) {
+                                changed = true;
+                                $scope.dto.PaxAdultDt = nowstring;
+                                $scope.dto.PaxAdult = $scope.entity.PaxAdult;
+                            }
+                            //$scope.dto.PaxChild = $scope.entity.PaxChild;
+                            if (($scope.entity.PaxChild || $scope.entity.PaxChild === 0) && $scope.entity.PaxChild != $scope.org.PaxChild) {
+                                changed = true;
+                                $scope.dto.PaxChildDt = nowstring;
+                                $scope.dto.PaxChild = $scope.entity.PaxChild;
+                            }
+                            //$scope.dto.PaxInfant = $scope.entity.PaxInfant;
+                            if (($scope.entity.PaxInfant || $scope.entity.PaxInfant === 0) && $scope.entity.PaxInfant != $scope.org.PaxInfant) {
+                                changed = true;
+                                $scope.dto.PaxInfantDt = nowstring;
+                                $scope.dto.PaxInfant = $scope.entity.PaxInfant;
+                            }
+                            $scope.dto.PaxTotal = $scope.entity.PaxTotal;
+
+                            //$scope.dto.BaggageWeight = $scope.entity.BaggageWeight;
+                            if (($scope.entity.BaggageWeight || $scope.entity.BaggageWeight === 0) && $scope.entity.BaggageWeight != $scope.org.BaggageWeight) {
+                                changed = true;
+                                $scope.dto.BaggageWeightDt = nowstring;
+                                $scope.dto.BaggageWeight = $scope.entity.BaggageWeight;
+                            }
+                            //$scope.dto.CargoWeight = $scope.entity.CargoWeight;
+                            if (($scope.entity.CargoWeight || $scope.entity.CargoWeight === 0) && $scope.entity.CargoWeight != $scope.org.CargoWeight) {
+                                changed = true;
+                                $scope.dto.CargoWeightDt = nowstring;
+                                $scope.dto.CargoWeight = $scope.entity.CargoWeight;
+                            }
+
+                            //$scope.dto.SerialNo = $scope.entity.SerialNo;
+                            if ($scope.entity.SerialNo && $scope.entity.SerialNo != $scope.org.SerialNo) {
+                                changed = true;
+                                $scope.dto.SerialNoDt = nowstring;
+                                $scope.dto.SerialNo = $scope.entity.SerialNo;
+                            }
+                            //$scope.dto.LTR = $scope.entity.LTR;
+                            if ($scope.entity.LTR && $scope.entity.LTR != $scope.org.LTR) {
+                                changed = true;
+                                $scope.dto.LTRDt = nowstring;
+                                $scope.dto.LTR = $scope.entity.LTR;
+                            }
+                            //$scope.dto.PF = $scope.entity.PF;
+                            if ($scope.entity.PF && $scope.entity.PF != $scope.org.PF) {
+                                changed = true;
+                                $scope.dto.PFDt = nowstring;
+                                $scope.dto.PF = $scope.entity.PF;
+                            }
+
+                            //$scope.dto.RVSM_GND_CPT = $scope.entity.RVSM_GND_CPT;
+                            if ($scope.entity.RVSM_GND_CPT && $scope.entity.RVSM_GND_CPT != $scope.org.RVSM_GND_CPT) {
+                                changed = true;
+                                $scope.dto.RVSM_GND_CPTDt = nowstring;
+                                $scope.dto.RVSM_GND_CPT = $scope.entity.RVSM_GND_CPT;
+                            }
+                            //$scope.dto.RVSM_GND_STBY = $scope.entity.RVSM_GND_STBY;
+                            if ($scope.entity.RVSM_GND_STBY && $scope.entity.RVSM_GND_STBY != $scope.org.RVSM_GND_STBY) {
+                                changed = true;
+                                $scope.dto.RVSM_GND_STBYDt = nowstring;
+                                $scope.dto.RVSM_GND_STBY = $scope.entity.RVSM_GND_STBY;
+                            }
+                            //$scope.dto.RVSM_GND_FO = $scope.entity.RVSM_GND_FO;
+                            if ($scope.entity.RVSM_GND_FO && $scope.entity.RVSM_GND_FO != $scope.org.RVSM_GND_FO) {
+                                changed = true;
+                                $scope.dto.RVSM_GND_FODt = nowstring;
+                                $scope.dto.RVSM_GND_FO = $scope.entity.RVSM_GND_FO;
+                            }
+
+                            //$scope.dto.RVSM_FLT_CPT = $scope.entity.RVSM_FLT_CPT;
+                            if ($scope.entity.RVSM_FLT_CPT && $scope.entity.RVSM_FLT_CPT != $scope.org.RVSM_FLT_CPT) {
+                                changed = true;
+                                $scope.dto.RVSM_FLT_CPTDt = nowstring;
+                                $scope.dto.RVSM_FLT_CPT = $scope.entity.RVSM_FLT_CPT;
+                            }
+                            //$scope.dto.RVSM_FLT_STBY = $scope.entity.RVSM_FLT_STBY;
+                            if ($scope.entity.RVSM_FLT_STBY && $scope.entity.RVSM_FLT_STBY != $scope.org.RVSM_FLT_STBY) {
+                                changed = true;
+                                $scope.dto.RVSM_FLT_STBYDt = nowstring;
+                                $scope.dto.RVSM_FLT_STBY = $scope.entity.RVSM_FLT_STBY;
+                            }
+                            //$scope.dto.RVSM_FLT_FO = $scope.entity.RVSM_FLT_FO;
+                            if ($scope.entity.RVSM_FLT_FO && $scope.entity.RVSM_FLT_FO != $scope.org.RVSM_FLT_FO) {
+                                changed = true;
+                                $scope.dto.RVSM_FLT_FODt = nowstring;
+                                $scope.dto.RVSM_FLT_FO = $scope.entity.RVSM_FLT_FO;
+                            }
+
+                            //$scope.dto.CommanderNote = $scope.entity.CommanderNote; 
+                            if ($scope.entity.CommanderNote && $scope.entity.CommanderNote != $scope.org.CommanderNote) {
+                                changed = true;
+                                $scope.dto.CommanderNoteDt = nowstring;
+                                $scope.dto.CommanderNote = $scope.entity.CommanderNote;
+                            }
+                            //$scope.dto.AttRepositioning1 = $scope.entity.AttRepositioning1;
+                            if ($scope.entity.AttRepositioning1 != $scope.org.AttRepositioning1) {
+                                changed = true;
+                                $scope.dto.AttRepositioning1Dt = nowstring;
+                                $scope.dto.AttRepositioning1 = $scope.entity.AttRepositioning1;
+                            }
+                            //$scope.dto.AttRepositioning2 = $scope.entity.AttRepositioning2;
+                            if ($scope.entity.AttRepositioning2 != $scope.org.AttRepositioning2) {
+                                changed = true;
+                                $scope.dto.AttRepositioning2Dt = nowstring;
+                                $scope.dto.AttRepositioning2 = $scope.entity.AttRepositioning2;
+                            }
+
+                            $scope.dto.JLDate = momentUtcNow();
+
+                            $scope.dto.Version = $scope.entity.Version + 1;
+
+
+                            if (changed) {
+                                if ($rootScope.getOnlineStatus()) {
+                                    $scope.updateServerNew();
                                 }
                                 else {
-                                    $scope.updateServer();
+                                    $scope.dto.JLUserId = $scope.entity.CrewId;
+                                    $scope.updateLocalNew();
                                 }
-                            }, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
+                            }
+                            else
+                                $scope.popup_add_visible = false;
+                        }
+                        catch (e) {
+                            alert(e);
+                        }
+                        ////////////////////////////////
+                        ////////////////////////////////
+                        ////////////////////////////////
+                        //$scope.dto = {Server:true};
+                        //$scope.dto.FlightId = $scope.entity.FlightId;
+                        //$scope.dto.CrewId = $scope.entity.CrewId;
 
-                        }
-                        else {
-                            $scope.dto.JLUserId = $scope.entity.CrewId;
-                            $scope.updateLocal();
-                        }
-                        
-                       
-                       
+                        //$scope.dto.DelayBlockOff = null;
+                        //$scope.dto.BlockTime = null;
+                        //$scope.dto.FlightTime = null;
+                        //if ($scope.blockOff) {
+                        //    $scope.dto.BlockOffDate = momentFromatFroServerUTC((new Date($scope.blockOff)).combineDate(new Date($scope.entity.STDDay), $scope.blockOffD));
+
+                        //    $scope.dto.DelayBlockOff = getMinutesDiff($scope.entity.STD, $scope.blockOff);
+                        //}
+                        //if ($scope.blockOn)
+                        //    $scope.dto.BlockOnDate = momentFromatFroServerUTC((new Date($scope.blockOn)).combineDate(new Date($scope.entity.STDDay), $scope.blockOnD));
+                        //if ($scope.takeOff)
+                        //    $scope.dto.TakeOffDate = momentFromatFroServerUTC((new Date($scope.takeOff)).combineDate(new Date($scope.entity.STDDay), $scope.takeOffD));
+                        //if ($scope.landing)
+                        //    $scope.dto.LandingDate = momentFromatFroServerUTC((new Date($scope.landing)).combineDate(new Date($scope.entity.STDDay), $scope.landingD));
+
+                        //if ($scope.blockOff && $scope.blockOn) {
+                        //    $scope.dto.BlockTime = getMinutesDiff($scope.blockOff, $scope.blockOn);
+                        //}
+                        //if ($scope.takeOff && $scope.landing) {
+                        //    $scope.dto.FlightTime = getMinutesDiff($scope.takeOff, $scope.landing);
+                        //}
+
+                        //$scope.dto.FuelRemaining = $scope.entity.FuelRemaining;
+                        //$scope.dto.FuelUplift = $scope.entity.FuelUplift;
+                        //$scope.dto.FuelUsed = $scope.entity.FuelUsed;
+                        //$scope.dto.FuelDensity = $scope.entity.FuelDensity;
+                        //$scope.dto.FuelTotal = $scope.entity.FuelRemaining && $scope.entity.FuelUplift ? $scope.entity.FuelRemaining + $scope.entity.FuelUplift : null;
+
+                        //$scope.dto.PaxAdult = $scope.entity.PaxAdult;
+                        //$scope.dto.PaxChild = $scope.entity.PaxChild;
+                        //$scope.dto.PaxInfant = $scope.entity.PaxInfant;
+                        //$scope.dto.PaxTotal = $scope.entity.PaxTotal;
+
+                        //$scope.dto.BaggageWeight = $scope.entity.BaggageWeight;
+                        //$scope.dto.CargoWeight = $scope.entity.CargoWeight;
+
+                        //$scope.dto.SerialNo = $scope.entity.SerialNo;
+                        //$scope.dto.LTR = $scope.entity.LTR;
+                        //$scope.dto.PF = $scope.entity.PF;
+
+                        //$scope.dto.RVSM_GND_CPT = $scope.entity.RVSM_GND_CPT;
+                        //$scope.dto.RVSM_GND_STBY = $scope.entity.RVSM_GND_STBY;
+                        //$scope.dto.RVSM_GND_FO = $scope.entity.RVSM_GND_FO;
+
+                        //$scope.dto.RVSM_FLT_CPT = $scope.entity.RVSM_FLT_CPT;
+                        //$scope.dto.RVSM_FLT_STBY = $scope.entity.RVSM_FLT_STBY;
+                        //$scope.dto.RVSM_FLT_FO = $scope.entity.RVSM_FLT_FO;
+
+                        //$scope.dto.CommanderNote = $scope.entity.CommanderNote; 
+                        //$scope.dto.AttRepositioning1 = $scope.entity.AttRepositioning1;
+                        //$scope.dto.AttRepositioning2 = $scope.entity.AttRepositioning2;
+
+                        //$scope.dto.JLDate = momentUtcNow();
+
+                        //$scope.dto.Version = $scope.entity.Version + 1;
+
+
+                        //if ($rootScope.getOnlineStatus()) {
+                        //    var dtoCheck = { JLDate: $scope.dto.JLDate, CrewId: $scope.dto.CrewId, FlightId: $scope.dto.FlightId };
+                        //    $scope.loadingVisible = true;
+                        //    flightService.epCheckLog(dtoCheck,'log').then(function (response) {
+                        //        $scope.loadingVisible = false;
+                        //        $scope.checkResult = response.Data;
+
+
+                        //        //if (($scope.checkResult.JLUserId && $scope.checkResult.JLUserId != $scope.entity.JLUserId)
+                        //        //    || ($scope.checkResult.JLUserId && getTimeForSync($scope.checkResult.JLDate) > getTimeForSync($scope.entity.JLDate))
+                        //        //) {
+                        //        //    $scope.checkResult.JLDate2 = moment($scope.checkResult.JLDate).format('YYYY-MMM-DD');
+                        //        //    $scope.popup_check_visible = true;
+                        //        //}
+                        //        //else {
+                        //        //    $scope.updateServer();
+                        //        //}
+                        //        ////////9-29
+                        //        $scope.updateServer();
+                        //        ///////////////
+                        //    }, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
+
+                        //}
+                        //else {
+                        //    $scope.dto.JLUserId = $scope.entity.CrewId;
+                        //    $scope.updateLocal();
+                        //}
+
+
+
 
 
 
@@ -282,24 +646,25 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         dragEnabled: true,
         closeOnOutsideClick: false,
         onShowing: function (e) {
+            $rootScope.IsRootSyncEnabled = false;
             $scope.popup_instance.repaint();
 
 
         },
         onShown: function (e) {
-
+            
             if ($scope.isNew) {
                 $scope.isContentVisible = true;
             }
             if ($scope.tempData != null)
                 $scope.bind();
-             
+
             if ($scope.isFullScreen)
                 //  $scope.scrollHeight = $(window).height() - 230;
-                $scope.scrollStyle = { height: ($(window).height() - 230).toString()+'px'};
+                $scope.scrollStyle = { height: ($(window).height() - 230).toString() + 'px' };
             else
-                $scope.scrollStyle = { height: ($scope.popup_height - 195).toString()+  'px' };
-              //  $scope.scrollHeight = 200;
+                $scope.scrollStyle = { height: ($scope.popup_height - 195).toString() + 'px' };
+            //  $scope.scrollHeight = 200;
 
 
 
@@ -307,7 +672,7 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         onHiding: function () {
 
             //$scope.clearEntity();
-
+            $rootScope.IsRootSyncEnabled = true;
             $scope.popup_add_visible = false;
             $rootScope.$broadcast('onLogAddHide', null);
         },
@@ -322,14 +687,14 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
             title: 'popup_add_title',
             height: 'popup_height',
             width: 'popup_width',
-            'toolbarItems[1].visible': 'isEditable', 
+            'toolbarItems[1].visible': 'isEditable',
             'toolbarItems[0].visible': 'isLockVisible',
 
         }
     };
 
 
-    $scope.scroll_logadd_height = 750-200;
+    $scope.scroll_logadd_height = 700 - 200;
     $scope.scroll_logadd = {
         width: '100%',
         bounceEnabled: false,
@@ -437,7 +802,52 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         displayFormat: "HHmm",
         interval: 15,
         onValueChanged: function (arg) {
+             
+                return;
+             
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                
+                var boff1 = momentFromatFroServerUTC(CreateDate($scope.blockOff).combineDate(CreateDate($scope.entity.STDDay), $scope.blockOffD));
+                var boff2 = momentFromatFroServerUTC(CreateDate($scope.entity.BlockOff));
+                 
+                if ($scope.blockOff && boff1 != boff2) {
+                    changed = true;
+                    $scope.dto.BlockOffDateDt = nowstring;
+                    $scope.dto.BlockOffDate = momentFromatFroServerUTC(CreateDate($scope.blockOff).combineDate(CreateDate($scope.entity.STDDay), $scope.blockOffD));
 
+                    $scope.dto.DelayBlockOff = getMinutesDiff($scope.entity.STD, $scope.blockOff);
+                }
+              
+                if ($scope.blockOff && $scope.blockOn) {
+                    $scope.dto.BlockTime = getMinutesDiff($scope.blockOff, $scope.blockOn);
+                }
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
         },
         bindingOptions: {
             value: 'blockOff',
@@ -451,7 +861,47 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         displayFormat: "HHmm",
         interval: 15,
         onValueChanged: function (arg) {
+            return;
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+              
+                var bon1 = momentFromatFroServerUTC(CreateDate($scope.blockOn).combineDate(CreateDate($scope.entity.STDDay), $scope.blockOnD));
+                var bon2 = momentFromatFroServerUTC(CreateDate($scope.entity.BlockOn));
+                if ($scope.blockOn && bon1 != bon2) {
+                    changed = true;
+                    $scope.dto.BlockOnDateDt = nowstring;
+                    $scope.dto.BlockOnDate = momentFromatFroServerUTC(CreateDate($scope.blockOn).combineDate(CreateDate($scope.entity.STDDay), $scope.blockOnD));
 
+                }
+                if ($scope.blockOff && $scope.blockOn) {
+                    $scope.dto.BlockTime = getMinutesDiff($scope.blockOff, $scope.blockOn);
+                }
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
         },
         bindingOptions: {
             value: 'blockOn',
@@ -465,7 +915,47 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         displayFormat: "HHmm",
         interval: 15,
         onValueChanged: function (arg) {
+            return;
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                
+                var bto1 = momentFromatFroServerUTC(CreateDate($scope.takeOff).combineDate(CreateDate($scope.entity.STDDay), $scope.takeOffD));
+                var bto2 = momentFromatFroServerUTC(CreateDate($scope.entity.TakeOff));
+                if ($scope.takeOff && bto1 != bto2) {
+                    changed = true;
+                    $scope.dto.TakeOffDateDt = nowstring;
+                    $scope.dto.TakeOffDate = momentFromatFroServerUTC(CreateDate($scope.takeOff).combineDate(CreateDate($scope.entity.STDDay), $scope.takeOffD));
 
+                }
+                if ($scope.takeOff && $scope.landing) {
+                    $scope.dto.FlightTime = getMinutesDiff($scope.takeOff, $scope.landing);
+                }
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
         },
         bindingOptions: {
             value: 'takeOff',
@@ -479,42 +969,157 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         displayFormat: "HHmm",
         interval: 15,
         onValueChanged: function (arg) {
+            return;
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                
+                var bla1 = momentFromatFroServerUTC(CreateDate($scope.landing).combineDate(CreateDate($scope.entity.STDDay), $scope.landingD));
+                var bla2 = momentFromatFroServerUTC(CreateDate($scope.entity.Landing));
+                if ($scope.landing && bla1 != bla2) {
+                    changed = true;
+                    $scope.dto.LandingDateDt = nowstring;
+                    $scope.dto.LandingDate = momentFromatFroServerUTC(CreateDate($scope.landing).combineDate(CreateDate($scope.entity.STDDay), $scope.landingD));
 
+                }
+                if ($scope.takeOff && $scope.landing) {
+                    $scope.dto.FlightTime = getMinutesDiff($scope.takeOff, $scope.landing);
+                }
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
         },
         bindingOptions: {
             value: 'landing',
 
         }
     };
-    
+
     $scope.fuel_remaining = {
         valueChangeEvent: 'keyup',
         showClearButton: false,
         step: 500,
-        useLargeSpinButtons:true,
+        useLargeSpinButtons: true,
         min: 0,
-        showSpinButtons: true,
+        showSpinButtons: false,
         onValueChanged: function (e) {
             $scope.entity.FuelTotal = null;
-            if ($scope.entity.FuelUplift && $scope.entity.FuelRemaining)
+            if (($scope.entity.FuelUplift || $scope.entity.FuelUplift === 0) && ($scope.entity.FuelRemaining || $scope.entity.FuelRemaining === 0))
                 $scope.entity.FuelTotal = $scope.entity.FuelUplift + $scope.entity.FuelRemaining;
+            
+
+
+        },
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if (($scope.entity.FuelRemaining || $scope.entity.FuelRemaining === 0) && $scope.entity.FuelRemaining != $scope.org.FuelRemaining) {
+                    changed = true;
+                    $scope.dto.FuelRemainingDt = nowstring;
+                    $scope.dto.FuelRemaining = $scope.entity.FuelRemaining;
+                }
+                $scope.dto.FuelTotal = $scope.entity.FuelRemaining && $scope.entity.FuelUplift ? $scope.entity.FuelRemaining + $scope.entity.FuelUplift : null;
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+                 
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+                 
+            }
+
+
+            ///////////////////////
         },
         bindingOptions: {
             value: "entity.FuelRemaining"
         },
-         
+
     };
     $scope.fuel_uplift = {
-        valueChangeEvent:'keyup',
+        valueChangeEvent: 'keyup',
         showClearButton: false,
         step: 500,
         useLargeSpinButtons: true,
         min: 0,
-        showSpinButtons: true,
+        showSpinButtons: false,
         onValueChanged: function (e) {
             $scope.entity.FuelTotal = null;
-            if ($scope.entity.FuelUplift && $scope.entity.FuelRemaining)
+            if (($scope.entity.FuelUplift || $scope.entity.FuelUplift === 0) && ($scope.entity.FuelRemaining || $scope.entity.FuelRemaining === 0))
                 $scope.entity.FuelTotal = $scope.entity.FuelUplift + $scope.entity.FuelRemaining;
+        },
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if (($scope.entity.FuelUplift || $scope.entity.FuelUplift === 0) && $scope.entity.FuelUplift != $scope.org.FuelUplift) {
+                    changed = true;
+                    $scope.dto.FuelUpliftDt = nowstring;
+                    $scope.dto.FuelUplift = $scope.entity.FuelUplift;
+                }
+                $scope.dto.FuelTotal = $scope.entity.FuelRemaining && $scope.entity.FuelUplift ? $scope.entity.FuelRemaining + $scope.entity.FuelUplift : null;
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+                
+            }
+
+
+            ///////////////////////
         },
         bindingOptions: {
             value: "entity.FuelUplift"
@@ -526,7 +1131,43 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         step: 0.1,
         useLargeSpinButtons: true,
         min: 0,
-        showSpinButtons: true,
+        showSpinButtons: false,
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if ($scope.entity.FuelDensity && $scope.entity.FuelDensity != $scope.org.FuelDensity) {
+                    changed = true;
+                    $scope.dto.FuelDensityDt = nowstring;
+                    $scope.dto.FuelDensity = $scope.entity.FuelDensity;
+                }
+
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
+        },
         bindingOptions: {
             value: "entity.FuelDensity"
         },
@@ -534,7 +1175,7 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
     };
     $scope.fuel_total = {
         showClearButton: false,
-        readOnly:true,
+        readOnly: true,
         useLargeSpinButtons: false,
         min: 0,
         showSpinButtons: false,
@@ -548,7 +1189,43 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         step: 500,
         useLargeSpinButtons: true,
         min: 0,
-        showSpinButtons: true,
+        showSpinButtons: false,
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if (($scope.entity.FuelUsed || $scope.entity.FuelUsed === 0) && $scope.entity.FuelUsed != $scope.org.FuelUsed) {
+                    changed = true;
+                    $scope.dto.FuelUsedDt = nowstring;
+                    $scope.dto.FuelUsed = $scope.entity.FuelUsed;
+                }
+               
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+                
+            }
+
+
+            ///////////////////////
+        },
         bindingOptions: {
             value: "entity.FuelUsed"
         },
@@ -560,11 +1237,47 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         showClearButton: false,
         step: 1,
         useLargeSpinButtons: true,
-        min: 0, 
-        showSpinButtons: true,
+        min: 0,
+        showSpinButtons: false,
         onValueChanged: function (e) {
-             
+
             $scope.entity.PaxTotal = nullZero($scope.entity.PaxAdult) + nullZero($scope.entity.PaxChild) + nullZero($scope.entity.PaxInfant);
+        },
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if (($scope.entity.PaxAdult || $scope.entity.PaxAdult === 0) && $scope.entity.PaxAdult != $scope.org.PaxAdult) {
+                    changed = true;
+                    $scope.dto.PaxAdultDt = nowstring;
+                    $scope.dto.PaxAdult = $scope.entity.PaxAdult;
+                }
+                $scope.dto.PaxTotal = $scope.entity.PaxTotal;
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
         },
         bindingOptions: {
             value: "entity.PaxAdult"
@@ -577,10 +1290,46 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         step: 1,
         useLargeSpinButtons: true,
         min: 0,
-        showSpinButtons: true,
+        showSpinButtons: false,
         onValueChanged: function (e) {
 
             $scope.entity.PaxTotal = nullZero($scope.entity.PaxAdult) + nullZero($scope.entity.PaxChild) + nullZero($scope.entity.PaxInfant);
+        },
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if (($scope.entity.PaxChild || $scope.entity.PaxChild === 0) && $scope.entity.PaxChild != $scope.org.PaxChild) {
+                    changed = true;
+                    $scope.dto.PaxChildDt = nowstring;
+                    $scope.dto.PaxChild = $scope.entity.PaxChild;
+                }
+                $scope.dto.PaxTotal = $scope.entity.PaxTotal;
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
         },
         bindingOptions: {
             value: "entity.PaxChild"
@@ -593,10 +1342,46 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         step: 1,
         useLargeSpinButtons: true,
         min: 0,
-        showSpinButtons: true,
+        showSpinButtons: false,
         onValueChanged: function (e) {
 
             $scope.entity.PaxTotal = nullZero($scope.entity.PaxAdult) + nullZero($scope.entity.PaxChild) + nullZero($scope.entity.PaxInfant);
+        },
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if (($scope.entity.PaxInfant || $scope.entity.PaxInfant === 0) && $scope.entity.PaxInfant != $scope.org.PaxInfant) {
+                    changed = true;
+                    $scope.dto.PaxInfantDt = nowstring;
+                    $scope.dto.PaxInfant = $scope.entity.PaxInfant;
+                }
+                $scope.dto.PaxTotal = $scope.entity.PaxTotal;
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
         },
         bindingOptions: {
             value: "entity.PaxInfant"
@@ -614,17 +1399,53 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         },
 
     };
-   ///////////////////////////////////
+    ///////////////////////////////////
     $scope.cargo = {
         valueChangeEvent: 'keyup',
         showClearButton: false,
         step: 100,
         useLargeSpinButtons: true,
         min: 0,
-        showSpinButtons: true,
+        showSpinButtons: false,
         onValueChanged: function (e) {
 
-            $scope.entity.Freight = nullZero($scope.entity.CargoWeight) + nullZero($scope.entity.BaggageWeight)  ;
+            $scope.entity.Freight = nullZero($scope.entity.CargoWeight) + nullZero($scope.entity.BaggageWeight);
+        },
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if (($scope.entity.CargoWeight || $scope.entity.CargoWeight === 0) && $scope.entity.CargoWeight != $scope.org.CargoWeight) {
+                    changed = true;
+                    $scope.dto.CargoWeightDt = nowstring;
+                    $scope.dto.CargoWeight = $scope.entity.CargoWeight;
+                }
+                
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
         },
         bindingOptions: {
             value: "entity.CargoWeight"
@@ -637,17 +1458,53 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         step: 100,
         useLargeSpinButtons: true,
         min: 0,
-        showSpinButtons: true,
+        showSpinButtons: false,
         onValueChanged: function (e) {
 
-            $scope.entity.Freight = nullZero($scope.entity.CargoWeight) + nullZero($scope.entity.BaggageWeight) ;
+            $scope.entity.Freight = nullZero($scope.entity.CargoWeight) + nullZero($scope.entity.BaggageWeight);
+        },
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if (($scope.entity.BaggageWeight || $scope.entity.BaggageWeight === 0) && $scope.entity.BaggageWeight != $scope.org.BaggageWeight) {
+                    changed = true;
+                    $scope.dto.BaggageWeightDt = nowstring;
+                    $scope.dto.BaggageWeight = $scope.entity.BaggageWeight;
+                }
+
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
         },
         bindingOptions: {
             value: "entity.BaggageWeight"
         },
 
     };
-    
+
     $scope.freight = {
         showClearButton: false,
         readOnly: true,
@@ -666,9 +1523,44 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         showClearButton: false,
         step: 100,
         useLargeSpinButtons: false,
-        
+
         showSpinButtons: false,
-       
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if ($scope.entity.RVSM_GND_CPT && $scope.entity.RVSM_GND_CPT != $scope.org.RVSM_GND_CPT) {
+                    changed = true;
+                    $scope.dto.RVSM_GND_CPTDt = nowstring;
+                    $scope.dto.RVSM_GND_CPT = $scope.entity.RVSM_GND_CPT;
+                }
+
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
+        },
         bindingOptions: {
             value: "entity.RVSM_GND_CPT"
         },
@@ -679,9 +1571,44 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         showClearButton: false,
         step: 100,
         useLargeSpinButtons: false,
-        
-        showSpinButtons: false,
 
+        showSpinButtons: false,
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if ($scope.entity.RVSM_GND_STBY && $scope.entity.RVSM_GND_STBY != $scope.org.RVSM_GND_STBY) {
+                    changed = true;
+                    $scope.dto.RVSM_GND_STBYDt = nowstring;
+                    $scope.dto.RVSM_GND_STBY = $scope.entity.RVSM_GND_STBY;
+                }
+
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
+        },
         bindingOptions: {
             value: "entity.RVSM_GND_STBY"
         },
@@ -692,9 +1619,44 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         showClearButton: false,
         step: 100,
         useLargeSpinButtons: false,
-         
-        showSpinButtons: false,
 
+        showSpinButtons: false,
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if ($scope.entity.RVSM_GND_FO && $scope.entity.RVSM_GND_FO != $scope.org.RVSM_GND_FO) {
+                    changed = true;
+                    $scope.dto.RVSM_GND_FODt = nowstring;
+                    $scope.dto.RVSM_GND_FO = $scope.entity.RVSM_GND_FO;
+                }
+
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
+        },
         bindingOptions: {
             value: "entity.RVSM_GND_FO"
         },
@@ -706,9 +1668,44 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         showClearButton: false,
         step: 100,
         useLargeSpinButtons: false,
-         
-        showSpinButtons: false,
 
+        showSpinButtons: false,
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if ($scope.entity.RVSM_FLT_CPT && $scope.entity.RVSM_FLT_CPT != $scope.org.RVSM_FLT_CPT) {
+                    changed = true;
+                    $scope.dto.RVSM_FLT_CPTDt = nowstring;
+                    $scope.dto.RVSM_FLT_CPT = $scope.entity.RVSM_FLT_CPT;
+                }
+
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
+        },
         bindingOptions: {
             value: "entity.RVSM_FLT_CPT"
         },
@@ -719,9 +1716,44 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         showClearButton: false,
         step: 100,
         useLargeSpinButtons: false,
-         
-        showSpinButtons: false,
 
+        showSpinButtons: false,
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if ($scope.entity.RVSM_FLT_STBY && $scope.entity.RVSM_FLT_STBY != $scope.org.RVSM_FLT_STBY) {
+                    changed = true;
+                    $scope.dto.RVSM_FLT_STBYDt = nowstring;
+                    $scope.dto.RVSM_FLT_STBY = $scope.entity.RVSM_FLT_STBY;
+                }
+
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
+        },
         bindingOptions: {
             value: "entity.RVSM_FLT_STBY"
         },
@@ -734,7 +1766,42 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         useLargeSpinButtons: false,
         min: 0,
         showSpinButtons: false,
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if ($scope.entity.RVSM_FLT_FO && $scope.entity.RVSM_FLT_FO != $scope.org.RVSM_FLT_FO) {
+                    changed = true;
+                    $scope.dto.RVSM_FLT_FODt = nowstring;
+                    $scope.dto.RVSM_FLT_FO = $scope.entity.RVSM_FLT_FO;
+                }
 
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
+        },
         bindingOptions: {
             value: "entity.RVSM_FLT_FO"
         },
@@ -744,7 +1811,43 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
     $scope.sb_pf = {
         showClearButton: true,
         searchEnabled: false,
-        dataSource: ['C','F','I'],
+        dataSource: ['C', 'F', 'I'],
+        onValueChanged: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if ($scope.entity.PF && $scope.entity.PF != $scope.org.PF) {
+                    changed = true;
+                    $scope.dto.PFDt = nowstring;
+                    $scope.dto.PF = $scope.entity.PF;
+                }
+
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
+        },
         bindingOptions: {
             value: 'entity.PF',
 
@@ -755,11 +1858,46 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
     $scope.serialNo = {
         valueChangeEvent: 'keyup',
         showClearButton: false,
-        
-        useLargeSpinButtons: false,
-        
-        showSpinButtons: false,
 
+        useLargeSpinButtons: false,
+
+        showSpinButtons: false,
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if ($scope.entity.SerialNo && $scope.entity.SerialNo != $scope.org.SerialNo) {
+                    changed = true;
+                    $scope.dto.SerialNoDt = nowstring;
+                    $scope.dto.SerialNo = $scope.entity.SerialNo;
+                }
+
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
+        },
         bindingOptions: {
             value: "entity.SerialNo"
         },
@@ -772,7 +1910,42 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         useLargeSpinButtons: false,
 
         showSpinButtons: false,
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if ($scope.entity.LTR && $scope.entity.LTR != $scope.org.LTR) {
+                    changed = true;
+                    $scope.dto.LTRDt = nowstring;
+                    $scope.dto.LTR = $scope.entity.LTR;
+                }
 
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
+        },
         bindingOptions: {
             value: "entity.LTR"
         },
@@ -781,6 +1954,42 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
     $scope.chb_rep1 = {
 
         text: '',
+        onValueChanged: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if ( $scope.entity.AttRepositioning1 != $scope.org.AttRepositioning1) {
+                    changed = true;
+                    $scope.dto.AttRepositioning1Dt = nowstring;
+                    $scope.dto.AttRepositioning1 = $scope.entity.AttRepositioning1;
+                }
+
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
+        },
         bindingOptions: {
             value: 'entity.AttRepositioning1',
 
@@ -789,16 +1998,88 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
     $scope.chb_rep2 = {
 
         text: '',
+        onValueChanged: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if ( $scope.entity.AttRepositioning2 != $scope.org.AttRepositioning2) {
+                    changed = true;
+                    $scope.dto.AttRepositioning2Dt = nowstring;
+                    $scope.dto.AttRepositioning2 = $scope.entity.AttRepositioning2;
+                }
+
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
+        },
         bindingOptions: {
             value: 'entity.AttRepositioning2',
 
         }
     };
     $scope.note = {
+        onFocusOut: function (e) {
+            /////SAVE//////////////
+            try {
+                var changed = false;
+                $scope.dto = { Server: true };
+                $scope.dto.FlightId = $scope.entity.FlightId;
+                $scope.dto.CrewId = $scope.entity.CrewId;
+                var nowstring = momentUtcNowStringSecond();
+                if ($scope.entity.CommanderNote && $scope.entity.CommanderNote != $scope.org.CommanderNote) {
+                    changed = true;
+                    $scope.dto.CommanderNoteDt = nowstring;
+                    $scope.dto.CommanderNote = $scope.entity.CommanderNote;
+                }
+
+                $scope.dto.JLDate = momentUtcNow();
+
+                $scope.dto.Version = $scope.entity.Version + 1;
+
+                if (changed) {
+                    if ($rootScope.getOnlineStatus()) {
+                        $scope.updateServerNew(true);
+                    }
+                    else {
+                        $scope.dto.JLUserId = $scope.entity.CrewId;
+                        $scope.updateLocalNew(true);
+                    }
+                }
+
+            }
+            catch (ee) {
+
+            }
+
+
+            ///////////////////////
+        },
         bindingOptions: {
             value: 'entity.CommanderNote',
             height: '80',
-           
+
         }
     };
     ////////////////////////////////
@@ -825,27 +2106,27 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
         return (new Date(dt)).getDate();
     };
 
-   
+
     $scope.bind = function () {
-        
-        if ($rootScope.getOnlineStatus()) {
-            
-            flightService.checkLock($scope.entity.Id,'log').then(function (response) {
-                $scope.isLockVisible = false;
-                if (response.IsSuccess && response.Data.canLock) {
-                    $scope.isLockVisible = true;
-                }
-            }, function (err) { });
-        }
+
+        //if ($rootScope.getOnlineStatus()) {
+
+        //    flightService.checkLock($scope.entity.Id, 'log').then(function (response) {
+        //        $scope.isLockVisible = false;
+        //        if (response.IsSuccess && response.Data.canLock) {
+        //            $scope.isLockVisible = true;
+        //        }
+        //    }, function (err) { });
+        //}
 
 
         $scope.loadingVisible = true;
         flightService.epGetFlightLocal($scope.entity.Id).then(function (response) {
             //moment.utc()
-           
-            
-            var diff = Math.abs((new Date()).getTime() - (new Date(response.Data.STALocal)).getTime()) / 3600000; 
-            $scope.isEditable = (diff <= 24);
+
+
+            var diff = Math.abs((new Date()).getTime() - (new Date(response.Data.STALocal)).getTime()) / 3600000;
+            $scope.isEditable = (diff <= 48);
             if (response.Data.JLSignedBy) {
                 //$scope.isEditable = false;
                 $scope.url_sign = signFiles + response.Data.PICId + ".jpg";
@@ -853,7 +2134,7 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
                 $scope.signDate = moment(new Date(response.Data.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');
             }
 
-            
+
             $scope.loadingVisible = false;
 
             if (response.IsSuccess) {
@@ -866,9 +2147,11 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
                 //$scope.entity.STD = response.Data.STD;
                 //$scope.entity.STA = response.Data.STA;
                 $scope.entity = response.Data;
-                 
+                $scope.org = JSON.parse(JSON.stringify($scope.entity));
 
+               
                 $scope.blockOff = $scope.entity.BlockOff;
+                
                 $scope.blockOn = $scope.entity.BlockOn;
                 $scope.takeOff = $scope.entity.TakeOff;
                 $scope.landing = $scope.entity.Landing;
@@ -900,7 +2183,9 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
                 if (!$scope.entity.FuelDensity)
                     $scope.entity.FuelDensity = 0.8;
 
-
+                if ($scope.remFuel)
+                    $scope.entity.FuelRemaining = $scope.remFuel;
+                //alert($scope.entity.FuelRemaining);
 
             }
             else
@@ -919,17 +2204,18 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
     });
     $scope.tempData = null;
     $scope.$on('onSign', function (event, prms) {
-        
+
         if (prms.doc == 'log')
-            flightService.signDocLocal(prms,prms.doc).then(function (response) {
+            flightService.signDocLocal(prms, prms.doc).then(function (response) {
                 //alert('log signed');
                 //$scope.isEditable = false;
-               // $scope.isLockVisible = false; 
+                // $scope.isLockVisible = false; 
                 $scope.url_sign = signFiles + prms.PICId + ".jpg";
                 $scope.PIC = prms.PIC;
                 $scope.signDate = moment(new Date(prms.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');
             }, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
     });
+    $scope.remFuel = null;
     $scope.$on('InitLogAdd', function (event, prms) {
 
 
@@ -939,14 +2225,15 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
 
             $scope.isNew = true;
 
-            $scope.popup_add_title = 'Log';
+            $scope.popup_add_title = 'Log (2.5)';
 
         }
 
         else {
 
-            $scope.popup_add_title = 'Log';
+            $scope.popup_add_title = 'Log (2.5)';
             $scope.tempData = prms;
+            $scope.remFuel = prms.remFuel;
             $scope.entity.Id = prms.Id;
 
         }
@@ -956,8 +2243,7 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
     });
     //////////////////////////////
 
-}]);  
-
+}]);
 
 'use strict';
 app.controller('asrAddController', ['$scope', '$location', 'flightService', 'authService', '$routeParams', '$rootScope', '$window', function ($scope, $location, flightService, authService, $routeParams, $rootScope, $window) {
@@ -990,10 +2276,17 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
                 widget: 'dxButton', location: 'before', options: {
                     type: 'default', text: 'Sign', icon: 'fas fa-signature', onClick: function (e) {
                         if ($rootScope.getOnlineStatus()) {
-                            //$scope.entity.Id
-                            var data = { FlightId: $scope.entity.FlightId, documentType: 'asr' };
+                            $rootScope.checkInternet(function (st) {
+                                if (st) {
+                                    var data = { FlightId: $scope.entity.FlightId, documentType: 'asr' };
 
-                            $rootScope.$broadcast('InitSignAdd', data);
+                                    $rootScope.$broadcast('InitSignAdd', data);
+                                }
+                                else {
+                                    General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');
+                                }
+                            });
+
                         }
                         else {
                             General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');
@@ -1053,6 +2346,7 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
         dragEnabled: true,
         closeOnOutsideClick: false,
         onShowing: function (e) {
+            $rootScope.IsRootSyncEnabled = false;
             $scope.popup_instance.repaint();
 
 
@@ -1071,7 +2365,7 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
 
         },
         onHiding: function () {
-
+            $rootScope.IsRootSyncEnabled = true;
             //$scope.clearEntity();
             $scope.entity = {
                 Id: -1,
@@ -1116,15 +2410,25 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
     $scope.bind = function () {
         $scope.entity.FlightId = $scope.tempData.FlightId;
 
-        if ($rootScope.getOnlineStatus()) {
 
-            flightService.checkLock($scope.entity.FlightId, 'asr').then(function (response) {
-                $scope.isLockVisible = false;
-                if (response.IsSuccess && response.Data.canLock) {
-                    $scope.isLockVisible = true;
+
+        if ($rootScope.getOnlineStatus()) {
+            $rootScope.checkInternet(function (st) {
+                if (st) {
+                    flightService.checkLock($scope.entity.FlightId, 'asr').then(function (response) {
+                        $scope.isLockVisible = false;
+                        if (response.IsSuccess && response.Data.canLock) {
+                            $scope.isLockVisible = true;
+                        }
+                    }, function (err) { });
                 }
-            }, function (err) { });
+                else {
+                    General.ShowNotifyBottom("The application cannot connect to the Server. Please check your internet connection.", 'error');
+                }
+            });
+
         }
+
 
         $scope.loadingVisible = true;
 
@@ -1151,7 +2455,7 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
                 }
                 else {
                     if (response2.Data.JLSignedBy) {
-                        $scope.isEditable = false;
+                        //$scope.isEditable = false;
                         $scope.url_sign = signFiles + response.Data.PICId + ".jpg";
                         $scope.PIC = response.Data.PIC;
                         $scope.signDate = moment(new Date(response.Data.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');
@@ -2206,8 +3510,8 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
 
         if (prms.doc == 'asr')
             flightService.signDocLocal(prms, prms.doc).then(function (response) {
-                $scope.isEditable = false;
-                $scope.isLockVisible = false;
+                // $scope.isEditable = false;
+                // $scope.isLockVisible = false;
                 $scope.url_sign = signFiles + prms.PICId + ".jpg";
                 $scope.PIC = prms.PIC;
                 $scope.signDate = moment(new Date(prms.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');
@@ -2230,11 +3534,6 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
     });
 
 }]);
-
-
-
-
-
 
 
 'use strict';
@@ -2438,10 +3737,18 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
                 widget: 'dxButton', location: 'before', options: {
                     type: 'default', text: 'Sign', icon: 'fas fa-signature', onClick: function (e) {
                         if ($rootScope.getOnlineStatus()) {
-                            //$scope.entity.Id
-                            var data = { FlightId: $scope.entity.FlightId, documentType: 'vr' };
+                            $rootScope.checkInternet(function (st) {
+                                if (st) {
+                                    var data = { FlightId: $scope.entity.FlightId, documentType: 'vr' };
 
-                            $rootScope.$broadcast('InitSignAdd', data);
+                                    $rootScope.$broadcast('InitSignAdd', data);
+                                }
+                                else {
+                                    General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');
+                                }
+                            });
+
+
                         }
                         else {
                             General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');
@@ -2454,47 +3761,79 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
                 widget: 'dxButton', location: 'after', options: {
                     type: 'default', text: 'Save', icon: 'check', validationGroup: 'logadd', onClick: function (e) {
 
+                        $scope.entity.EFBFlightIrregularities = [];
+                        $scope.entity.EFBReasons = [];
                         $scope.entity.Irregularities = [];
-                        if ($scope.irr_100111)
+                        if ($scope.irr_100111) {
                             $scope.entity.Irregularities.push(100111);
-                        if ($scope.irr_100112)
+                            $scope.entity.EFBFlightIrregularities.push({ IrrId: 100111 });
+                        }
+                        if ($scope.irr_100112) {
                             $scope.entity.Irregularities.push(100112);
-                        if ($scope.irr_100113)
+                            $scope.entity.EFBFlightIrregularities.push({ IrrId: 100112 });
+                        }
+                        if ($scope.irr_100113) {
                             $scope.entity.Irregularities.push(100113);
-                        if ($scope.irr_100114)
+                            $scope.entity.EFBFlightIrregularities.push({ IrrId: 100113 });
+                        }
+                        if ($scope.irr_100114) {
                             $scope.entity.Irregularities.push(100114);
-                        if ($scope.irr_100115)
+                            $scope.entity.EFBFlightIrregularities.push({ IrrId: 100114 });
+                        }
+                        if ($scope.irr_100115) {
                             $scope.entity.Irregularities.push(100115);
+                            $scope.entity.EFBFlightIrregularities.push({ IrrId: 100115 });
+                        }
                         $scope.entity.Reasons = [];
-                        if ($scope.re_100119)
+                        if ($scope.re_100119) {
                             $scope.entity.Reasons.push(100119);
+                            $scope.entity.EFBReasons.push({ ReasonId: 100119 });
+                        }
 
-                        if ($scope.re_100120)
+                        if ($scope.re_100120) {
                             $scope.entity.Reasons.push(100120);
+                            $scope.entity.EFBReasons.push({ ReasonId: 100120 });
+                        }
 
-                        if ($scope.re_100121)
+                        if ($scope.re_100121) {
                             $scope.entity.Reasons.push(100121);
+                            $scope.entity.EFBReasons.push({ ReasonId: 100121 });
+                        }
 
-                        if ($scope.re_100122)
+                        if ($scope.re_100122) {
                             $scope.entity.Reasons.push(100122);
+                            $scope.entity.EFBReasons.push({ ReasonId: 100122 });
+                        }
 
-                        if ($scope.re_100123)
+                        if ($scope.re_100123) {
                             $scope.entity.Reasons.push(100123);
+                            $scope.entity.EFBReasons.push({ ReasonId: 100123 });
+                        }
 
-                        if ($scope.re_100124)
+                        if ($scope.re_100124) {
                             $scope.entity.Reasons.push(100124);
+                            $scope.entity.EFBReasons.push({ ReasonId: 100124 });
+                        }
 
-                        if ($scope.re_100125)
+                        if ($scope.re_100125) {
                             $scope.entity.Reasons.push(100125);
+                            $scope.entity.EFBReasons.push({ ReasonId: 100125 });
+                        }
 
-                        if ($scope.re_100126)
+                        if ($scope.re_100126) {
                             $scope.entity.Reasons.push(100126);
+                            $scope.entity.EFBReasons.push({ ReasonId: 100126 });
+                        }
 
-                        if ($scope.re_100127)
+                        if ($scope.re_100127) {
                             $scope.entity.Reasons.push(100127);
+                            $scope.entity.EFBReasons.push({ ReasonId: 100127 });
+                        }
 
-                        if ($scope.re_100128)
+                        if ($scope.re_100128) {
                             $scope.entity.Reasons.push(100128);
+                            $scope.entity.EFBReasons.push({ ReasonId: 100128 });
+                        }
 
 
 
@@ -2505,7 +3844,7 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
                         $scope.loadingVisible = true;
                         flightService.saveVR($scope.entity).then(function (response2) {
                             $scope.loadingVisible = false;
-                            console.log('Vr res', response2);
+
                             if (response2.IsSuccess) {
                                 General.ShowNotify(Config.Text_SavedOk, 'success');
                                 console.log('Vr', response2.Data);
@@ -2532,6 +3871,7 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
         dragEnabled: true,
         closeOnOutsideClick: false,
         onShowing: function (e) {
+            $rootScope.IsRootSyncEnabled = false;
             $scope.popup_instance.repaint();
 
 
@@ -2550,7 +3890,7 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
 
         },
         onHiding: function () {
-
+            $rootScope.IsRootSyncEnabled = true;
             //$scope.clearEntity();
 
 
@@ -2676,14 +4016,24 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
     $scope.bind = function () {
         $scope.entity.FlightId = $scope.tempData.FlightId;
         if ($rootScope.getOnlineStatus()) {
-
-            flightService.checkLock($scope.entity.FlightId, 'vr').then(function (response) {
-                $scope.isLockVisible = false;
-                if (response.IsSuccess && response.Data.canLock) {
-                    $scope.isLockVisible = true;
+            $rootScope.checkInternet(function (st) {
+                if (st) {
+                    flightService.checkLock($scope.entity.FlightId, 'vr').then(function (response) {
+                        $scope.isLockVisible = false;
+                        if (response.IsSuccess && response.Data.canLock) {
+                            $scope.isLockVisible = true;
+                        }
+                    }, function (err) { });
                 }
-            }, function (err) { });
+                else {
+                    General.ShowNotifyBottom("The application cannot connect to the Server. Please check your internet connection.", 'error');
+                }
+            });
+
         }
+
+
+
         $scope.loadingVisible = true;
 
         flightService.epGetFlightLocal($scope.entity.FlightId).then(function (response) {
@@ -2696,7 +4046,7 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
             $scope.loadingVisible = true;
 
             flightService.epGetVRByFlight($scope.entity.FlightId).then(function (response2) {
-                console.log('GET VR', response2);
+
                 $scope.loadingVisible = false;
                 if (!response2.Data) {
                     $scope.entity.Id = -1;
@@ -2706,7 +4056,7 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
                 }
                 else {
                     if (response2.Data.JLSignedBy) {
-                        $scope.isEditable = false;
+                        // $scope.isEditable = false;
                         $scope.url_sign = signFiles + response.Data.PICId + ".jpg";
                         $scope.PIC = response.Data.PIC;
                         $scope.signDate = moment(new Date(response.Data.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');
@@ -2785,8 +4135,8 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
 
         if (prms.doc == 'vr')
             flightService.signDocLocal(prms, prms.doc).then(function (response) {
-                $scope.isEditable = false;
-                $scope.isLockVisible = false;
+                // $scope.isEditable = false;
+                //   $scope.isLockVisible = false;
                 $scope.url_sign = signFiles + prms.PICId + ".jpg";
                 $scope.PIC = prms.PIC;
                 $scope.signDate = moment(new Date(prms.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');
@@ -2883,6 +4233,8 @@ app.controller('vrAddController', ['$scope', '$location', 'flightService', 'auth
 }]);  
 
 
+
+ 
 'use strict';
 app.controller('drAddController', ['$scope', '$location', 'flightService', 'authService', '$routeParams', '$rootScope', '$window', function ($scope, $location, flightService, authService, $routeParams, $rootScope, $window) {
     $scope.isNew = true;
@@ -3437,10 +4789,18 @@ app.controller('drAddController', ['$scope', '$location', 'flightService', 'auth
                 widget: 'dxButton', location: 'before', options: {
                     type: 'default', text: 'Sign', icon: 'fas fa-signature', onClick: function (e) {
                         if ($rootScope.getOnlineStatus()) {
-                            //$scope.entity.Id
-                            var data = { FlightId: $scope.entity.FlightId, documentType: 'dr' };
+                            $rootScope.checkInternet(function (st) {
+                                if (st) {
+                                    var data = { FlightId: $scope.entity.FlightId, documentType: 'dr' };
 
-                            $rootScope.$broadcast('InitSignAdd', data);
+                                    $rootScope.$broadcast('InitSignAdd', data);
+                                }
+                                else {
+                                    General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');
+                                }
+                            });
+                            //$scope.entity.Id
+
                         }
                         else {
                             General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');
@@ -3485,6 +4845,7 @@ app.controller('drAddController', ['$scope', '$location', 'flightService', 'auth
         dragEnabled: true,
         closeOnOutsideClick: false,
         onShowing: function (e) {
+            $rootScope.IsRootSyncEnabled = false;
             $scope.popup_instance.repaint();
 
 
@@ -3505,7 +4866,7 @@ app.controller('drAddController', ['$scope', '$location', 'flightService', 'auth
         onHiding: function () {
 
             //$scope.clearEntity();
-
+            $rootScope.IsRootSyncEnabled = true;
             $scope.popup_add_visible = false;
             $rootScope.$broadcast('onDrAddHide', null);
         },
@@ -3584,13 +4945,20 @@ app.controller('drAddController', ['$scope', '$location', 'flightService', 'auth
         $scope.entity.FlightId = $scope.tempData.FlightId;
 
         if ($rootScope.getOnlineStatus()) {
-
-            flightService.checkLock($scope.entity.FlightId, 'dr').then(function (response) {
-                $scope.isLockVisible = false;
-                if (response.IsSuccess && response.Data.canLock) {
-                    $scope.isLockVisible = true;
+            $rootScope.checkInternet(function (st) {
+                if (st) {
+                    flightService.checkLock($scope.entity.FlightId, 'dr').then(function (response) {
+                        $scope.isLockVisible = false;
+                        if (response.IsSuccess && response.Data.canLock) {
+                            $scope.isLockVisible = true;
+                        }
+                    }, function (err) { });
                 }
-            }, function (err) { });
+                else {
+                    General.ShowNotifyBottom("The application cannot connect to the Server. Please check your internet connection.", 'error');
+                }
+            });
+
         }
 
         $scope.loadingVisible = true;
@@ -3664,10 +5032,11 @@ app.controller('drAddController', ['$scope', '$location', 'flightService', 'auth
                 }
                 else {
                     if (response2.Data.JLSignedBy) {
-                        $scope.isEditable = false;
+                        //$scope.isEditable = false;
+
                         $scope.url_sign = signFiles + response.Data.PICId + ".jpg";
-                        $scope.PIC = response.Data.PIC;
-                        $scope.signDate = moment(new Date(response.Data.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');
+                        $scope.PIC = response2.Data.PIC;
+                        $scope.signDate = moment(new Date(response2.Data.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');
                     }
                     if (response2.Data.Alert) {
                         General.Confirm("The document updated by " + response2.Data.Alert + ". Would you like to get edited report?", function (res) {
@@ -3743,8 +5112,8 @@ app.controller('drAddController', ['$scope', '$location', 'flightService', 'auth
 
         if (prms.doc == 'dr')
             flightService.signDocLocal(prms, prms.doc).then(function (response) {
-                $scope.isEditable = false;
-                $scope.isLockVisible = false;
+                // $scope.isEditable = false;
+                // $scope.isLockVisible = false;
                 $scope.url_sign = signFiles + prms.PICId + ".jpg";
                 $scope.PIC = prms.PIC;
                 $scope.signDate = moment(new Date(prms.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');

@@ -1,6 +1,6 @@
 ﻿'use strict';
-app.controller('loginController', ['$scope', '$location', 'authService', 'ngAuthSettings', '$rootScope', function ($scope, $location, authService, ngAuthSettings, $rootScope) {
-
+app.controller('loginController', ['$scope', '$location', 'authService', 'ngAuthSettings', '$rootScope','$window', function ($scope, $location, authService, ngAuthSettings, $rootScope,$window) {
+    
     $scope.loginData = {
         userName: "",
         password: "",
@@ -20,22 +20,47 @@ app.controller('loginController', ['$scope', '$location', 'authService', 'ngAuth
 
         $('.wrapper').addClass('form-success');
         if ($rootScope.getOnlineStatus()) {
-            authService.login($scope.loginData).then(function (response) {
+            $rootScope.checkInternet(function (st) {
+                if (st) {
+                    authService.login($scope.loginData).then(function (response) {
 
 
 
-                $rootScope.userName = authService.authentication.userName;
+                        $rootScope.userName = authService.authentication.userName;
 
-                $location.path('/home');
+                        $location.path('/home');
 
 
-            },
-                function (err) {
-                    $scope.message = err.error_description;
-                    $('.wait').hide();
-                    $('.wrapper').removeClass('form-success');
-                    $('form').fadeIn(700);
-                });
+                    },
+                        function (err) {
+                            $scope.message = err.error_description;
+                            $('.wait').hide();
+                            $('.wrapper').removeClass('form-success');
+                            $('form').fadeIn(700);
+                        });
+                }
+                else {
+                    authService.loginLocal($scope.loginData).then(function (response) {
+
+
+
+                        $rootScope.userName = authService.authentication.userName;
+
+                        $location.path('/home');
+
+
+                    },
+                        function (err) {
+
+                            $scope.message = err.error_description;
+                            $('.wait').hide();
+                            $('.wrapper').removeClass('form-success');
+                            $('form').fadeIn(700);
+                            General.ShowNotify($scope.message, 'error');
+                        });
+                }
+            });
+            
         }
         else {
            // alert('offline login');
@@ -110,4 +135,14 @@ app.controller('loginController', ['$scope', '$location', 'authService', 'ngAuth
     $scope.register = function () {
         $location.path('/register/s1');
     };
+    $scope.$on('$viewContentLoaded', function () {
+
+        $('.container').height(($(window).height() - 450) / 2).fadeIn();
+    });
+    $('.container').fadeIn();
+    var appWindow = angular.element($window);
+    appWindow.bind('resize', function () {
+        $('.container').height(($(window).height() - 450) / 2).fadeIn();
+    });
+
 }]);

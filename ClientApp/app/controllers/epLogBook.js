@@ -1,7 +1,18 @@
 ﻿'use strict';
 app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$rootScope', 'flightService', 'authService', 'notificationService', '$route', '$window', '$q', '$http', function ($scope, $location, $routeParams, $rootScope, flightService, authService, notificationService, $route, $window, $q, $http) {
+    
+    $scope.updversion = 'v2.5';
+    $scope.employeeId = $rootScope.employeeId;
+    $scope.isPIC = false;
+    $scope._user = '';
+    try {
+        $scope._user = $rootScope.userName.toLowerCase();
+    }
+    catch (e) {
 
-
+    }
+    
+    
    
     // var m1=moment().format();     // 2013-02-04T10:35:24-08:00
     // var m2 = moment.utc().format(); // 2013-02-04T18:35:24+00:00
@@ -50,7 +61,7 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
     $scope.prms = $routeParams.prms;
      
     $scope.scroll_btns = {
-        direction: 'horizontal',
+        direction: 'horizontal', 
         bounceEnabled: false,
         showScrollbar: 'never',
         pulledDownText: '',
@@ -133,11 +144,20 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         text: 'Log',
         type: 'default',
         //icon: 'search',
-        width: 120,
+        width: 150,
 
         onClick: function (e) {
-
-            var data = { Id: $scope.selectedFlight.FlightId, crewId: $scope.selectedFlight.CrewId };
+            // alert($scope.preFlight.FuelTotal + '   ' + $scope.preFlight.FuelUsed);
+            var rem = null;
+            if ($scope.preFlight && $scope.preFlight.FuelTotal && $scope.preFlight.FuelUsed) {
+                try {
+                    rem = $scope.preFlight.FuelTotal - $scope.preFlight.FuelUsed;
+                }
+                catch (ee) {
+                }
+              
+            }
+            var data = { Id: $scope.selectedFlight.FlightId, crewId: $scope.selectedFlight.CrewId,remFuel:rem };
 
             $rootScope.$broadcast('InitLogAdd', data);
 
@@ -153,7 +173,7 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         text: 'ASR',
         type: 'default',
         //icon: 'search',
-        width: 120,
+        width: 150,
 
         onClick: function (e) {
 
@@ -215,7 +235,7 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         text: 'OFP',
         type: 'default',
         //icon: 'search',
-        width: 120,
+        width: 150,
 
         onClick: function (e) {
             //if (!$rootScope.getOnlineStatus()) {
@@ -231,7 +251,7 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
             disabled: 'IsLegLocked'
         }
     };
-    $scope.leftHeight = $(window).height() - 150;
+    $scope.leftHeight = $(window).height() - 160;
     $scope.scroll_left = {
         width: '100%',
         bounceEnabled: false,
@@ -254,7 +274,7 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         }
 
     };
-    $scope.rightHeight = $(window).height() - 150 - 45;
+    $scope.rightHeight = $(window).height() - 205;
     $scope.scroll_right = {
         width: '100%',
         bounceEnabled: false,
@@ -278,6 +298,14 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
 
     };
     $scope.clickDate = function (n) {
+        //if (n == -7) {
+        //    alert(n);
+        //    caches.keys().then(function (names) {
+        //        for (let name of names)
+        //            caches.delete(name);
+        //    });
+        //    return;
+        //}
         var dt1 = new Date();
         var dt2 = (new Date()).addDays(n);
         $scope.dt_from = dt2;
@@ -285,8 +313,11 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         $scope.bind();
     };
     $scope.clickDay = function (n) {
-
         
+        
+        //flightService.syncUnsignedOFPS(function (result) { });
+
+       // return;
         
         var dt = (new Date()).addDays(n);
         $scope.dt_from = dt;
@@ -299,8 +330,14 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         $rootScope.$broadcast('InitCalendar', data);
     };
     $scope.selectedFlight = null;
-    $scope.showFlight = function (item, n, $event) {
-        $scope.selectedFlight = item;
+    $scope.preFlight = null;
+    $scope.showFlight = function (item, items, index) {
+        $scope.preFlight = null;
+        $scope.selectedFlight = item; 
+        if (index && index>0) {
+            $scope.preFlight = items[index - 1];
+          
+        }
         //if (item.FlightNumber == '6919')
         //    $scope.imgurl = staticFiles + 'Weather/SIGWX/ADDS/a.png';
 
@@ -482,6 +519,59 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
 
         }
     };
+
+
+    ////////////////////////////
+    $scope.popup_loading_visible = false;
+    $scope.popup_loading = {
+        height: 120,
+        width: '100%',
+        title: 'Message',
+        showTitle: false,
+        shading:true,
+        toolbarItems: [
+
+
+
+            {
+                widget: 'dxButton', location: 'after', options: {
+                    type: 'danger', text: 'Cloas', onClick: function (e) {
+                        
+                        $scope.popup_loading_visible = false;
+
+                    }
+                }, toolbar: 'bottom'
+            },
+            
+
+        ],
+        position: 'top',
+        animation: { show: { type: 'fadeIn', duration: 400 }, hide: { type: 'fadeOut', duration: 400 }},
+        visible: false,
+        dragEnabled: true,
+        closeOnOutsideClick: false,
+        onShowing: function (e) {
+
+        },
+        onShown: function (e) {
+
+        },
+        onHiding: function () {
+
+            //$scope.clearEntity();
+
+            $scope.popup_loading_visible = false;
+
+        },
+        onContentReady: function (e) {
+
+        },
+        bindingOptions: {
+            visible: 'popup_loading_visible',
+
+
+        }
+    };
     ////////////////////////////
     $scope.syncedFlight = null;
     //doolmah
@@ -490,31 +580,46 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
             alert('You are OFFLINE.Please check your internet connection.');
             return;
         }
-        var fid = item.FlightId;
-        flightService.epGetFlightLocal(fid).then(function (response) {
-            if (response.IsSuccess) {
-                $scope.syncedFlight = response.Data;
-                var dtoCheck = { JLDate: $scope.syncedFlight.JLDate, CrewId: $scope.syncedFlight.CrewId, FlightId: $scope.syncedFlight.FlightId };
-                $scope.loadingVisible = true;
-                flightService.epCheckLog(dtoCheck).then(function (response) {
-                    $scope.loadingVisible = false;
-                    $scope.checkResult = response.Data;
+        $rootScope.checkInternet(function (st) {
+            if (st) {
+                flightService.autoSyncLogsNew(function (data) {
 
-                    if (($scope.checkResult.JLUserId && $scope.checkResult.JLUserId != $scope.syncedFlight.JLUserId)
-                        || ($scope.checkResult.JLUserId && getTimeForSync($scope.checkResult.JLDate) > getTimeForSync($scope.syncedFlight.JLDate))
-                    ) {
-                        $scope.checkResult.JLDate2 = moment($scope.checkResult.JLDate).format('YYYY-MMM-DD HH:mm');
-                        $scope.popup_check2_visible = true;
-                    }
-                    else {
+                    console.log('Synced Log Result ', data);
 
-                        $scope.overwriteServer();
-                    }
-                }, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
-
+                });
             }
+            else {
 
-        }, function (err) { });
+                alert('The application cannot connect to the Server. Please check your internet connection.');
+                return;
+            }
+        });
+        
+        //var fid = item.FlightId;
+        //flightService.epGetFlightLocal(fid).then(function (response) {
+        //    if (response.IsSuccess) {
+        //        $scope.syncedFlight = response.Data;
+        //        var dtoCheck = { JLDate: $scope.syncedFlight.JLDate, CrewId: $scope.syncedFlight.CrewId, FlightId: $scope.syncedFlight.FlightId };
+        //        $scope.loadingVisible = true;
+        //        flightService.epCheckLog(dtoCheck).then(function (response) {
+        //            $scope.loadingVisible = false;
+        //            $scope.checkResult = response.Data;
+
+        //            if (($scope.checkResult.JLUserId && $scope.checkResult.JLUserId != $scope.syncedFlight.JLUserId)
+        //                || ($scope.checkResult.JLUserId && getTimeForSync($scope.checkResult.JLDate) > getTimeForSync($scope.syncedFlight.JLDate))
+        //            ) {
+        //                $scope.checkResult.JLDate2 = moment($scope.checkResult.JLDate).format('YYYY-MMM-DD HH:mm');
+        //                $scope.popup_check2_visible = true;
+        //            }
+        //            else {
+
+        //                $scope.overwriteServer();
+        //            }
+        //        }, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
+
+        //    }
+
+        //}, function (err) { });
     };
     $scope.getDutyType = function (flt) {
         if (!flt)
@@ -730,6 +835,57 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
             $scope.folderSIGWX.push(sigwx);
         });
         $scope.popup_folder_visible = true;
+    };
+
+    $scope.IsSJLVisible = function (g) {
+        var first = g.items[0];
+        var last = g.items[g.items.length - 1];
+        var diff = Math.abs((new Date()).getTime() - (new Date(last.STALocal)).getTime()) / 3600000;
+        return diff <= 24 && ($scope.employeeId == first.PICId || $scope._user == 'zahiri');
+
+    };
+    $scope.drClick = function (g) {
+        var first = g.items[0];
+        var data = { FlightId: first.FlightId };
+
+        $rootScope.$broadcast('InitDrAdd', data);
+    };
+    $scope.sjlClick = function (g) {
+
+        if ($rootScope.getOnlineStatus()) {
+            flightService.checkInternet(function (st) {
+                if (st) {
+                    var ids = Enumerable.From(g.items).Select('$.FlightId').ToArray();
+                    var data = { FlightId: ids, documentType: 'jlog' };
+
+                    $rootScope.$broadcast('InitSignAdd', data);
+                }
+                else {
+                    General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');
+                }
+              
+            });
+        }
+     
+    };
+
+    $scope.sofplClick = function (g) {
+
+        if ($rootScope.getOnlineStatus()) {
+            flightService.checkInternet(function (st) {
+                if (st) {
+                    var ids = Enumerable.From(g.items).Select('$.FlightId').ToArray();
+                    var data = { FlightId: ids, documentType: 'ofpsall' };
+
+                    $rootScope.$broadcast('InitSignAdd', data);
+                }
+                else {
+                    General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');
+                }
+
+            });
+        }
+
     };
 
 
@@ -1017,51 +1173,79 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
 
         });
 
-        _tafcnt = 0;
-
+         
+       _tafcnt = 0;
         //9-18
-        _getTAF(_grps[0], _grps);
+        // _getTAF(_grps[0], _grps);
 
 
-        if ($rootScope.getOnlineStatus() && 1==2) {
-             
+        if ($rootScope.getOnlineStatus()) {
+            $rootScope.checkInternet(function (st) {
+                if (st) {
+                    _getTAF(_grps[0], _grps);
+                    if (grps && grps.length > 0) {
+
+                        var grpsFlightIds = [];
+                        $.each(grps, function (_i, _g) {
+                            $.each(_g.items, function (_j, _flt) {
+                                grpsFlightIds.push(_flt.FlightId);
+                            });
+                        });
+                        var _fdto = { ids: grpsFlightIds };
+
+
+                        flightService.epGetOFPByFlights(_fdto, function () {  /*$scope.popup_loading_visible = true;*/ }).then(function (_taf) {
+                            /*$scope.popup_loading_visible = false;*/
+
+
+
+
+                        }, function (err) { });
+
+                        flightService.epGetDRsByFlights(_fdto).then(function (_taf) {
+
+
+
+                        }, function (err) { });
+                        _getWeatherCharts(grps);
+                        _getWindCharts(grps);
+                        _getIRIMOSigwx(grps);
+
+
+                        //_getWeatherCharts(grps);
+                        //_getWindCharts(grps);
+                        //_getIRIMOSigwx(grps);
+
+                    }
+                    else {
+                        //  _getTAF(_grps[0], _grps);
+                    }
+                }
+            });
+           // _tafcnt = 0;
+           // _getTAF(_grps[0], _grps);
            
-            if (grps && grps.length > 0) {
-               
-                var grpsFlightIds = [];
-                $.each(grps, function (_i, _g) {
-                    $.each(_g.items, function (_j, _flt) {
-                        grpsFlightIds.push(_flt.FlightId);
-                    });
-                });
-                var _fdto = { ids: grpsFlightIds };
-               
-                
-                //flightService.epGetOFPByFlights(_fdto).then(function (_taf) {
-                    
-
-               // }, function (err) { });
-                
-                flightService.epGetDRsByFlights(_fdto).then(function (_taf) {
-
-
-                }, function (err) { });
-
-                 _getWeatherCharts(grps);
-                _getWindCharts(grps);
-                _getIRIMOSigwx(grps);
-                // _getIRIMOFF(grps);
-            }
+            
         }
        
 
     };
+    
     $scope.bind = function (show) {
         if (!authService.isAuthorized())
             return;
-        var _d1 = moment($scope.dt_from).format('YYYY-MM-DDTHH:mm:ss');
+        
+        //var _d1 = moment($scope.dt_from).format('YYYY-MM-DDTHH:mm:ss');
 
-        var _d2 = moment($scope.dt_to).format('YYYY-MM-DDTHH:mm:ss');
+        //var _d2 = moment($scope.dt_to).format('YYYY-MM-DDTHH:mm:ss');
+        var _d1 = moment($scope.dt_from).format('YYYY-MM-DDT00:00:00');
+
+        var _d2 = moment($scope.dt_to).format('YYYY-MM-DDT00:00:00');
+        
+        
+         if ($rootScope.userName == 'fazeli') {
+             //alert('test1'); 
+         }
         $scope.loadingVisible = true;
         flightService.epGetCrewFlights(_d1, _d2).then(function (response) {
 
@@ -1158,8 +1342,9 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         //alert('w: '+$(window).width());
 
         $scope.$apply(function () {
-            $scope.leftHeight = $(window).height() - 135;
-            $scope.rightHeight = $(window).height() - 135 - 45;
+            $scope.leftHeight = $(window).height() - 160;
+            $scope.rightHeight = $(window).height() - 205;
+            $scope.scroll_folder_height = $(window).height() - 100;
         });
     });
 

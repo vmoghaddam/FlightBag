@@ -10,5 +10,6 @@ namespace APCore.Models
         public int Id { get; set; }
         public int FlightId { get; set; }
         public int? Delay { get; set; }
+        public int? TypeId { get; set; }
     }
 }

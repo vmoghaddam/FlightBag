@@ -279,6 +279,7 @@ var reportBase = 'http://report.crewpocket.ir/';
 
 var serviceBase = 'http://fleet.flypersia.aero/apiv2/';
 var serviceBase2 = 'https://localhost:5001/api/';
+//var serviceBase2 = 'https://172.20.10.3:45458/api/';
 //var serviceBase3 = 'https://fbpocket.ir/service/api/';
 var serviceBase3 = 'https://localhost:5001/api/';
 
@@ -297,16 +298,17 @@ var GlobalUserId = null;
 app.constant('ngAuthSettings', {
     apiServiceBaseUri: serviceBase,
     apiUrl: serviceBase2,
-    clientId: 'ngAuthApp'
+    clientId: 'ngAuthApp' 
 });
 
 //app.config(function ($httpProvider) {
 app.config(['$httpProvider', function ($httpProvider) {
-
+     
     $httpProvider.interceptors.push('authInterceptorService');
 }]);
 
-app.run(['authService', 'activityService', '$rootScope', '$location', '$templateCache', 'generalService', 'localStorageService', '$window', 'flightService', function (authService, activityService, $rootScope, $location, $templateCache, generalService, localStorageService, $window, flightService) {
+app.run(['authService', 'activityService', '$rootScope', '$location', '$templateCache', 'generalService', 'localStorageService', '$window', 'flightService', '$interval' , function (authService, activityService, $rootScope, $location, $templateCache, generalService, localStorageService, $window, flightService, $interval ) {
+    
     db.Init();
     //var collection = db.getDb().AppCrewFlights;
 
@@ -329,27 +331,92 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
     $rootScope.isServerMode = false;
     $rootScope.online = navigator.onLine;
     // alert('INIT ' + $rootScope.online);
-    $rootScope.getOnlineStatus = function () {
+    $rootScope.getOnlineStatus = function () { 
         // return true;
+        
         return navigator.onLine;
     };
+    $rootScope.checkInternet = function (callback) {
+        flightService.checkInternet(callback);
+    }; 
 
     $rootScope.onlineStatusChanged = function () {
-    /*alert($rootScope.online);*/
+    
         if ($rootScope.getOnlineStatus()) {
-            flightService.autoSyncLogs(function (data) {
 
-                console.log('Synced Log Result ', data);
+           
 
+            $rootScope.checkInternet(function (st) {
+                if (st) {
+                    flightService.autoSyncLogsNew(function (data) {
+
+                      //  console.log('Synced Log Result ', data);
+
+                    });
+                    flightService.autoSyncASR(function (data) { });
+                    flightService.autoSyncVR(function (data) { });
+                    flightService.autoSyncDR(function (data) { });
+                    flightService.autoSyncOFPProp(function (data) { });
+                }
+                else {
+
+                    alert('The application cannot connect to the Server. Please check your internet connection.');
+                    return;
+                }
             });
-            flightService.autoSyncASR(function (data) { });
-            flightService.autoSyncVR(function (data) { });
-            flightService.autoSyncDR(function (data) { }); 
-            flightService.autoSyncOFPProp(function (data) { });
+
+
+
+
+
             
         }
     };
+    $rootScope.IsRootSyncEnabled = true;
+    $rootScope.callAtInterval = function () {
+        if (!$rootScope.IsRootSyncEnabled)
+            return;
+         
+      //  console.log("$scope.callAtInterval - Interval occurred  " );
 
+        if ($rootScope.getOnlineStatus()) {
+
+
+
+            $rootScope.checkInternet(function (st) {
+                if (st) {
+                    flightService.autoSyncLogsNew(function (data) {
+
+                      //  console.log('Synced Log Result ', data);
+
+                    });
+                    flightService.autoSyncASR(function (data) { });
+                    flightService.autoSyncVR(function (data) { });
+                    flightService.autoSyncDR(function (data) { });
+                    flightService.syncUnsignedOFPS(function (data) { });
+                }
+
+            });
+
+
+        }
+    };
+
+    $interval(function () { $rootScope.callAtInterval(); }, 60*1000);
+    $rootScope.onlineClick = function () {
+        alert('UPDATING. PLEASE WAIT TO RELOAD');
+        caches.keys().then(function (names) {
+            for (let name of names)
+                caches.delete(name);
+        });
+        setTimeout(function () {
+            $rootScope.$apply(function () {
+                $window.location.reload();
+            });
+        }, 5000);
+        
+
+    };
     $window.addEventListener("offline", function () {
         $rootScope.$apply(function () {
             $rootScope.online = false;
@@ -620,7 +687,9 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
     $rootScope.getTimeHHMM2 = function (x, prm) {
         if (!x || !x[prm])
             return '-';
-        return moment(x[prm]).format('HHmm');
+       
+        //return x[prm];
+        return moment( x[prm] ).format('HHmm');
     };
     $rootScope.formatDateLong = function (dt) {
         return moment(dt).format('ddd DD MMM YY');
@@ -631,6 +700,10 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
     $rootScope.getDuration = function (x) {
         if (!x)
             return "-";
+        if (x < 0) {
+            x = -x;
+            return "- "+pad(Math.floor(x / 60)).toString() + ':' + pad(x % 60).toString();
+        }
         return pad(Math.floor(x / 60)).toString() + ':' + pad(x % 60).toString();
     };
     $rootScope.getStatusClass = function (item) {

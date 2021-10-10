@@ -232,6 +232,30 @@ app.controller('metarController', ['$scope', '$location', 'flightService', 'auth
 
         }).ToArray();
 
+        /////////////////////
+        //////////////////////
+        //nool
+        if ($rootScope.getOnlineStatus()) {
+            flightService.updateMETARs($scope.fdp.FDPId).then(function (response) {
+                
+                $scope.tempData.METAR = response.Data;
+                $scope.fdp.METAR = response.Data;
+
+
+                $scope.filtered = Enumerable.From($scope.fdp.METAR)
+                    .Where(function (x) { return $scope.selectedStations.indexOf(x.StationId) != -1; })
+                    .OrderBy(function (x) { return $scope.stations.indexOf(x.StationId); }).ThenByDescending(function (x) {
+                        return Number(moment(new Date(x.observation_time)).format('YYMMDDHHmm'));
+
+                    }).ToArray();
+
+
+
+            }, function (err) {   });
+        }
+        /////////////////////
+        /////////////////////
+
     };
     ////////////////////////////
     var appWindow = angular.element($window);

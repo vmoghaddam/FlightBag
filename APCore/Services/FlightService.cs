@@ -22,7 +22,9 @@ namespace APCore.Services
         Task<DataResponse> GetFlight(int flightId);
         Task<DataResponse> GetFlightDelays(int flightId);
         Task<DataResponse> SaveLog(LogViewModel log);
-        Task<DataResponse> SaveSign(int flightId, int pic, string picStr,string doc,string user);
+        Task<DataResponse> SaveLog2(LogViewModel2 log);
+        Task<DataResponse> SaveSign(int flightId, int pic, string picStr, string doc, string user);
+        Task<DataResponse> SaveSignJL(List<int> flightIds, int pic, string picStr, string doc, string user);
         Task<DataResponse> CheckLog(LogViewModel log);
         Task<DataResponse> GetCrewCalendarByYearMonth(int crewId, int year, int month);
         Task<DataResponse> GetCrewCalendarByYearMonth(int crewId, DateTime from, DateTime to);
@@ -38,7 +40,7 @@ namespace APCore.Services
         Task<DataResponse> GetOFPsByFlightIds(List<int?> ids);
         Task<DataResponse> GetDRsByFlightIds(List<int?> ids);
 
-        Task<DataResponse> CheckLock(int flightId,string doc);
+        Task<DataResponse> CheckLock(int flightId, string doc);
 
         //Task<UserManagerResponse> ConfirmEmailAsync(string userId, string token);
 
@@ -122,13 +124,14 @@ namespace APCore.Services
         public async Task<DataResponse> GetFlightCommanders(int flightId)
         {
 
-            var crews = await _context.ViewFlightCrewNewXes.Where(q => q.FlightId == flightId && q.IsPositioning==false && (q.PositionId== 1160 || q.PositionId==1161 || q.PositionId==12000)).OrderBy(q => q.GroupOrder).ToListAsync();
+            var crews = await _context.ViewFlightCrewNewXes.Where(q => q.FlightId == flightId && q.IsPositioning == false && (q.PositionId == 1160 || q.PositionId == 1161 || q.PositionId == 12000)).OrderBy(q => q.GroupOrder).ToListAsync();
 
             return new DataResponse
             {
-                Data =new  { 
-                  commander=crews.FirstOrDefault(),
-                  items=crews,
+                Data = new
+                {
+                    commander = crews.FirstOrDefault(),
+                    items = crews,
                 },
                 Errors = null,
                 IsSuccess = true
@@ -193,10 +196,10 @@ namespace APCore.Services
         public async Task<DataResponse> GetDRsByFlightIds(List<int?> ids)
         {
             var _drs = await _context.EFBDSPReleases.Where(q => ids.Contains(q.FlightId)).ToListAsync();
-            
+
             return new DataResponse
             {
-                Data =_drs,
+                Data = _drs,
                 Errors = null,
                 IsSuccess = true
             };
@@ -207,13 +210,17 @@ namespace APCore.Services
             var _ofps = await _context.OFPImports.Where(q => ids.Contains(q.FlightId)).ToListAsync();
             var ofpIds = _ofps.Select(q => q.Id).ToList();
             var ofpProps = await _context.OFPImportProps.Where(q => ofpIds.Contains(q.OFPId)).ToListAsync();
-
+            //var filledprops = ofpProps.Where(q => !q.User.ToLower().StartsWith("demo") && !q.User.ToLower().StartsWith("dis.")).ToList();
+            var props = ofpProps.Select(q => new { q.Id, q.OFPId, q.PropName, q.PropValue, q.User, q.DateUpdate, q.PropType }).ToList();
             return new DataResponse
             {
                 Data = new
                 {
-                    ofps = _ofps.Select(q => new { q.Id, q.DateCreate, q.DateFlight, q.Destination, q.FileName, q.FlightId, q.FlightNo, q.Origin, q.TextOutput, q.User,q.JLSignedBy,q.JLDatePICApproved,q.PIC,q.PICId }).ToList(),
-                    ofpProps
+                    ofps = _ofps.Select(q => new { q.Id, q.DateCreate, q.DateFlight, q.Destination, q.FileName, q.FlightId, q.FlightNo, q.Origin, q.TextOutput, q.User, q.JLSignedBy, q.JLDatePICApproved, q.PIC, q.PICId }).ToList(),
+                    ofpProps = props
+
+
+
 
                 },
                 Errors = null,
@@ -271,9 +278,18 @@ namespace APCore.Services
                 }
                 else
                 {
-                    prop.DateUpdate = DateTime.UtcNow.ToString("yyyyMMddHHmm");
-                    prop.User = item.User;
-                    prop.PropValue = item.PropValue;
+                    if (!string.IsNullOrEmpty(item.PropValue) && !string.IsNullOrEmpty(item.PropValue.Trim().Replace(" ", "")))
+                    {
+                        if (prop.DateUpdateLocal == null || Convert.ToDecimal(item.DateUpdate) > prop.DateUpdateLocal)
+                        {
+                            prop.DateUpdate = item.DateUpdate; //DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+                            prop.User = item.User;
+                            prop.PropValue = item.PropValue;
+                            prop.DateUpdateLocal = Convert.ToDecimal(item.DateUpdate);
+                        }
+
+                    }
+
 
 
                 }
@@ -299,8 +315,9 @@ namespace APCore.Services
                 };
                 _context.OFPImportProps.Add(prop);
             }
-            prop.DateUpdate = DateTime.UtcNow.ToString("yyyyMMddHHmm");
-            prop.PropValue = propValue;
+            prop.DateUpdate = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            if (!string.IsNullOrEmpty(propValue.Trim().Replace(" ", "")))
+                prop.PropValue = propValue;
             prop.User = user;
             var saveResult = await _context.SaveAsync();
             if (saveResult.Succeed)
@@ -311,7 +328,24 @@ namespace APCore.Services
         }
 
         //Task<DataResponse> SaveSign(int flightId,string doc,string user)
-        public async Task<DataResponse> SaveSign(int flightId, int pic,string picStr,string doc, string user)
+        public async Task<DataResponse> SaveSignJL(List<int> flightIds, int pic, string picStr, string doc, string user)
+        {
+            var flights = await _context.FlightInformations.Where(q => flightIds.Contains(q.ID)).ToListAsync();
+            var dt = DateTime.UtcNow;
+            foreach (var flight in flights)
+            {
+                flight.JLSignedBy = user;
+                flight.JLDatePICApproved = dt;
+                flight.PICId = pic;
+                flight.PIC = picStr;
+            }
+            var saveResult1 = await _context.SaveAsync();
+            if (saveResult1.Succeed)
+                return new DataResponse() { IsSuccess = true, Data = new { ID = flightIds, PICId = pic, JLSignedBy = user, JLDatePICApproved = dt, PIC = pic } };
+            else
+                return new DataResponse() { IsSuccess = false };
+        }
+        public async Task<DataResponse> SaveSign(int flightId, int pic, string picStr, string doc, string user)
         {
             switch (doc)
             {
@@ -323,13 +357,13 @@ namespace APCore.Services
                     flight.PIC = picStr;
                     var saveResult1 = await _context.SaveAsync();
                     if (saveResult1.Succeed)
-                        return new DataResponse() { IsSuccess = true, Data =new { flight.ID,flight.PICId,flight.JLSignedBy,flight.JLDatePICApproved,flight.PIC } };
+                        return new DataResponse() { IsSuccess = true, Data = new { flight.ID, flight.PICId, flight.JLSignedBy, flight.JLDatePICApproved, flight.PIC } };
                     else
                         return new DataResponse() { IsSuccess = false };
                 case "dr":
                     var dr = await _context.EFBDSPReleases.SingleOrDefaultAsync(q => q.FlightId == flightId);
-                   
-                    if (dr!=null)
+
+                    if (dr != null)
                     {
                         dr.JLSignedBy = user;
                         dr.JLDatePICApproved = DateTime.UtcNow;
@@ -337,7 +371,7 @@ namespace APCore.Services
                         dr.PIC = picStr;
                         var saveResult2 = await _context.SaveAsync();
                         if (saveResult2.Succeed)
-                            return new DataResponse() { IsSuccess = true, Data = new {dr.Id, dr.FlightId, dr.PICId, dr.JLSignedBy, dr.JLDatePICApproved,dr.PIC } };
+                            return new DataResponse() { IsSuccess = true, Data = new { dr.Id, dr.FlightId, dr.PICId, dr.JLSignedBy, dr.JLDatePICApproved, dr.PIC } };
                         else
                             return new DataResponse() { IsSuccess = false };
                     }
@@ -353,7 +387,7 @@ namespace APCore.Services
                         asr.PIC = picStr;
                         var saveResult3 = await _context.SaveAsync();
                         if (saveResult3.Succeed)
-                            return new DataResponse() { IsSuccess = true, Data = new { asr.Id, asr.FlightId, asr.PICId, asr.JLSignedBy, asr.JLDatePICApproved,asr.PIC } };
+                            return new DataResponse() { IsSuccess = true, Data = new { asr.Id, asr.FlightId, asr.PICId, asr.JLSignedBy, asr.JLDatePICApproved, asr.PIC } };
                         else
                             return new DataResponse() { IsSuccess = false };
                     }
@@ -369,7 +403,7 @@ namespace APCore.Services
                         ofp.PIC = picStr;
                         var saveResult4 = await _context.SaveAsync();
                         if (saveResult4.Succeed)
-                            return new DataResponse() { IsSuccess = true, Data = new { ofp.Id, ofp.FlightId, ofp.PICId, ofp.JLSignedBy, ofp.JLDatePICApproved,ofp.PIC } };
+                            return new DataResponse() { IsSuccess = true, Data = new { ofp.Id, ofp.FlightId, ofp.PICId, ofp.JLSignedBy, ofp.JLDatePICApproved, ofp.PIC } };
                         else
                             return new DataResponse() { IsSuccess = false };
                     }
@@ -385,7 +419,7 @@ namespace APCore.Services
                         vr.PIC = picStr;
                         var saveResult5 = await _context.SaveAsync();
                         if (saveResult5.Succeed)
-                            return new DataResponse() { IsSuccess = true, Data = new { vr.Id, vr.FlightId, vr.PICId, vr.JLSignedBy, vr.JLDatePICApproved,vr.PIC } };
+                            return new DataResponse() { IsSuccess = true, Data = new { vr.Id, vr.FlightId, vr.PICId, vr.JLSignedBy, vr.JLDatePICApproved, vr.PIC } };
                         else
                             return new DataResponse() { IsSuccess = false };
                     }
@@ -396,44 +430,339 @@ namespace APCore.Services
             }
         }
 
+        public decimal getPropDate(List<LogProp> props, string propName)
+        {
+            try
+            {
+                var prop = props.Where(q => q.PropName.ToLower() == propName.ToLower()).FirstOrDefault();
+                if (prop == null)
+                    return -1;
+                if (prop.DateUpdateLocal == null)
+                    return -1;
+                return Convert.ToDecimal(prop.DateUpdateLocal);
+            }
+            catch (Exception ex)
+            {
+                return -1;
+            }
+
+
+        }
+
+        public bool checkLogProp(string dt, string propName, List<LogProp> props)
+        {
+            if (string.IsNullOrEmpty(dt))
+                return false;
+            var _dt = Convert.ToDecimal(dt);
+            var pd = getPropDate(props, propName);
+            if (_dt > pd)
+                return true;
+            else
+                return false;
+        }
+
+        void updateProp(int fid,int crew,string name,string date,string value,List<LogProp> props)
+        {
+            var prop = props.FirstOrDefault(q => q.PropName == name);
+            if (prop == null)
+            {
+                prop = new LogProp()
+                {
+                    FlightId =fid,
+                    User =crew.ToString(),
+                    DateUpdate = DateTime.UtcNow,
+                    DateUpdateLocal = Convert.ToDecimal(date),
+                    PropValue = value,
+                    PropName=name,
+                };
+                _context.LogProps.Add(prop);
+            }
+            else
+            {
+                prop.PropValue = value;
+                prop.User = crew.ToString();
+                prop.DateUpdate = DateTime.UtcNow;
+                prop.DateUpdateLocal = Convert.ToDecimal(date);
+            }
+        }
+        public async Task<DataResponse> SaveLog2(LogViewModel2 log)
+        {
+            var flight = await _context.FlightInformations.FirstOrDefaultAsync(q => q.ID == log.FlightId);
+            var props = await _context.LogProps.Where(q => q.FlightId == flight.ID).ToListAsync();
+
+            if (log.BlockOffDate!=null && checkLogProp(log.BlockOffDateDt, "BLOCKOFF", props))
+            {
+                updateProp(flight.ID, log.CrewId, "BLOCKOFF", log.BlockOffDateDt, log.BlockOffDate.ToString(), props);
+                flight.JLOffBlock = log.BlockOffDate;
+            }
+
+            if (log.TakeOffDate!=null && checkLogProp(log.TakeOffDateDt, "TAKEOFF", props))
+            {
+                updateProp(flight.ID, log.CrewId, "TAKEOFF", log.TakeOffDateDt, log.TakeOffDate.ToString(), props);
+                flight.JLTakeOff = log.TakeOffDate;
+            }
+
+
+         
+            if (log.LandingDate != null && checkLogProp(log.LandingDateDt, "LANDING", props))
+            {
+                updateProp(flight.ID, log.CrewId, "LANDING", log.LandingDateDt, log.LandingDate.ToString(), props);
+                flight.JLLanding = log.LandingDate;
+            }
+
+          
+            if (log.BlockOnDate != null && checkLogProp(log.BlockOnDateDt, "BLOCKON", props))
+            {
+                updateProp(flight.ID, log.CrewId, "BLOCKON", log.BlockOnDateDt, log.BlockOnDate.ToString(), props);
+                flight.JLOnBlock = log.BlockOnDate;
+            }
+
+           
+            if (log.FuelDensity != null && checkLogProp(log.FuelDensityDt, "DENSITY", props))
+            {
+                updateProp(flight.ID, log.CrewId, "DENSITY", log.FuelDensityDt, log.FuelDensity.ToString(), props);
+                flight.FuelDensity = log.FuelDensity;
+            }
+
+             
+            if (log.FuelUplift != null && checkLogProp(log.FuelUpliftDt, "UPLIFT", props))
+            {
+                updateProp(flight.ID, log.CrewId, "UPLIFT", log.FuelUpliftDt, log.FuelUplift.ToString(), props);
+                flight.FuelDeparture = log.FuelUplift;
+            }
+
+           
+            if (log.FuelRemaining != null && checkLogProp(log.FuelRemainingDt, "FuelRemaining", props))
+            {
+                updateProp(flight.ID, log.CrewId, "FuelRemaining", log.FuelRemainingDt, log.FuelRemaining.ToString(), props);
+                flight.FuelArrival = log.FuelRemaining;
+            }
+
+          
+            if (log.FuelUsed != null && checkLogProp(log.FuelUsedDt, "FuelUsed", props))
+            {
+                updateProp(flight.ID, log.CrewId, "FuelUsed", log.FuelUsedDt, log.FuelUsed.ToString(), props);
+                flight.UsedFuel = log.FuelUsed;
+            }
+
+
+            
+            if (log.PaxAdult != null && checkLogProp(log.PaxAdultDt, "PaxAdult", props))
+            {
+                updateProp(flight.ID, log.CrewId, "PaxAdult", log.PaxAdultDt, log.PaxAdult.ToString(), props);
+                flight.PaxAdult = log.PaxAdult;
+            }
+
+           
+            if (log.PaxChild != null && checkLogProp(log.PaxChildDt, "PaxAdult", props))
+            {
+                updateProp(flight.ID, log.CrewId, "PaxChild", log.PaxChildDt, log.PaxChild.ToString(), props);
+                flight.PaxChild = log.PaxChild;
+            }
+
+             
+            if (log.PaxInfant != null && checkLogProp(log.PaxInfantDt, "PaxInfant", props))
+            {
+                updateProp(flight.ID, log.CrewId, "PaxInfant", log.PaxInfantDt, log.PaxInfant.ToString(), props);
+                flight.PaxInfant = log.PaxInfant;
+            }
+
+
+           
+            if (log.BaggageWeight != null && checkLogProp(log.BaggageWeightDt, "BaggageWeight", props))
+            {
+                updateProp(flight.ID, log.CrewId, "BaggageWeight", log.BaggageWeightDt, log.BaggageWeight.ToString(), props);
+                flight.BaggageWeight = log.BaggageWeight;
+            }
+
+            
+            if (log.CargoWeight != null && checkLogProp(log.CargoWeightDt, "CargoWeight", props))
+            {
+                updateProp(flight.ID, log.CrewId, "CargoWeight", log.CargoWeightDt, log.CargoWeight.ToString(), props);
+                flight.CargoWeight = log.CargoWeight;
+            }
+
+          
+            if (log.SerialNo != null && checkLogProp(log.SerialNoDt, "SerialNo", props))
+            {
+                updateProp(flight.ID, log.CrewId, "SerialNo", log.SerialNoDt, log.SerialNo.ToString(), props);
+                flight.SerialNo = log.SerialNo;
+            }
+
+            
+            if (log.LTR != null && checkLogProp(log.LTRDt, "LTR", props))
+            {
+                updateProp(flight.ID, log.CrewId, "LTR", log.LTRDt, log.LTR.ToString(), props);
+                flight.LTR = log.LTR;
+            }
+
+            
+            if (log.PF != null && checkLogProp(log.PFDt, "PF", props))
+            {
+                updateProp(flight.ID, log.CrewId, "PF", log.PFDt, log.PF.ToString(), props);
+                flight.PF = log.PF;
+            }
+
+             
+            if (log.RVSM_GND_CPT != null && checkLogProp(log.RVSM_GND_CPTDt, "RVSM_GND_CPT", props))
+            {
+                updateProp(flight.ID, log.CrewId, "RVSM_GND_CPT", log.RVSM_GND_CPTDt, log.RVSM_GND_CPT.ToString(), props);
+                flight.RVSM_GND_CPT = log.RVSM_GND_CPT;
+            }
+
+           
+            if (log.RVSM_GND_STBY != null && checkLogProp(log.RVSM_GND_STBYDt, "RVSM_GND_STBY", props))
+            {
+                updateProp(flight.ID, log.CrewId, "RVSM_GND_STBY", log.RVSM_GND_STBYDt, log.RVSM_GND_STBY.ToString(), props);
+                flight.RVSM_GND_STBY = log.RVSM_GND_STBY;
+            }
+
+             
+            if (log.RVSM_GND_FO != null && checkLogProp(log.RVSM_GND_FODt, "RVSM_GND_FO", props))
+            {
+                updateProp(flight.ID, log.CrewId, "RVSM_GND_FO", log.RVSM_GND_FODt, log.RVSM_GND_FO.ToString(), props);
+                flight.RVSM_GND_FO = log.RVSM_GND_FO;
+            }
+
+            
+            if (log.RVSM_FLT_CPT != null && checkLogProp(log.RVSM_FLT_CPTDt, "RVSM_FLT_CPT", props))
+            {
+                updateProp(flight.ID, log.CrewId, "RVSM_FLT_CPT", log.RVSM_FLT_CPTDt, log.RVSM_FLT_CPT.ToString(), props);
+                flight.RVSM_FLT_CPT = log.RVSM_FLT_CPT;
+            }
+ 
+            if (log.RVSM_FLT_STBY != null && checkLogProp(log.RVSM_FLT_STBYDt, "RVSM_FLT_STBY", props))
+            {
+                updateProp(flight.ID, log.CrewId, "RVSM_FLT_STBY", log.RVSM_FLT_STBYDt, log.RVSM_FLT_STBY.ToString(), props);
+                flight.RVSM_FLT_STBY = log.RVSM_FLT_STBY;
+            }
+
+           
+            if (log.RVSM_FLT_FO != null && checkLogProp(log.RVSM_FLT_FODt, "RVSM_FLT_FO", props))
+            {
+                updateProp(flight.ID, log.CrewId, "RVSM_FLT_FO", log.RVSM_FLT_FODt, log.RVSM_FLT_FO.ToString(), props);
+                flight.RVSM_FLT_FO = log.RVSM_FLT_FO;
+            }
+
+
+            
+            if (log.AttRepositioning1 != null && checkLogProp(log.AttRepositioning1Dt, "AttRepositioning1", props))
+            {
+                updateProp(flight.ID, log.CrewId, "AttRepositioning1", log.AttRepositioning1Dt, log.AttRepositioning1.ToString(), props);
+                flight.AttRepositioning1 = log.AttRepositioning1;
+            }
+
+
+            
+            if (log.AttRepositioning2 != null && checkLogProp(log.AttRepositioning2Dt, "AttRepositioning2", props))
+            {
+                updateProp(flight.ID, log.CrewId, "AttRepositioning2", log.AttRepositioning2Dt, log.AttRepositioning2.ToString(), props);
+                flight.AttRepositioning2 = log.AttRepositioning2;
+            }
+
+            
+            if (log.CommanderNote != null && checkLogProp(log.CommanderNoteDt, "CommanderNoteDt", props))
+            {
+                updateProp(flight.ID, log.CrewId, "CommanderNote", log.CommanderNoteDt, log.CommanderNote.ToString(), props);
+                flight.CommanderNote = log.CommanderNote;
+            }
+
+            flight.JLUserId = log.CrewId;
+            flight.JLDate = DateTime.UtcNow;
+            flight.Version = log.Version;
+            var saveResult = await _context.SaveAsync();
+            if (saveResult.Succeed)
+            {
+                var _flt = await _context.AppCrewFlights.Where(q => q.FlightId == flight.ID && q.CrewId == log.CrewId).FirstOrDefaultAsync();
+                return new DataResponse() { IsSuccess = true, Data = new { flight=_flt, props } };
+            }
+                
+            else
+                return new DataResponse() { IsSuccess = false };
+
+
+
+        }
+
         public async Task<DataResponse> SaveLog(LogViewModel log)
         {
             var flight = await _context.FlightInformations.FirstOrDefaultAsync(q => q.ID == log.FlightId);
-            flight.JLOffBlock = log.BlockOffDate; //Helper.ConvertToDate(log.BlockOff);
-            flight.JLTakeOff = log.TakeOffDate; //Helper.ConvertToDate(log.TakeOff);
-            flight.JLLanding = log.LandingDate; //Helper.ConvertToDate(log.Landing);
-            flight.JLOnBlock = log.BlockOnDate; //Helper.ConvertToDate(log.BlockOn);
+            if (log.BlockOffDate != null)
+                flight.JLOffBlock = log.BlockOffDate;
 
-            flight.FuelDensity = log.FuelDensity;
-            flight.FuelDeparture = log.FuelUplift;
-            flight.FuelArrival = log.FuelRemaining;
-            flight.UsedFuel = log.FuelUsed;
+            if (log.TakeOffDate != null)
+                flight.JLTakeOff = log.TakeOffDate;
+
+            if (log.LandingDate != null)
+                flight.JLLanding = log.LandingDate;
+
+            if (log.BlockOnDate != null)
+                flight.JLOnBlock = log.BlockOnDate;
+
+            if (log.FuelDensity != null)
+                flight.FuelDensity = log.FuelDensity;
+
+            if (log.FuelUplift != null)
+                flight.FuelDeparture = log.FuelUplift;
+
+            if (log.FuelRemaining != null)
+                flight.FuelArrival = log.FuelRemaining;
+
+            if (log.FuelUsed != null)
+                flight.UsedFuel = log.FuelUsed;
 
 
+            if (log.PaxAdult != null)
+                flight.PaxAdult = log.PaxAdult;
 
-            flight.PaxAdult = log.PaxAdult;
-            flight.PaxChild = log.PaxChild;
-            flight.PaxInfant = log.PaxInfant;
+            if (log.PaxChild != null)
+                flight.PaxChild = log.PaxChild;
 
-            flight.BaggageWeight = log.BaggageWeight;
-            flight.CargoWeight = log.CargoWeight;
+            if (log.PaxInfant != null)
+                flight.PaxInfant = log.PaxInfant;
 
-            flight.SerialNo = log.SerialNo;
-            flight.LTR = log.LTR;
-            flight.PF = log.PF;
 
-            flight.RVSM_GND_CPT = log.RVSM_GND_CPT;
-            flight.RVSM_GND_STBY = log.RVSM_GND_STBY;
-            flight.RVSM_GND_FO = log.RVSM_GND_FO;
+            if (log.BaggageWeight != null)
+                flight.BaggageWeight = log.BaggageWeight;
 
-            flight.RVSM_FLT_CPT = log.RVSM_FLT_CPT;
-            flight.RVSM_FLT_STBY = log.RVSM_FLT_STBY;
-            flight.RVSM_FLT_FO = log.RVSM_FLT_FO;
+            if (log.CargoWeight != null)
+                flight.CargoWeight = log.CargoWeight;
+
+            if (!string.IsNullOrEmpty(log.SerialNo))
+                flight.SerialNo = log.SerialNo;
+
+            if (!string.IsNullOrEmpty(log.LTR))
+                flight.LTR = log.LTR;
+
+            if (!string.IsNullOrEmpty(log.PF))
+                flight.PF = log.PF;
+
+            if (log.RVSM_GND_CPT != null)
+                flight.RVSM_GND_CPT = log.RVSM_GND_CPT;
+
+            if (log.RVSM_GND_STBY != null)
+                flight.RVSM_GND_STBY = log.RVSM_GND_STBY;
+
+            if (log.RVSM_GND_FO != null)
+                flight.RVSM_GND_FO = log.RVSM_GND_FO;
+
+            if (log.RVSM_FLT_CPT != null)
+                flight.RVSM_FLT_CPT = log.RVSM_FLT_CPT;
+
+            if (log.RVSM_FLT_STBY != null)
+                flight.RVSM_FLT_STBY = log.RVSM_FLT_STBY;
+
+            if (log.RVSM_FLT_FO != null)
+                flight.RVSM_FLT_FO = log.RVSM_FLT_FO;
+
 
             flight.AttRepositioning1 = log.AttRepositioning1;
+
+
             flight.AttRepositioning2 = log.AttRepositioning2;
 
-            flight.CommanderNote = log.CommanderNote;
+            if (!string.IsNullOrEmpty(log.CommanderNote))
+                flight.CommanderNote = log.CommanderNote;
 
             flight.JLUserId = log.CrewId;
             flight.JLDate = DateTime.UtcNow;
@@ -464,9 +793,9 @@ namespace APCore.Services
 
         }
 
-        public async Task<DataResponse> CheckLock(int flightId,string doc)
+        public async Task<DataResponse> CheckLock(int flightId, string doc)
         {
-            var flight = await _context.AppLegs.Where(q => q.FlightId == flightId).Select(q =>new { q.FlightStatusID,q.JLSignedBy }).FirstOrDefaultAsync();
+            var flight = await _context.AppLegs.Where(q => q.FlightId == flightId).Select(q => new { q.FlightStatusID, q.JLSignedBy }).FirstOrDefaultAsync();
             if (flight == null)
 
                 return new DataResponse()
@@ -479,11 +808,11 @@ namespace APCore.Services
             {
                 var _canLock = false;
                 if (doc == "log")
-                    _canLock = (flight.FlightStatusID == 3 || flight.FlightStatusID == 15) && flight.JLSignedBy==null;
+                    _canLock = (flight.FlightStatusID == 3 || flight.FlightStatusID == 15) && flight.JLSignedBy == null;
                 else if (doc == "dr")
                 {
-                    var obj = await _context.EFBDSPReleases.Select(q=>new {q.FlightId,q.JLSignedBy }).FirstOrDefaultAsync(q => q.FlightId == flightId);
-                    _canLock =obj!=null && obj.JLSignedBy==null && (flight.FlightStatusID == 3 || flight.FlightStatusID == 15);
+                    var obj = await _context.EFBDSPReleases.Select(q => new { q.FlightId, q.JLSignedBy }).FirstOrDefaultAsync(q => q.FlightId == flightId);
+                    _canLock = obj != null && obj.JLSignedBy == null && (flight.FlightStatusID == 3 || flight.FlightStatusID == 15);
                 }
                 else if (doc == "vr")
                 {
@@ -510,7 +839,7 @@ namespace APCore.Services
                     Data = new { canLock = _canLock },
                 };
             }
-                
+
 
         }
 

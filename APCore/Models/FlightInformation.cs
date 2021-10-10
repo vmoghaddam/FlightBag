@@ -146,6 +146,7 @@ namespace APCore.Models
         public string ALT3 { get; set; }
         public string ALT4 { get; set; }
         public string ALT5 { get; set; }
+        public int? UTCDIFF { get; set; }
 
         public virtual Organization AirlineOperators { get; set; }
         public virtual Box Box { get; set; }

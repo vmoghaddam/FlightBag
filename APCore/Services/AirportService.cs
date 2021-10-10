@@ -38,7 +38,7 @@ namespace APCore.Services
 
         public async Task<DataResponse> GetAirportNotamAll()
         {
-            var stations = await _context.Airports.Where(q => q.ICAO.StartsWith("OI")).Select(q => q.ICAO).ToListAsync();
+            var stations = await _context.Airports.Where(q => q.ICAO.StartsWith("OI") || q.ICAO.StartsWith("ORNI")).Select(q => q.ICAO).ToListAsync();
             stations.Add("OIIX");
             DateTime baseDate = DateTime.Now.Date;
             var data = new List<NOTAM>();

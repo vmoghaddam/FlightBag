@@ -232,6 +232,30 @@ $scope.bind = function () {
 
     }).ToArray();
 
+    //////////////////////
+    //////////////////////
+    if ($rootScope.getOnlineStatus()) {
+        flightService.updateTAFs($scope.fdp.FDPId).then(function (response) {
+
+            $scope.tempData.TAF = response.Data;
+            $scope.fdp.TAF = response.Data;
+
+
+            $scope.filtered = Enumerable.From($scope.fdp.TAF)
+                .Where(function (x) { return $scope.selectedStations.indexOf(x.StationId) != -1; })
+                .OrderBy(function (x) { return $scope.stations.indexOf(x.StationId); }).ThenByDescending(function (x) {
+                    return Number(moment(new Date(x.IssueTime)).format('YYMMDDHHmm'));
+
+                }).ToArray();
+
+
+
+        }, function (err) { });
+    }
+    
+    ////////////////////
+    //////////////////////
+
 };
 
 ////////////////////////////

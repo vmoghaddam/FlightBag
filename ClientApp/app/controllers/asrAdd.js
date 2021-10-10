@@ -29,10 +29,17 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
                 widget: 'dxButton', location: 'before', options: {
                     type: 'default', text: 'Sign', icon: 'fas fa-signature', onClick: function (e) {
                         if ($rootScope.getOnlineStatus()) {
-                            //$scope.entity.Id
-                            var data = { FlightId: $scope.entity.FlightId, documentType: 'asr' };
+                            $rootScope.checkInternet(function (st) {
+                                if (st) {
+                                    var data = { FlightId: $scope.entity.FlightId, documentType: 'asr' };
 
-                            $rootScope.$broadcast('InitSignAdd', data);
+                                    $rootScope.$broadcast('InitSignAdd', data);
+                                }
+                                else {
+                                    General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');
+                                }
+                            });
+                            
                         }
                         else {
                             General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');
@@ -92,6 +99,7 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
         dragEnabled: true,
         closeOnOutsideClick: false,
         onShowing: function (e) {
+            $rootScope.IsRootSyncEnabled = false;
             $scope.popup_instance.repaint();
 
 
@@ -110,7 +118,7 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
 
         },
         onHiding: function () {
-
+            $rootScope.IsRootSyncEnabled = true;
             //$scope.clearEntity();
             $scope.entity = {
                 Id: -1,
@@ -155,15 +163,25 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
     $scope.bind = function () {
         $scope.entity.FlightId = $scope.tempData.FlightId;
 
-        if ($rootScope.getOnlineStatus()) {
+         
 
-            flightService.checkLock($scope.entity.FlightId,'asr').then(function (response) {
-                $scope.isLockVisible = false;
-                if (response.IsSuccess && response.Data.canLock) {
-                    $scope.isLockVisible = true;
+        if ($rootScope.getOnlineStatus()) {
+            $rootScope.checkInternet(function (st) {
+                if (st) {
+                    flightService.checkLock($scope.entity.FlightId, 'asr').then(function (response) {
+                        $scope.isLockVisible = false;
+                        if (response.IsSuccess && response.Data.canLock) {
+                            $scope.isLockVisible = true;
+                        }
+                    }, function (err) { });
                 }
-            }, function (err) { });
+                else {
+                    General.ShowNotifyBottom("The application cannot connect to the Server. Please check your internet connection.", 'error');
+                }
+            });
+
         }
+
 
         $scope.loadingVisible = true;
          
@@ -190,7 +208,7 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
                 }
                 else {
                     if (response2.Data.JLSignedBy) {
-                        $scope.isEditable = false;
+                        //$scope.isEditable = false;
                         $scope.url_sign = signFiles + response.Data.PICId + ".jpg";
                         $scope.PIC = response.Data.PIC;
                         $scope.signDate = moment(new Date(response.Data.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');
@@ -1245,8 +1263,8 @@ app.controller('asrAddController', ['$scope', '$location', 'flightService', 'aut
         
         if (prms.doc == 'asr')
             flightService.signDocLocal(prms, prms.doc).then(function (response) {
-                $scope.isEditable = false;
-                $scope.isLockVisible = false;
+               // $scope.isEditable = false;
+               // $scope.isLockVisible = false;
                 $scope.url_sign = signFiles + prms.PICId + ".jpg";
                 $scope.PIC = prms.PIC;
                 $scope.signDate = moment(new Date(prms.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');

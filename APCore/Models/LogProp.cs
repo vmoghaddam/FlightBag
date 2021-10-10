@@ -5,17 +5,15 @@ using System.Collections.Generic;
 
 namespace APCore.Models
 {
-    public partial class OFPImportProp
+    public partial class LogProp
     {
         public int Id { get; set; }
-        public int OFPId { get; set; }
+        public int FlightId { get; set; }
         public string PropName { get; set; }
         public string PropValue { get; set; }
-        public string PropType { get; set; }
-        public string User { get; set; }
-        public string DateUpdate { get; set; }
+        public DateTime? DateUpdate { get; set; }
         public decimal? DateUpdateLocal { get; set; }
-
-        public virtual OFPImport OFP { get; set; }
+        public string User { get; set; }
+        public string PropValueOld { get; set; }
     }
 }

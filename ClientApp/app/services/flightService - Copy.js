@@ -15,18 +15,14 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
             displayTime: 5000,
         });
     };
-    var internetUrl = "https://fleet.caspianairlines.com/fbservicea/api/online";
-    //var internetUrl = "https://localhost:5001/api/online";
+   // var internetUrl = "https://fleet.caspianairlines.com/fbservicea/api/online";
+    var internetUrl = "https://localhost:5001/api/online";
     var _checkInternet = function (callback) {
-
         var config = {
             method: "GET",
             url: internetUrl,
-
-
-            timeout: 7 * 1000
+            timeout: 5   * 1000
         };
-
         //var deferred = $q.defer();
         $http(config).then(function (response) {
             callback(true);
@@ -338,28 +334,17 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
         if ($rootScope.online) {
             _checkInternet(function (st) {
                 if (st) {
-                    //if ($rootScope.employeeId == 3529) {
-                    //    alert('dates');
-                    //    alert(df);
-                    //    alert(dt);
-                    //}
                     $http.get($rootScope.apiUrl + 'crew/flights/' + df + '/' + dt /*+ '?from=' + _df + '&to=' + _dt*/).then(function (response) {
 
 
                         if ($rootScope.isServerMode)
                             deferred.resolve(response.data);
-                        else if (response.data.IsSuccess) {
-                            //if ($rootScope.employeeId == 3529) {
-                            //    alert('flt count');
-                            //    alert(response.data.Data.length);
-
-                            //}
+                        else if (response.data.IsSuccess)
                             db.sync.SyncAppCrewFlightsByDateRange(df, dt, response.data.Data, function (syncResult) {
 
 
                                 deferred.resolve(syncResult);
                             });
-                        }
                         // deferred.resolve(response.data);
 
 
@@ -370,7 +355,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                     });
                 }
                 else {
-                    ShowNotify2("The application cannot connect to the Server. Please check your internet connection.", 'error');
+                    ShowNotify2("The application cannot connect to the Server. Please check your internet connection.", 'error'); 
                     db.GetAppCrewFlightsByDates(df, dt, function (results) {
 
                         var response = {};
@@ -381,7 +366,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                     });
                 }
             });
-
+           
         }
         else if (!$rootScope.isServerMode) {
             db.GetAppCrewFlightsByDates(df, dt, function (results) {
@@ -476,7 +461,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                 }
                 else {
                     db.GetDuties(from, to, function (results) {
-
+                       
                         var response = {};
                         response.Data = results;
                         response.IsSuccess = 1;
@@ -484,11 +469,11 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                     });
                 }
             });
-
+            
         }
         else if (!$rootScope.isServerMode) {
             db.GetDuties(from, to, function (results) {
-
+                 
                 var response = {};
                 response.Data = results;
                 response.IsSuccess = 1;
@@ -521,7 +506,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
         });
         return deferred.promise;
     };
-    var _epGetFlightCrews = function (flightId) {
+    var _epGetFlightCrews = function (flightId) { 
         //db.sync.SyncFlightCrews
         var deferred = $q.defer();
         //$http.get($rootScope.apiUrl + 'flight/crews/' + flightId ).then(function (response) {
@@ -561,11 +546,11 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                 }
 
             });
-
+           
         }
         else if (!$rootScope.isServerMode) {
             db.GetFlightCrews(flightId, function (results) {
-
+                 
                 var response = {};
                 response.Data = results;
                 response.IsSuccess = 1;
@@ -591,8 +576,6 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
         return deferred.promise;
     };
-
-
     var _epGetFlightLocal = function (flightId) {
 
         var deferred = $q.defer();
@@ -943,91 +926,23 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
             JLUserId: $rootScope.employeeId,
         };
         if (entity.BlockOffDateDt) {
-            //goodi
-            var boffdt = momentFromatLocalUTCObj(entity.BlockOffDate);
-            if (boffdt.result) {
-                changes.BlockOff = boffdt.result;
-            }
-            else {
-                changes.BlockOff = null;
-                alert('Error in converting BLOCKOFF date. Please report the error value to the application administrator. ERROR VALUE: (fservice) ' + boffdt.err);
-            }
-
-            if (!changes.BlockOff) {
-                entity.BlockOffDate = null;
-            }
+            changes.BlockOff = momentFromatLocalUTC(entity.BlockOffDate);
             changes.BlockOffDateDt = entity.BlockOffDateDt;
         }
 
         if (entity.BlockOnDateDt) {
-            var boffdt = momentFromatLocalUTCObj(entity.BlockOnDate);
-            if (boffdt.result) {
-                changes.BlockOn = boffdt.result;
-            }
-            else {
-                changes.BlockOn = null;
-                alert('Error in converting BLOCKON date. Please report the error value to the application administrator. ERROR VALUE: (fservice) ' + boffdt.err);
-            }
-
-            if (!changes.BlockOn) {
-                entity.BlockOnDate = null;
-            }
+            changes.BlockOn = momentFromatLocalUTC(entity.BlockOnDate);
             changes.BlockOnDateDt = entity.BlockOnDateDt;
-
-
-
-            //changes.BlockOn = momentFromatLocalUTC(entity.BlockOnDate);
-            //if (!changes.BlockOn) {
-            //    entity.BlockOnDate = null;
-            //}
-            //changes.BlockOnDateDt = entity.BlockOnDateDt;
         }
 
         if (entity.TakeOffDateDt) {
-            var boffdt = momentFromatLocalUTCObj(entity.TakeOffDate);
-            if (boffdt.result) {
-                changes.TakeOff = boffdt.result;
-            }
-            else {
-                changes.TakeOff = null;
-                alert('Error in converting TAKEOFF date. Please report the error value to the application administrator. ERROR VALUE: (fservice) ' + boffdt.err);
-            }
-
-            if (!changes.TakeOff) {
-                entity.TakeOffDate = null;
-            }
+            changes.TakeOff = momentFromatLocalUTC(entity.TakeOffDate);
             changes.TakeOffDateDt = entity.TakeOffDateDt;
-
-
-
-            //changes.TakeOff = momentFromatLocalUTC(entity.TakeOffDate);
-            //if (!changes.TakeOff) {
-            //    entity.TakeOffDate = null;
-            //}
-            //changes.TakeOffDateDt = entity.TakeOffDateDt;
         }
 
         if (entity.LandingDateDt) {
-            var boffdt = momentFromatLocalUTCObj(entity.LandingDate);
-            if (boffdt.result) {
-                changes.Landing = boffdt.result;
-            }
-            else {
-                changes.Landing = null;
-                alert('Error in converting LANDING date. Please report the error value to the application administrator. ERROR VALUE: (fservice) ' + boffdt.err);
-            }
-
-            if (!changes.Landing) {
-                entity.LandingDate = null;
-            }
+            changes.Landing = momentFromatLocalUTC(entity.LandingDate);
             changes.LandingDateDt = entity.LandingDateDt;
-
-
-            //changes.Landing = momentFromatLocalUTC(entity.LandingDate);
-            //if (!changes.Landing) {
-            //    entity.LandingDate = null;
-            //}
-            //changes.LandingDateDt = entity.LandingDateDt;
         }
 
         if (entity.FuelRemainingDt) {
@@ -1131,52 +1046,39 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
             changes.AttRepositioning2Dt = entity.AttRepositioning2Dt;
         }
 
-        console.log(changes);
 
 
         db.Update('AppCrewFlights', entity.FlightId, changes, function (row) {
 
 
             if ($rootScope.getOnlineStatus() && entity.Server) {
-                _checkInternet(function (st) {
-                    if (st) {
-                        $http.post($rootScope.apiUrl + 'flight/log/save2', entity).then(function (response) {
-                            //alert('ok');
-                            var _flt = response.data.Data.flight;
-                            _flt.JLDate = momentFromatLocalUTC(_flt.JLDate);
-                            _flt.IsSynced = 1;
-                            _flt.JLUserId = $rootScope.employeeId;
-                            db.Put('AppCrewFlights', entity.FlightId, _flt, function (row2) { deferred.resolve({ Data: row2, IsSuccess: 1 }); });
-                            //db.Update('AppCrewFlights', entity.FlightId, dateChanges, function (row2) {
-                            //    deferred.resolve({ Data: row2, IsSuccess: 1 });
-                            //});
+                $http.post($rootScope.apiUrl + 'flight/log/save2', entity).then(function (response) {
+                    //alert('ok');
+                    var _flt = response.data.Data.flight;
+                    _flt.JLDate = momentFromatLocalUTC(_flt.JLDate);
+                    _flt.IsSynced = 1;
+                    _flt.JLUserId = $rootScope.employeeId;
+                    db.Put('AppCrewFlights', entity.FlightId, _flt, function (row2) { deferred.resolve({ Data: row2, IsSuccess: 1 }); });
+                    //db.Update('AppCrewFlights', entity.FlightId, dateChanges, function (row2) {
+                    //    deferred.resolve({ Data: row2, IsSuccess: 1 });
+                    //});
 
 
-                        }, function (err, status) {
+                }, function (err, status) {
 
-                            //desynced
-                            ShowNotify2("The application cannot connect to the Server. Please check your internet connection.", 'error');
-                            row.IsSynced = 0;
-                            db.deSyncedItem('AppCrewFlights', entity.FlightId, function () {
-                                try {
-                                    db.AddErrorLog($rootScope.employeeId, '_epSaveLogNew', 'online', function (_eres) { });
-                                }
-                                catch (e) {
-                                }
-                                deferred.resolve({ Data: row, IsSuccess: 1 });
-                            });
+                    //desynced
+                    ShowNotify2("The application cannot connect to the Server. Please check your internet connection.", 'error');
+                    row.IsSynced = 0;
+                    db.deSyncedItem('AppCrewFlights', entity.FlightId, function () {
+                        try {
+                            db.AddErrorLog($rootScope.employeeId, '_epSaveLogNew', 'online', function (_eres) { });
+                        }
+                        catch (e) {
+                        }
+                        deferred.resolve({ Data: row, IsSuccess: 1 });
+                    });
 
-                        });
-                    }
-                    else {
-                        ShowNotify2("The application cannot connect to the Server. Please check your internet connection.", 'error');
-                        row.IsSynced = 0;
-                        db.deSyncedItem('AppCrewFlights', entity.FlightId, function () {
-                            deferred.resolve({ Data: row, IsSuccess: 1 });
-                        });
-                    }
                 });
-
             }
             else {
                 //desynced
@@ -1196,7 +1098,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
     };
 
     var _epSyncFlight = function (entity) {
-
+         
         entity.IsSynced = 1;
         var deferred = $q.defer();
         entity.JLDate = momentFromatLocalUTC(entity.JLDate);
@@ -1482,7 +1384,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                         deferred.resolve(data);
                     }
                 });
-
+                
 
 
             }
@@ -1585,7 +1487,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                     }
                 });
 
-
+               
             }
             else {
                 row.IsSynced = 0;
@@ -1648,7 +1550,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                         });
                     }
                 });
-
+               
             }
             else {
 
@@ -1701,7 +1603,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                             deferred.resolve(response.data);
 
                     }, function (err, status) {
-                        ShowNotify2("The application cannot connect to the Server. Please check your internet connection.", 'error');
+                            ShowNotify2("The application cannot connect to the Server. Please check your internet connection.", 'error');
                         row.IsSynced = 0
                         //nool2     
                         db.deSyncedOFPProp(entity.OFPId, entity.PropName, function () {
@@ -1851,7 +1753,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                     }
                 });
 
-
+               
 
 
 
@@ -1920,7 +1822,6 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
         return deferred.promise;
     };
-    //10-09
     var _epGetOFPByFlights = async function (dto, fnc) {
         var deferred = $q.defer();
         // var dto = { ids: flightIds };
@@ -1940,7 +1841,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
             else {
                 if (fnc)
                     fnc();
-                /////////////////////// 
+                ///////////////////////
                 $http.post($rootScope.apiUrl + 'ofp/flights', dto).then(sr => {
                     var serverOFPs = sr.data.Data.ofps;
                     var serverProps = sr.data.Data.ofpProps;
@@ -2017,98 +1918,56 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
         return deferred.promise;
     };
-    //10-09
-    var _epCheckOFBVersion = function (flightId, ofpId) {
-        var deferred = $q.defer();
-        if ($rootScope.getOnlineStatus()) {
-            _checkInternet(function (st) {
-                if (st) {
-                    $http.get($rootScope.apiUrl + 'ofp/flight/' + flightId).then(function (response) {
-
-                        if (response.data.IsSuccess && response.data.Data) {
-                             
-                            if (Number(response.data.Data.Id) != Number(ofpId)) {
-                                deferred.resolve({ IsSuccess: 1, Data: response.data.Data });
-                            } 
-                            else {
-                                deferred.resolve({ IsSuccess: 1, Data: null });
-                            }
-                            //response.data.Data.IsSynced = 1;
-                            //db.DeleteOFP(flightId, function () {
-
-                            //    response.data.Data.IsSynced = 1;
-                            //    db.Put('OFP', response.data.Data.FlightId, response.data.Data, function (dbitem) {
-                            //        deferred.resolve(response.data);
-                            //    });
-                            //});
-
-
-                        }
-                        else
-                            deferred.resolve({ IsSuccess: 1, Data: null });
-                    });
-                }
-                else {
-                    var data = { IsSuccess: 1, Data: null };
-                    deferred.resolve(data);
-                }
-            });
-        }
-        else {
-            var data = { IsSuccess: 1, Data: null };
-            deferred.resolve(data);
-        };
-        return deferred.promise;
-    };
-    serviceFactory.epCheckOFBVersion = _epCheckOFBVersion;
-
-    //10-10
-    var _deleteOFP = function (flightId, callback) {
-        db.DeleteOFP(flightId, function () {
-            callback();
-        });
-    };
-    serviceFactory.deleteOFP = _deleteOFP;
     var _epGetOFPByFlight = function (flightId) {
         var deferred = $q.defer();
 
         db.GetOFPsByFlightId(flightId, function (_dbitem) {
-           
-            //var dbitem = _dbitem && _dbitem.length > 0 ? _dbitem[0] : null;
-            var dbitem = _dbitem;
-              
-            
-            if (!dbitem && $rootScope.getOnlineStatus()) {
-                
-                _checkInternet(function (st) { 
-                    if (st) { 
-                        $http.get($rootScope.apiUrl + 'ofp/flight/' + flightId).then(function (response) {
-                             
-                            if (response.data.IsSuccess && response.data.Data) {
-                                response.data.Data.IsSynced = 1;
-                                db.DeleteOFP(flightId, function () {
+            var dbitem = _dbitem && _dbitem.length > 0 ? _dbitem[0] : null;
+            if ($rootScope.getOnlineStatus()) {
 
-                                    response.data.Data.IsSynced = 1;
-                                    db.Put('OFP', response.data.Data.FlightId, response.data.Data, function (dbitem) {
-                                        deferred.resolve(response.data);
-                                    });
-                                });
+                $http.get($rootScope.apiUrl + 'ofp/flight/' + flightId).then(function (response) {
+                    if (response.data.IsSuccess && response.data.Data) {
+                        response.data.Data.IsSynced = 1;
+                        db.DeleteOFP(flightId, function () {
 
-
-                            }
-                            else
-                                deferred.resolve({ IsSuccess: 1, Data: dbitem });
+                            response.data.Data.IsSynced = 1;
+                            db.Put('OFP', response.data.Data.FlightId, response.data.Data, function (dbitem) {
+                                deferred.resolve(response.data);
+                            });
                         });
-                    }
-                    else {
-                        General.ShowNotifyBottom("The application cannot connect to the Server. Please check your internet connection.", 'error');
+                        //var _dbdate = !dbitem ? 0 : Number(dbitem.DateUpdate);
+                        //var _serverdate = Number(response.data.Data.DateUpdate);
 
-                        var data = { IsSuccess: 1, Data: dbitem };
+                        //if (!dbitem || (dbitem.IsSynced == 1 && _serverdate >= _dbdate)) {
 
-                        deferred.resolve(data);
+
+                        //    db.DeleteOFP(flightId, function () {
+
+                        //        response.data.Data.IsSynced = 1;
+                        //        db.Put('OFP', response.data.Data.FlightId, response.data.Data, function (dbitem) {
+                        //            deferred.resolve(response.data);
+                        //        });
+                        //    });
+                        //}
+                        //else if (dbitem.IsSynced == 0 && _serverdate > _dbdate) {
+
+                        //    dbitem.Alert = response.data.Data.User;
+                        //    dbitem.server = response.data.Data;
+                        //    deferred.resolve({ IsSuccess: 1, Data: dbitem });
+                        //}
+                        //else if (dbitem.IsSynced == 0 && _serverdate <= _dbdate) {
+
+                        //    deferred.resolve({ IsSuccess: 1, Data: dbitem });
+                        //}
+                        //else {
+
+                        //    deferred.resolve({ IsSuccess: 1, Data: dbitem });
+                        //}
+
                     }
+                    else
+                        deferred.resolve({ IsSuccess: 1, Data: dbitem });
                 });
-                
 
 
 
@@ -2122,82 +1981,67 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
         return deferred.promise;
     };
-    //10-10
-    var _epGetOFPProps = function (ofpId) { 
+    var _epGetOFPProps = function (ofpId) {
         var deferred = $q.defer();
-         
+
         db.GetOFPProps(ofpId, function (_dbitem) {
             //var dbitem = _dbitem && _dbitem.length > 0 ? _dbitem[0] : null;
             if ($rootScope.getOnlineStatus()) {
-                _checkInternet(function (st) {
-                    if (st) {
-                        console.log('internet checked');
-                        
-                        $http.get($rootScope.apiUrl + 'ofp/props/' + ofpId).then(function (response) {
-                            if (response.data.IsSuccess && response.data.Data) {
-                                //deferred.resolve({ IsSuccess: 1, Data: response.data.Data }); 
-                                var dbRows = response.data.Data;
+                $http.get($rootScope.apiUrl + 'ofp/props/' + ofpId).then(function (response) {
+                    if (response.data.IsSuccess && response.data.Data) {
+                        //deferred.resolve({ IsSuccess: 1, Data: response.data.Data }); 
+                        var dbRows = response.data.Data;
 
-                                var output = [];
-                                var upd = 1;
-                                
-                                $.each(dbRows, function (_i, _dbRow) {
-                                    var localRow = Enumerable.From(_dbitem).Where('$.Id==' + _dbRow.Id).FirstOrDefault();
-                                    var _dbdate = !localRow ? 0 : Number(localRow.DateUpdate);
-                                    var _serverdate = Number(_dbRow.DateUpdate);
-                                    if (!localRow || _serverdate > _dbdate) {
-                                        _dbRow.IsSynced = 1;
-                                        output.push(_dbRow);
-                                        db.DeleteOFPPropById(_dbRow.Id, function () {
-                                            console.log('deleted ' + _dbRow.Id);
+                        var output = [];
+                        var upd = 1;
 
-                                            db.PutOFPPropById(_dbRow.Id, _dbRow, function (row) {
-                                                console.log('put ' + _dbRow.Id);
-                                                // output.push(row);
-                                                upd++;
-                                                //if (upd == dbRows.length)
-                                                //   deferred.resolve({ IsSuccess: 1, Data: output });
-                                            });
-
-                                        });
-                                    }
-
-                                    else if (localRow.IsSynced == 0 && _serverdate <= _dbdate) {
+                        $.each(dbRows, function (_i, _dbRow) {
+                            var localRow = Enumerable.From(_dbitem).Where('$.Id==' + _dbRow.Id).FirstOrDefault();
+                            var _dbdate = !localRow ? 0 : Number(localRow.DateUpdate);
+                            var _serverdate = Number(_dbRow.DateUpdate);
+                            if (!localRow || _serverdate > _dbdate) {
+                                _dbRow.IsSynced = 1;
+                                output.push(_dbRow);
+                                db.DeleteOFPPropById(_dbRow.Id, function () {
 
 
-                                        output.push(localRow);
-                                        // upd++;
+                                    db.PutOFPPropById(_dbRow.Id, _dbRow, function (row) {
+
+                                        // output.push(row);
+                                        upd++;
                                         //if (upd == dbRows.length)
-                                        //    deferred.resolve({ IsSuccess: 1, Data: output });
-                                    }
-                                    else {
-
-
-                                        output.push(localRow);
-                                        // upd++;
-                                        //if (upd == dbRows.length)
-                                        //    deferred.resolve({ IsSuccess: 1, Data: output });
-                                    }
+                                        //   deferred.resolve({ IsSuccess: 1, Data: output });
+                                    });
 
                                 });
-                                deferred.resolve({ IsSuccess: 1, Data: output });
                             }
-                            else
-                                deferred.resolve({ IsSuccess: 1, Data: dbitem });
 
+                            else if (localRow.IsSynced == 0 && _serverdate <= _dbdate) {
+
+
+                                output.push(localRow);
+                                // upd++;
+                                //if (upd == dbRows.length)
+                                //    deferred.resolve({ IsSuccess: 1, Data: output });
+                            }
+                            else {
+
+
+                                output.push(localRow);
+                                // upd++;
+                                //if (upd == dbRows.length)
+                                //    deferred.resolve({ IsSuccess: 1, Data: output });
+                            }
 
                         });
-
+                        deferred.resolve({ IsSuccess: 1, Data: output });
                     }
-                    else {
-                        General.ShowNotifyBottom("The application cannot connect to the Server. Please check your internet connection.", 'error');
+                    else
+                        deferred.resolve({ IsSuccess: 1, Data: dbitem });
 
-                        var data = { IsSuccess: 1, Data: _dbitem };
 
-                        deferred.resolve(data);
-                    }
                 });
-                
+
 
 
 
@@ -3112,7 +2956,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
 
 
-    //10-03
+
     var _autoSyncOFPProp = async function (callback) {
 
         var _db = db.getDb();
@@ -3216,103 +3060,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
 
     };
-    //10-03
-    var _syncUnsignedOFPS = function (callback) {
-        var _db = db.getDb();
-        _db.OFP
-            .filter(function (asr) {
-                var diff = Math.abs((new Date()).getTime() - (new Date(asr.DateCreate)).getTime()) / 3600000;
-                 
-                var condition = !asr.JLSignedBy && (diff <= 24 * 3);
-                return condition;
-            }).toArray(function (ofps) {
-                
-                console.log('ofps ofps   ', ofps);
-                if (!ofps || ofps.length == 0) {
-                    callback({
-                        total: 0,
-                        synced: 0,
-                        remark: 'no ofps found',
-                    });
-                    return;
-                }
-                else {
-                    var ofpIds = Enumerable.From(ofps).Select('$.Id').ToArray();
-                    _db.OFPProp.filter(function (asr) {
-                        return ofpIds.indexOf(asr.OFPId) != -1 && (asr.PropValue || asr.PropValue===0);
-                    }).toArray(function (asrs) {
-                        console.log('ofps props   ', asrs);
-                        if (!asrs || asrs.length == 0) {
 
-                            callback({
-                                total: 0,
-                                synced: 0,
-                                remark: 'no ofp props found',
-                            });
-                            return;
-                        }
-                        var logResult = { total: asrs.length };
-                        var flightIds = Enumerable.From(asrs).Select('$.Id').ToArray();
-
-                        var dto = { ids: flightIds };
-
-                        $http.post($rootScope.apiUrl + 'ofp/props/ids', dto).then(sr => {
-
-                            var resps = sr.data.Data;
-                            var serverUpdates = [];
-                            $.each(asrs, function (_i, _local) {
-                                var _server = Enumerable.From(resps).Where('$.Id==' + _local.Id).FirstOrDefault();
-                                if (_server) {
-                                    var _localDate = Number(_local.DateUpdate);
-                                    var _serverDate = Number(_server.DateUpdate);
-                                    if (_serverDate >= _localDate && false) {
-                                        ///////////////// UPDATE LOCAL ///////////////////
-                                        _epReplaceOFPProp(_server).then(rp => { });
-                                        ////////////////END UPDATE LOCAL //////////////////
-                                    }
-                                    else {
-
-
-                                        _local.User = $rootScope.userTitle
-                                        serverUpdates.push(_local);
-
-
-                                    }
-
-
-
-
-                                }
-
-                            });
-
-                            if (serverUpdates.length > 0) {
-                                /////////////////UPDATE SERVER //////////////////////////
-                                $http.post($rootScope.apiUrl + 'ofp/props/save', serverUpdates).then(function (response1) {
-                                    if (response1.data.IsSuccess && response1.data.Data && response1.data.Data.length > 0) {
-                                        $.each(response1.data.Data, function (_i, _r) {
-                                            _r.IsSynced = 1;
-                                            db.DeleteOFPPropById(_r.Id, function () {
-                                                db.PutOFPPropById(_r.Id, _r, function (dbitem) { });
-                                            });
-                                        });
-                                    }
-                                });
-                                ////////////////END UPDATE SERVER //////////////////////
-                            }
-
-
-
-                        });
-
-                         ////////////////// END UPDATE //////////////////////////
-                    });
-
-                }
-
-            });
-
-    };
     var _syncOFPProps = function (ofpId, overwrite, callback) {
 
         var _db = db.getDb();
@@ -3422,7 +3170,6 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
     serviceFactory.autoSyncOFP = _autoSyncOFP;
     serviceFactory.autoSyncOFPProp = _autoSyncOFPProp;
     serviceFactory.syncOFPProps = _syncOFPProps;
-    serviceFactory.syncUnsignedOFPS = _syncUnsignedOFPS;
     serviceFactory.epGetDRByFlight = _epGetDRByFlight;
     serviceFactory.epGetDRsByFlights = _epGetDRsByFlights;
     serviceFactory.epGetOFPByFlight = _epGetOFPByFlight;

@@ -26,6 +26,17 @@ namespace APCore.Controllers
             _flightService = flightService;
         }
 
+        [HttpGet]
+      
+        [Route("api/online")]
+        public async Task<IActionResult> GetOnline()
+        {
+            var result = DateTime.Now.ToString("yyyyMMddHHmm");
+           
+            return Ok(result);
+        }
+
+
         [EnableQuery()]  // requires using Microsoft.AspNet.OData;
         [HttpGet]
         [Route("api/crew/flights/query")]
@@ -40,6 +51,11 @@ namespace APCore.Controllers
         {
             return _flightService.GetFlightsQuery();
         }
+
+        
+        
+        
+
         [HttpGet]
         [Authorize]
         [Route("api/crew/flights/{from}/{to}")]
@@ -132,7 +148,7 @@ namespace APCore.Controllers
         }
 
         [HttpGet]
-        [Authorize]
+        //[Authorize]
         [Route("api/flight/{flightId}")]
         public async Task<IActionResult> GetFlight(int flightId)
         {
@@ -170,6 +186,17 @@ namespace APCore.Controllers
 
         [HttpPost]
         [Authorize]
+        [Route("api/flight/log/save2")]
+        public async Task<IActionResult> SaveFlightLog2(LogViewModel2 log)
+        {
+            var result = await _flightService.SaveLog2(log);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
         [Route("api/flight/sign")]
         public async Task<IActionResult> SaveSign(dynamic dto)
         {
@@ -185,6 +212,28 @@ namespace APCore.Controllers
                 return NotFound(result.Errors);
             return Ok(result);
         }
+
+
+        [HttpPost]
+        [Authorize]
+        [Route("api/flight/sign/jl")]
+        public async Task<IActionResult> SaveSignJL(dynamic dto)
+        {
+            var userData = User.FindFirst(ClaimTypes.UserData).Value;
+            var crewId = Objects.AuthDataHelper.GetEmployeeId(userData);
+            // int flightId = Convert.ToInt32(dto.flightId);
+            string  idsStr = Convert.ToString(dto.flightId);
+            var flightIds = idsStr.Split('_').Select(q => Convert.ToInt32(q)).ToList();
+            string doc = Convert.ToString(dto.doc);
+            int pic = Convert.ToInt32(dto.pic);
+            string picStr = Convert.ToString(dto.picStr);
+            string user = Convert.ToString(dto.user);
+            var result = await _flightService.SaveSignJL(flightIds, pic, picStr, doc, crewId.ToString());
+            if (!result.IsSuccess)
+                return NotFound(result.Errors);
+            return Ok(result);
+        }
+
 
         [HttpPost] 
         [Authorize]
@@ -208,7 +257,7 @@ namespace APCore.Controllers
 
 
         [HttpGet]
-        [Authorize]
+        //[Authorize]
         [Route("api/ofp/flight/{flightId}")]
         public async Task<IActionResult> GetFlightOFP(int flightId)
         {
@@ -220,7 +269,9 @@ namespace APCore.Controllers
             return Ok(result);
         }
 
-       
+         
+
+
 
         [HttpPost]
         [Route("api/ofp/props/ids")]
@@ -246,7 +297,7 @@ namespace APCore.Controllers
 
 
         [HttpGet]
-        [Authorize]
+        //[Authorize]
         [Route("api/ofp/props/{ofpId}")]
         public async Task<IActionResult> GeOFPProps(int ofpId)
         {
@@ -281,7 +332,7 @@ namespace APCore.Controllers
         {
             //SaveOFPProp(int ofpId, string propName, string propValue, string user)
              
-            var result = await _flightService.SaveOFPProps(props);
+          var result = await _flightService.SaveOFPProps(props);
             if (!result.IsSuccess)
                 return NotFound(result.Errors);
             return Ok(result);

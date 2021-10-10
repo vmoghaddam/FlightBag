@@ -16,6 +16,7 @@ using System.Net.Http;
 using System.Xml.Linq;
 using System.Drawing;
 using HtmlAgilityPack;
+using ImageMagick;
 
 namespace APCore.Services
 {
@@ -33,7 +34,7 @@ namespace APCore.Services
         Task<DataResponse> GetSIGWX_ADDS(string doc);
         Task<DataResponse> GetSIGWX_ADDS_UPDATE();
         Task<DataResponse> GetSIGWX_ADDS_Date(string dt);
-        Task<DataResponse> GetWIND_ADDS_IMG(string fl);
+        Task<DataResponse> GetWIND_ADDS_IMG(string fl, string dtstr = "");
         Task<DataResponse> GetWIND_ADDS_PDF();
         Task<DataResponse> GetTAF_ADDS(string stations, string from, string to, DateTime baseDate);
         Task<DataResponse> GetTAF_ADDS_All();
@@ -331,7 +332,21 @@ namespace APCore.Services
                 IsSuccess = true
             };
         }
-        public async Task<DataResponse> GetWIND_ADDS_IMG(string fl)
+        int getImagePercentage(string fl) {
+            switch (fl) {
+                case "180":
+                    return 50;
+                case "240":
+                    return 50;
+                case "300":
+                    return 50;
+                case "340":
+                    return 50;
+                default:
+                    return 50;
+            }
+        }
+        public async Task<DataResponse> GetWIND_ADDS_IMG(string fl,string dtstr="")
         {
             List<ADDSWindUrl> docs = ADDSWindUrl.GetADDSWindUrls();
             if (fl != "-1")
@@ -339,11 +354,13 @@ namespace APCore.Services
             List<string> results = new List<string>();
             foreach (var doc in docs)
             {
-                var result = "WIND_ADDS_" + DateTime.Now.ToString("yyyyMMdd") + "_FL" + doc.FL + "_VALID" + doc.Valid + ".png";
+                var result = "WIND_ADDS_" + (string.IsNullOrEmpty(dtstr)? DateTime.Now.ToString("yyyyMMdd"):dtstr) + "_FL" + doc.FL + "_VALID" + doc.Valid + ".png";
+                var result2 = "WIND_ADDS_" + DateTime.Now.ToString("yyyyMMdd") + "_FL" + doc.FL + "_VALID" + doc.Valid + "_XXXX.png";
                 results.Add(result);
                 string webRootPath = _webHostEnvironment.ContentRootPath;
                 string path = "";
                 path = Path.Combine(webRootPath, "Upload", "Weather", "WIND", "ADDS", result);
+                var path2 = Path.Combine(webRootPath, "Upload", "Weather", "WIND", "ADDS", result2);
                 var url = _configuration["WeatherUrls:SIGWX_WIND"];
                 using (WebClient webClient = new WebClient())
                 {
@@ -351,20 +368,31 @@ namespace APCore.Services
 
                     using (MemoryStream mem = new MemoryStream(data))
                     {
-                        using (var yourImage = System.Drawing.Image.FromStream(mem))
-                        {
-                            // If you want it as Png
-                            //var h =Convert.ToInt32( Math.Round( (yourImage.Height*0.8)));
-                            //var img = ScaleImage(yourImage, h);
-                            yourImage.RotateFlip(RotateFlipType.Rotate270FlipNone);
-                            yourImage.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+                        MagickImage image = new MagickImage(mem);
+                        image.Rotate(270);
+                         image.Resize(new Percentage(getImagePercentage(fl)));
+                        //image.Quality = 10;
+                        image.ColorType = ColorType.Grayscale;
+                        image.Write(path,MagickFormat.Png8);
+                        //using (var yourImage = System.Drawing.Image.FromStream(mem))
+                        //{
+                        //    // If you want it as Png
+                        //    //var h =Convert.ToInt32( Math.Round( (yourImage.Height*0.8)));
+                        //    //var img = ScaleImage(yourImage, h);
+                        //    yourImage.RotateFlip(RotateFlipType.Rotate270FlipNone);
+                        //   // var image2 = yourImage.GetThumbnailImage(yourImage.Width, yourImage.Height, null, System.IntPtr.Zero);
+                        //   ;
 
-                            // If you want it as Jpeg
-                            //yourImage.Save("path_to_your_file.jpg", System.Drawing.Imaging.ImageFormat.Jpeg);
-                        }
+                        //    yourImage.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+                        //   // image2.Save(path2, System.Drawing.Imaging.ImageFormat.Png);
+
+                        //    // If you want it as Jpeg
+                        //    //yourImage.Save("path_to_your_file.jpg", System.Drawing.Imaging.ImageFormat.Jpeg);
+                        //}
                     }
 
                 }
+                Task.Delay(1000).Wait();
             }
 
 
@@ -724,7 +752,7 @@ namespace APCore.Services
         }
         public async Task<DataResponse> GetTAF_ADDS_All()
         {
-            var stations = await _context.Airports.Where(q => q.ICAO.StartsWith("OI")).Select(q => q.ICAO).ToListAsync();
+            var stations = await _context.Airports.Where(q => q.ICAO.StartsWith("OI") || q.ICAO.StartsWith("ORNI")).Select(q => q.ICAO).ToListAsync();
             // var oldTafs = await _context.WeatherTafs.Where(q => stations.Contains(q.StationId)).ToListAsync();
 
             var baseDate = DateTime.Now.Date;
@@ -745,7 +773,7 @@ namespace APCore.Services
                     var url = "https://www.aviationweather.gov/adds/dataserver_current/httpparam?dataSource=tafs&requestType=retrieve&format=xml"
                    + "&startTime=" + from//"2021-08-10T00:00:00+0430"
                    + "&endTime=" + to//"2021-08-11T00:00:00+0430"
-                   + "&timeType=issue"
+                   + "&timeType=valid"
                    + "&stationString=" + station//"OISS,OIII";
                    ;
 
@@ -815,7 +843,7 @@ namespace APCore.Services
             var url = "https://www.aviationweather.gov/adds/dataserver_current/httpparam?dataSource=tafs&requestType=retrieve&format=xml"
                 + "&startTime=" + from//"2021-08-10T00:00:00+0430"
                 + "&endTime=" + to//"2021-08-11T00:00:00+0430"
-                + "&timeType=issue"
+                + "&timeType=valid"
                 + "&stationString=" + stations//"OISS,OIII";
                 ;
             List<Models.WeatherTaf> result = new List<Models.WeatherTaf>();
@@ -982,7 +1010,7 @@ namespace APCore.Services
         }
         public async Task<DataResponse> GetMETAR_ADDS_ALL()
         {
-            var stations = await _context.Airports.Where(q => q.ICAO.StartsWith("OI")).Select(q => q.ICAO).ToListAsync();
+            var stations = await _context.Airports.Where(q => q.ICAO.StartsWith("OI") || q.ICAO.StartsWith("ORNI")).Select(q => q.ICAO).ToListAsync();
             // var oldTafs = await _context.WeatherTafs.Where(q => stations.Contains(q.StationId)).ToListAsync();
 
             var baseDate = DateTime.Now.Date;

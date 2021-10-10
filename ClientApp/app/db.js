@@ -6,7 +6,7 @@ db.getDb = function () {
     return _db;
 };
 db.Init = function () {
-    _db.version(72).stores({
+    _db.version(320).stores({
         AppCrewFlights: "Id,FlightId,CrewId,FDPId,FDPItemId,DutyType,IsPositioning,PositionId,Position,FlightNumber,STDDay,FlightStatusId,Register,RegisterId,FromAirportIATA,ToAirportIATA,STD,STA,BlockOff,BlockOn,TakeOff,Landing,IStart,IsSynced",
         FlightCrews: "[CrewId+FlightId],FDPItemId,FDPId",
         Calendar: "[Id+Date],DateStart,Legs,Sectors,DutyType,DutyTypeTitle,Year,Month,Day",
@@ -22,7 +22,9 @@ db.Init = function () {
         VR: "FlightId,IsSynced",
         DR: "FlightId,IsSynced",
         OFP: "FlightId,IsSynced",
-        OFPProp:"Id,OFPId,PropName,IsSynced",
+        OFPProp: "Id,OFPId,PropName,IsSynced",
+        LogProp: "FlightId,PropName",
+        LogErr:"++id",
          
     });
     _db.open();
@@ -197,27 +199,43 @@ db.GetDRsByFlightId = function (flightId, callback) {
     });
 };
 
+//10-09
 db.GetOFPsByFlightId = function (flightId, callback) {
-    var collection = db.GetOFPByFlightCollection(flightId);
-    collection.toArray().then(function (arg) {
+    //var collection = db.GetOFPByFlightCollection(flightId);
+    //collection.toArray().then(function (arg) {
 
 
-        callback(arg);
-    });
+    //    callback(arg);
+    //});
+    _db.OFP.get(flightId).then(function (arg) { callback(arg); });
 };
 
  
 
 db.GetOFPProps = function (ofpId, callback) {
-    var collection = db.GetOFPPropCollection(ofpId);
+
+
+    //dool
+    //var collection = _db.OFPProp
+    //    .filter(function (rec) {
+    //        return rec.OFPId == ofpId;
+    //    });
+
+   /* var collection = db.GetOFPPropCollection(ofpId);
     collection.toArray().then(function (arg) {
 
 
         callback(arg);
     });
+    */
+
+    _db.OFPProp.where('OFPId').equals(ofpId).toArray(function (arg) { callback(arg); });
+
+
 };
 
 db.GetOFPPropByName = function (ofpId, name, callback) {
+   
     _db.OFPProp.filter(function (row) { return row.OFPId == ofpId && row.PropName == name; })
         .first(function (item) { callback(item); });
 };
@@ -269,12 +287,12 @@ db.DateTimeToNumber = function (dt) {
     return Number(str);
 };
 db.GetAppCrewFlightsByDatesCollection = function (df, dt) {
+    
+    
     var collection= _db.AppCrewFlights
         .filter(function (flight) {
-            //return true;
-            
-            // return (new Date(flight.STDDay).getTime() >= new Date(df).getTime()) && new Date(flight.STDDay).getTime() <= new Date(dt).getTime();
-            return db.DateToNumber(flight.STDDay) >= db.DateToNumber(df) && db.DateToNumber(flight.STDDay) <= db.DateToNumber(dt);
+           
+            return db.DateToNumber(CreateDate(flight.STDDay)) >= db.DateToNumber(CreateDate(df)) && db.DateToNumber(CreateDate(flight.STDDay)) <= db.DateToNumber(CreateDate(dt));
         });
      
     return collection;
@@ -387,7 +405,22 @@ db.PutOFPProp = function (ofpId,name,   item, callback) {
               
     });
 };
+db.AddErrorLog = function (empId,request,remark,  callback) {
+    
+    _db.LogErr.add({
+        EmployeeId: empId,
+       Request: request,
+       Remark: remark,
+       IsSynced: 0,
+         Date: moment(new Date()).format('YYYYMMDDHHmmss')
+    }).then(function (id) {
+         
 
+            if (callback)
+                callback(id);
+        
+    });
+};
 db.PutOFPPropById = function (id, item, callback) {
 
     _db["OFPProp"].put(item).then(function (upd) {
@@ -650,11 +683,13 @@ db.sync.SyncVR = async function (flightId, serverData, callback) {
 
 
 db.sync.SyncAppCrewFlightsByDateRange = async function (df, dt, serverData, callback) {
-     
+      
    // _db.AppCrewFlights.update(62205, { Version: 2 }).then(function (arg) { alert(arg); });
    // return;
+   
     var collection = db.GetAppCrewFlightsByDatesCollection(df, dt);
     var allRows = await collection.toArray();
+     
     var allFids = Enumerable.From(allRows).Select('Number($.Id)').ToArray();
     var serverIds = Enumerable.From(serverData).Select('Number($.Id)').ToArray();
       

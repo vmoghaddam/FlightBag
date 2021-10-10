@@ -552,10 +552,18 @@ app.controller('drAddController', ['$scope', '$location', 'flightService', 'auth
                 widget: 'dxButton', location: 'before', options: {
                     type: 'default', text: 'Sign', icon: 'fas fa-signature', onClick: function (e) {
                         if ($rootScope.getOnlineStatus()) {
-                            //$scope.entity.Id
-                            var data = { FlightId: $scope.entity.FlightId, documentType: 'dr' };
+                            $rootScope.checkInternet(function (st) {
+                                if (st) {
+                                    var data = { FlightId: $scope.entity.FlightId, documentType: 'dr' };
 
-                            $rootScope.$broadcast('InitSignAdd', data);
+                                    $rootScope.$broadcast('InitSignAdd', data);
+                                }
+                                else {
+                                    General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');
+                                }
+                            });
+                            //$scope.entity.Id
+                            
                         }
                         else {
                             General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');
@@ -600,6 +608,7 @@ app.controller('drAddController', ['$scope', '$location', 'flightService', 'auth
         dragEnabled: true,
         closeOnOutsideClick: false,
         onShowing: function (e) {
+            $rootScope.IsRootSyncEnabled = false;
             $scope.popup_instance.repaint();
 
 
@@ -620,7 +629,7 @@ app.controller('drAddController', ['$scope', '$location', 'flightService', 'auth
         onHiding: function () {
 
             //$scope.clearEntity();
-
+            $rootScope.IsRootSyncEnabled = true;
             $scope.popup_add_visible = false;
             $rootScope.$broadcast('onDrAddHide', null);
         },
@@ -699,13 +708,20 @@ app.controller('drAddController', ['$scope', '$location', 'flightService', 'auth
         $scope.entity.FlightId = $scope.tempData.FlightId;
 
         if ($rootScope.getOnlineStatus()) {
-
-            flightService.checkLock($scope.entity.FlightId, 'dr').then(function (response) {
-                $scope.isLockVisible = false;
-                if (response.IsSuccess && response.Data.canLock) {
-                    $scope.isLockVisible = true;
+            $rootScope.checkInternet(function (st) {
+                if (st) {
+                    flightService.checkLock($scope.entity.FlightId, 'dr').then(function (response) {
+                        $scope.isLockVisible = false;
+                        if (response.IsSuccess && response.Data.canLock) {
+                            $scope.isLockVisible = true;
+                        }
+                    }, function (err) { });
                 }
-            }, function (err) { });
+                else {
+                    General.ShowNotifyBottom("The application cannot connect to the Server. Please check your internet connection.", 'error');
+                }
+            });
+            
         }
 
         $scope.loadingVisible = true;
@@ -779,10 +795,11 @@ app.controller('drAddController', ['$scope', '$location', 'flightService', 'auth
                 }
                 else {
                     if (response2.Data.JLSignedBy) {
-                        $scope.isEditable = false;
+                        //$scope.isEditable = false;
+                       
                         $scope.url_sign = signFiles + response.Data.PICId + ".jpg";
-                        $scope.PIC = response.Data.PIC;
-                        $scope.signDate = moment(new Date(response.Data.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');
+                        $scope.PIC = response2.Data.PIC;
+                        $scope.signDate = moment(new Date(response2.Data.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');
                     }
                     if (response2.Data.Alert) {
                         General.Confirm("The document updated by " + response2.Data.Alert + ". Would you like to get edited report?", function (res) {
@@ -858,8 +875,8 @@ app.controller('drAddController', ['$scope', '$location', 'flightService', 'auth
 
         if (prms.doc == 'dr')
             flightService.signDocLocal(prms, prms.doc).then(function (response) {
-                $scope.isEditable = false;
-                $scope.isLockVisible = false;
+               // $scope.isEditable = false;
+               // $scope.isLockVisible = false;
                 $scope.url_sign = signFiles + prms.PICId + ".jpg";
                 $scope.PIC = prms.PIC;
                 $scope.signDate = moment(new Date(prms.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');

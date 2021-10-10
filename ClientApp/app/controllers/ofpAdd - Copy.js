@@ -38,7 +38,7 @@ app.controller('ofpAddController', ['$scope', '$location', 'flightService', 'aut
     $scope.popup_add_visible = false;
     $scope.popup_height = '100%';
     $scope.popup_width = '100%';
-    $scope.popup_add_title = 'Operational Flight Plan (2.10)';
+    $scope.popup_add_title = 'Operational Flight Plan (1.0)';
     $scope.popup_instance = null;
 
     $scope.popup_add = {
@@ -62,7 +62,7 @@ app.controller('ofpAddController', ['$scope', '$location', 'flightService', 'aut
                                 }
                             });
                             //$scope.entity.Id
-
+                            
                         }
                         else {
                             General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');
@@ -92,14 +92,14 @@ app.controller('ofpAddController', ['$scope', '$location', 'flightService', 'aut
                                 });
                             }
                             else {
-
+                               
                                 alert('The application cannot connect to the Server. Please check your internet connection.');
                                 return;
                             }
                         });
 
-
-
+                         
+                     
 
 
                     }
@@ -118,7 +118,6 @@ app.controller('ofpAddController', ['$scope', '$location', 'flightService', 'aut
         dragEnabled: true,
         closeOnOutsideClick: false,
         onShowing: function (e) {
-            $rootScope.IsRootSyncEnabled = false;
             $scope.popup_instance.repaint();
 
 
@@ -146,7 +145,6 @@ app.controller('ofpAddController', ['$scope', '$location', 'flightService', 'aut
 
         },
         onHiding: function () {
-            $rootScope.IsRootSyncEnabled = true;
             $("#ofp-doc")
                 .off("click", ".prop");
             $("#ofp-doc")
@@ -430,7 +428,7 @@ app.controller('ofpAddController', ['$scope', '$location', 'flightService', 'aut
             sobId = ($sob.attr('id'));
             callback();
 
-        }, 100);
+        }, 500);
 
         //  $compile($("#ofp-doc").contents())($scope);
         //alert('x');
@@ -446,40 +444,24 @@ app.controller('ofpAddController', ['$scope', '$location', 'flightService', 'aut
 
     };
     $scope.isLockVisible = false;
-
     var toTime = function (dt) {
         if (!dt)
             return "";
-
-        var result = moment(new Date(dt)).format('HHmm');
-         
-
-
         return moment(new Date(dt)).format('HHmm');
     };
-    function parseISOString(s) {
-        s = s.toString();
-        var prts = s.split('T');
-        var dts = prts[0].split('-');
-        var tms = prts[1].split(':');
-        var dt = new Date(dts[0], dts[1] - 1, dts[2], tms[0], tms[1], tms[2]);
-        // var b = s.split(/\D+/);
-        // return new Date(Date.UTC(b[0], --b[1], b[2], b[3], b[4], b[5], b[6]));
-        return dt;
-    }
     $scope.bind = function (callback) {
 
         $scope.entity.FlightId = $scope.tempData.FlightId;
 
-        //if ($rootScope.getOnlineStatus()) {
+        if ($rootScope.getOnlineStatus()) {
 
-        //    flightService.checkLock($scope.entity.FlightId, 'ofp').then(function (response) {
-        //        $scope.isLockVisible = false;
-        //        if (response.IsSuccess && response.Data.canLock) {
-        //            $scope.isLockVisible = true;
-        //        }
-        //    }, function (err) { });
-        //}
+            flightService.checkLock($scope.entity.FlightId, 'ofp').then(function (response) {
+                $scope.isLockVisible = false;
+                if (response.IsSuccess && response.Data.canLock) {
+                    $scope.isLockVisible = true;
+                }
+            }, function (err) { });
+        }
 
         $scope.loadingVisible = true;
 
@@ -500,11 +482,6 @@ app.controller('ofpAddController', ['$scope', '$location', 'flightService', 'aut
                     $scope.url_sign = signFiles + response.Data.PICId + ".png";
                     $scope.PIC = response.Data.PIC;
                     $scope.signDate = moment(new Date(response.Data.JLDatePICApproved)).format('YYYY-MM-DD HH:mm');
-                }
-                else {
-                    $scope.url_sign = null;
-                    $scope.PIC = null;
-                    $scope.signDate = null;
                 }
 
                 $scope.loadingVisible = false;
@@ -527,140 +504,103 @@ app.controller('ofpAddController', ['$scope', '$location', 'flightService', 'aut
 
                     $scope.isNew = false;
                     $scope.fill(response2.Data, function () {
-
-
-                        flightService.epCheckOFBVersion($scope.entity.FlightId, $scope.entity.Id).then(function (resCheck) {
-                            if (resCheck.Data) {
-                                flightService.deleteOFP($scope.entity.FlightId, function () {
-                                    alert("The OPF has been changed by Dispatchers. Please reopen the from to load new OFP.");
-                                    $scope.popup_add_visible = false;
-                                    return;
-                                });
-
-                            }
-                            else {
-                                ////// GET PROPS ///////////////
-
-
-                                 ////////// END OF GET PROPS //////////////
-
-                            }
-
-                            ////// END OF OFP VERSION CHECK /////////////
-                        });
-
-
                         $scope.loadingVisible = true;
-                        
                         flightService.epGetOFPProps($scope.entity.Id).then(function (response3) {
-                            try {
+                            $scope.loadingVisible = false;
+                            $scope.props = response3.Data;
+                            $('.prop').html(' ');
 
-                                $scope.loadingVisible = false;
+                            //9-11
+                            var updates = [];
+                            var takeOffChanged = false;
+                            var sob = 0;
+                            var sobValue = null;
+                            var sobprops = ['prop_pax_adult', 'prop_pax_child', 'prop_pax_infant', crewAId, crewBId, crewCId];
 
+                            $.each($scope.props, function (_i, _d) {
+                                // if (_d.Id == 140)
+                                //    alert(_d.PropValue);
+                                if (_d.PropName == sobId) {
 
-                                
-
-                                console.log('props got');
-                                $scope.props = response3.Data;
-                                $('.prop').html(' ');
-
-                                //9-11
-                                var updates = [];
-                                var takeOffChanged = false;
-                                var sob = 0;
-                                var sobValue = null;
-                                var sobprops = ['prop_pax_adult', 'prop_pax_child', 'prop_pax_infant', crewAId, crewBId, crewCId];
-
-
-
-                                $.each($scope.props, function (_i, _d) {
-                                    // if (_d.Id == 140)
-                                    //    alert(_d.PropValue);
-                                    if (_d.PropName == sobId) {
-
-                                        sobValue = _d.PropValue;
-                                    }
+                                    sobValue = _d.PropValue;
+                                }
 
 
-                                    if (_d.PropValue)
-                                        $('#' + _d.PropName).val(_d.PropValue);
-                                    if (_d.PropName == 'prop_pax_adult' /*&& $scope.flight.PaxAdult != _d.PropValue*/) {
-                                        $('#' + _d.PropName).val($scope.flight.PaxAdult);
-                                        updates.push({ OFPId: $scope.entity.Id, PropName: _d.PropName, User: $rootScope.userTitle, PropValue: $scope.flight.PaxAdult });
-                                        //var dto = { OFPId: $scope.entity.Id, PropName: _d.propName, User: $rootScope.userTitle, PropValue: $scope.flight.PaxAdult };
-                                        //flightService.saveOFPProp(dto);
-                                    }
-                                    if (_d.PropName == 'prop_pax_child' /*&& $scope.flight.PaxChild != _d.PropValue*/) {
-                                        $('#' + _d.PropName).val($scope.flight.PaxChild);
-                                        updates.push({ OFPId: $scope.entity.Id, PropName: _d.PropName, User: $rootScope.userTitle, PropValue: $scope.flight.PaxChild });
-                                    }
-                                    if (_d.PropName == 'prop_pax_infant' /*&& $scope.flight.PaxInfant != _d.PropValue*/) {
-                                        $('#' + _d.PropName).val($scope.flight.PaxInfant);
-                                        updates.push({ OFPId: $scope.entity.Id, PropName: _d.PropName, User: $rootScope.userTitle, PropValue: $scope.flight.PaxInfant });
-                                    }
-                                    //prop_offblock
+                                if (_d.PropValue)
+                                    $('#' + _d.PropName).val(_d.PropValue);
+                                if (_d.PropName == 'prop_pax_adult' && $scope.flight.PaxAdult != _d.PropValue) {
+                                    $('#' + _d.PropName).val($scope.flight.PaxAdult);
+                                    updates.push({ OFPId: $scope.entity.Id, PropName: _d.PropName, User: $rootScope.userTitle, PropValue: $scope.flight.PaxAdult });
+                                    //var dto = { OFPId: $scope.entity.Id, PropName: _d.propName, User: $rootScope.userTitle, PropValue: $scope.flight.PaxAdult };
+                                    //flightService.saveOFPProp(dto);
+                                }
+                                if (_d.PropName == 'prop_pax_child' && $scope.flight.PaxChild != _d.PropValue) {
+                                    $('#' + _d.PropName).val($scope.flight.PaxChild);
+                                    updates.push({ OFPId: $scope.entity.Id, PropName: _d.PropName, User: $rootScope.userTitle, PropValue: $scope.flight.PaxChild });
+                                }
+                                if (_d.PropName == 'prop_pax_infant' && $scope.flight.PaxInfant != _d.PropValue) {
+                                    $('#' + _d.PropName).val($scope.flight.PaxInfant);
+                                    updates.push({ OFPId: $scope.entity.Id, PropName: _d.PropName, User: $rootScope.userTitle, PropValue: $scope.flight.PaxInfant });
+                                }
+                                //prop_offblock
+                                if (_d.PropName == 'prop_offblock' && toTime($scope.flight.BlockOff) != _d.PropValue) {
+                                    $('#' + _d.PropName).val(toTime($scope.flight.BlockOff));
+                                    updates.push({ OFPId: $scope.entity.Id, PropName: _d.PropName, User: $rootScope.userTitle, PropValue: toTime($scope.flight.BlockOff) });
+                                }
+                                //prop_takeoff
+                                if (_d.PropName == 'prop_takeoff' && toTime($scope.flight.TakeOff) != _d.PropValue) {
+                                    takeOffChanged = true;
+                                    $('#' + _d.PropName).val(toTime($scope.flight.TakeOff));
+                                    updates.push({ OFPId: $scope.entity.Id, PropName: _d.PropName, User: $rootScope.userTitle, PropValue: toTime($scope.flight.TakeOff) });
+                                }
+                                //prop_landing
+                                if (_d.PropName == 'prop_landing' && toTime($scope.flight.Landing) != _d.PropValue) {
+                                    $('#' + _d.PropName).val(toTime($scope.flight.Landing));
+                                    updates.push({ OFPId: $scope.entity.Id, PropName: _d.PropName, User: $rootScope.userTitle, PropValue: toTime($scope.flight.Landing) });
+                                }
+                                //prop_onblock
+                                if (_d.PropName == 'prop_onblock' && toTime($scope.flight.BlockOn) != _d.PropValue) {
+                                    $('#' + _d.PropName).val(toTime($scope.flight.BlockOn));
+                                    updates.push({ OFPId: $scope.entity.Id, PropName: _d.PropName, User: $rootScope.userTitle, PropValue: toTime($scope.flight.BlockOn) });
+                                }
 
-                                    if (_d.PropName == 'prop_offblock' /*&& toTime(CreateDate($scope.flight.BlockOff)) != _d.PropValue*/) {
-                                        $('#' + _d.PropName).val(toTime(CreateDate($scope.flight.BlockOff)));
-                                        updates.push({ OFPId: $scope.entity.Id, PropName: _d.PropName, User: $rootScope.userTitle, PropValue: toTime(CreateDate($scope.flight.BlockOff)) });
-                                    }
-                                    //prop_takeoff
-                                    if (_d.PropName == 'prop_takeoff' /*&& toTime(CreateDate($scope.flight.TakeOff)) != _d.PropValue*/) {
-                                        takeOffChanged = true;
-                                        $('#' + _d.PropName).val(toTime(CreateDate($scope.flight.TakeOff)));
-                                        updates.push({ OFPId: $scope.entity.Id, PropName: _d.PropName, User: $rootScope.userTitle, PropValue: toTime(CreateDate($scope.flight.TakeOff)) });
-                                    }
-                                    //prop_landing
-                                    if (_d.PropName == 'prop_landing' /*&& toTime(CreateDate($scope.flight.Landing)) != _d.PropValue*/) {
-                                        $('#' + _d.PropName).val(toTime(CreateDate($scope.flight.Landing)));
-                                        updates.push({ OFPId: $scope.entity.Id, PropName: _d.PropName, User: $rootScope.userTitle, PropValue: toTime(CreateDate($scope.flight.Landing)) });
-                                    }
-                                    //prop_onblock
-                                    if (_d.PropName == 'prop_onblock' /*&& toTime(CreateDate($scope.flight.BlockOn)) != _d.PropValue*/) {
-                                        $('#' + _d.PropName).val(toTime(CreateDate($scope.flight.BlockOn)));
-                                        updates.push({ OFPId: $scope.entity.Id, PropName: _d.PropName, User: $rootScope.userTitle, PropValue: toTime(CreateDate($scope.flight.BlockOn)) });
-                                    }
+                                if (sobprops.indexOf(_d.PropName) != -1) {
+                                    var vlu = _toNum($('#' + _d.PropName).val());
+                                    if (!isNaN(vlu))
+                                        sob += vlu;
+                                }
 
-                                    if (sobprops.indexOf(_d.PropName) != -1) {
-                                        var vlu = _toNum($('#' + _d.PropName).val());
-                                        if (!isNaN(vlu))
-                                            sob += vlu;
-                                    }
+                            });
 
+                            if (sob != sobValue) {
+                                $('#' + sobId).val(sob);
+                                updates.push({ OFPId: $scope.entity.Id, PropName: sobId, User: $rootScope.userTitle, PropValue: sob });
+                            }
+                            if (takeOffChanged) {
+                                var times = $("input[data-info^='time_']");
+                                var objs = [];
+                                $.each(times, function (_w, _t) {
+                                    var data = $(_t).data('info');
+                                    objs.push({ id: $(_t).attr('id'), index: Number(data.split('_')[1]), value: data.split('_')[2] });
                                 });
-
-                                if (sob != sobValue) {
-                                    $('#' + sobId).val(sob);
-                                    updates.push({ OFPId: $scope.entity.Id, PropName: sobId, User: $rootScope.userTitle, PropValue: sob });
-                                }
-                                if (takeOffChanged && $scope.flight.TakeOff) {
-                                    var times = $("input[data-info^='time_']");
-                                    var objs = [];
-                                    $.each(times, function (_w, _t) {
-                                        var data = $(_t).data('info');
-                                        objs.push({ id: $(_t).attr('id'), index: Number(data.split('_')[1]), value: data.split('_')[2] });
-                                    });
-                                    objs = Enumerable.From(objs).OrderBy('$.index').ToArray();
-                                    var to = CreateDate($scope.flight.TakeOff);
-                                    $.each(objs, function (_w, _t) {
-                                        to = new Date(to.addMinutes(_t.value));
-                                        $('#' + _t.id).val(toTime(to));
-                                        updates.push({ OFPId: $scope.entity.Id, PropName: _t.id, User: $rootScope.userTitle, PropValue: toTime(to) });
-                                    });
-                                }
-
-                                if (updates.length > 0)
-                                    flightService.saveOFPPropBulk(updates);
-                                if ($scope.url_sign)
-                                    $('#sig_pic_img').attr('src', $scope.url_sign);
-                                //  $('#sig_disp_img').attr('src', signFiles + '3542.jpg');
-
-                                //  $('#sig_pic_img').attr('src', signFiles + '3542.jpg');
-
+                                objs = Enumerable.From(objs).OrderBy('$.index').ToArray();
+                                var to = new Date($scope.flight.TakeOff);
+                                $.each(objs, function (_w, _t) {
+                                    to = new Date(to.addMinutes(_t.value));
+                                    $('#' + _t.id).val(toTime(to));
+                                    updates.push({ OFPId: $scope.entity.Id, PropName: _t.id, User: $rootScope.userTitle, PropValue: toTime(to) });
+                                });
                             }
-                            catch (e) {
-                                alert(e);
-                            }
+                            console.log(updates);
+                            if (updates.length > 0)
+                                flightService.saveOFPPropBulk(updates);
+                            if ($scope.url_sign)
+                                $('#sig_pic_img').attr('src', $scope.url_sign);
+                            //  $('#sig_disp_img').attr('src', signFiles + '3542.jpg');
+
+                            //  $('#sig_pic_img').attr('src', signFiles + '3542.jpg');
+
+
 
                         }, function (err) { $scope.loadingVisible = false; General.ShowNotify(err.message, 'error'); });
 

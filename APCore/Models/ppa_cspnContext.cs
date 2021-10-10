@@ -274,6 +274,7 @@ namespace APCore.Models
         public virtual DbSet<LibraryFolder> LibraryFolders { get; set; }
         public virtual DbSet<LicenseResultBasic> LicenseResultBasics { get; set; }
         public virtual DbSet<Location> Locations { get; set; }
+        public virtual DbSet<LogProp> LogProps { get; set; }
         public virtual DbSet<LoginInfo> LoginInfos { get; set; }
         public virtual DbSet<MV> MVs { get; set; }
         public virtual DbSet<MVT> MVTs { get; set; }
@@ -306,6 +307,7 @@ namespace APCore.Models
         public virtual DbSet<PersonEducation> PersonEducations { get; set; }
         public virtual DbSet<PersonEducationDocument> PersonEducationDocuments { get; set; }
         public virtual DbSet<PersonExperiense> PersonExperienses { get; set; }
+        public virtual DbSet<PersonHistory> PersonHistories { get; set; }
         public virtual DbSet<PersonMisc> PersonMiscs { get; set; }
         public virtual DbSet<PersonRating> PersonRatings { get; set; }
         public virtual DbSet<PersonRatingDocument> PersonRatingDocuments { get; set; }
@@ -651,6 +653,7 @@ namespace APCore.Models
         public virtual DbSet<ViewStudyField> ViewStudyFields { get; set; }
         public virtual DbSet<ViewTableDutyFDP> ViewTableDutyFDPs { get; set; }
         public virtual DbSet<ViewTrainingDuty> ViewTrainingDuties { get; set; }
+        public virtual DbSet<ViewTrainingSMSHistory> ViewTrainingSMSHistories { get; set; }
         public virtual DbSet<ViewUser> ViewUsers { get; set; }
         public virtual DbSet<ViewUserActivity> ViewUserActivities { get; set; }
         public virtual DbSet<ViewUserRole> ViewUserRoles { get; set; }
@@ -689,6 +692,8 @@ namespace APCore.Models
         public virtual DbSet<_fsg> _fsgs { get; set; }
         public virtual DbSet<_h2> _h2s { get; set; }
         public virtual DbSet<_index> _indices { get; set; }
+        public virtual DbSet<_passcockpit> _passcockpits { get; set; }
+        public virtual DbSet<_tempname> _tempnames { get; set; }
         public virtual DbSet<dood> doods { get; set; }
         public virtual DbSet<journals2> journals2s { get; set; }
         public virtual DbSet<newbl> newbls { get; set; }
@@ -7308,6 +7313,31 @@ namespace APCore.Models
                     .HasConstraintName("FK_LOCATION_ROOT");
             });
 
+            modelBuilder.Entity<LogProp>(entity =>
+            {
+                entity.ToTable("LogProp", "dbo");
+
+                entity.Property(e => e.DateUpdate).HasColumnType("datetime");
+
+                entity.Property(e => e.DateUpdateLocal).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.PropName)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.PropValue)
+                    .HasMaxLength(2000)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.PropValueOld)
+                    .HasMaxLength(2000)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.User)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
+            });
+
             modelBuilder.Entity<LoginInfo>(entity =>
             {
                 entity.ToTable("LoginInfo", "dbo");
@@ -7704,6 +7734,8 @@ namespace APCore.Models
                 entity.Property(e => e.DateUpdate)
                     .HasMaxLength(255)
                     .IsUnicode(false);
+
+                entity.Property(e => e.DateUpdateLocal).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.PropName)
                     .HasMaxLength(500)
@@ -8361,6 +8393,17 @@ namespace APCore.Models
                     .WithMany(p => p.PersonExperienses)
                     .HasForeignKey(d => d.PersonId)
                     .HasConstraintName("FK_PersonExperience_Person");
+            });
+
+            modelBuilder.Entity<PersonHistory>(entity =>
+            {
+                entity.ToTable("PersonHistory", "dbo");
+
+                entity.Property(e => e.DateCreate).HasColumnType("datetime");
+
+                entity.Property(e => e.User)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<PersonMisc>(entity =>
@@ -16337,7 +16380,7 @@ namespace APCore.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.Flts)
-                    .HasMaxLength(1000)
+                    .HasMaxLength(500)
                     .IsUnicode(false);
 
                 entity.Property(e => e.FromAirportIATA).HasMaxLength(255);
@@ -16367,7 +16410,7 @@ namespace APCore.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.Routes)
-                    .HasMaxLength(1000)
+                    .HasMaxLength(500)
                     .IsUnicode(false);
 
                 entity.Property(e => e.ScheduleName).HasMaxLength(500);
@@ -18539,7 +18582,7 @@ namespace APCore.Models
 
                 entity.Property(e => e.Name)
                     .IsRequired()
-                    .HasMaxLength(1001);
+                    .HasMaxLength(1003);
 
                 entity.Property(e => e.Nickname).HasMaxLength(50);
 
@@ -26081,6 +26124,56 @@ namespace APCore.Models
                 entity.Property(e => e.YearName).HasMaxLength(4000);
             });
 
+            modelBuilder.Entity<ViewTrainingSMSHistory>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("ViewTrainingSMSHistory", "dbo");
+
+                entity.Property(e => e.DateSent).HasColumnType("datetime");
+
+                entity.Property(e => e.DateStatus).HasColumnType("datetime");
+
+                entity.Property(e => e.DateVisit).HasColumnType("datetime");
+
+                entity.Property(e => e.DutyDate).HasColumnType("datetime");
+
+                entity.Property(e => e.JobGroup).HasMaxLength(500);
+
+                entity.Property(e => e.JobGroupCode)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Message)
+                    .HasMaxLength(1000)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Name).HasMaxLength(1001);
+
+                entity.Property(e => e.Pickup).HasColumnType("datetime");
+
+                entity.Property(e => e.PickupLocal).HasColumnType("datetime");
+
+                entity.Property(e => e.RefId)
+                    .HasMaxLength(200)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ScheduleName).HasMaxLength(500);
+
+                entity.Property(e => e.Sender)
+                    .HasMaxLength(8000)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Status)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.TypeStr)
+                    .IsRequired()
+                    .HasMaxLength(21)
+                    .IsUnicode(false);
+            });
+
             modelBuilder.Entity<ViewUser>(entity =>
             {
                 entity.HasNoKey();
@@ -27915,6 +28008,38 @@ namespace APCore.Models
                 entity.Property(e => e.sta).HasColumnType("datetime");
 
                 entity.Property(e => e.std).HasColumnType("datetime");
+            });
+
+            modelBuilder.Entity<_passcockpit>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("_passcockpit", "dbo");
+
+                entity.Property(e => e.FIRSTNAME).HasMaxLength(255);
+
+                entity.Property(e => e.LASTNAME).HasMaxLength(255);
+
+                entity.Property(e => e.NID).HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<_tempname>(entity =>
+            {
+                entity.ToTable("_tempname", "dbo");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.FirstName)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.LastName)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.NID)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<dood>(entity =>
