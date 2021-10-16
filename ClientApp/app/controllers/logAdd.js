@@ -1402,8 +1402,8 @@ app.controller('logAddController', ['$scope', '$location', 'flightService', 'aut
     ///////////////////////////////////
     $scope.cargo = {
         valueChangeEvent: 'keyup',
-        showClearButton: false,
-        step: 100,
+        showClearButton: true,
+        step: 0,
         useLargeSpinButtons: true,
         min: 0,
         showSpinButtons: false,

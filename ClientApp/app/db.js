@@ -1,5 +1,5 @@
 ﻿const dbName = "CrewPocketDb";
- 
+
 var _db = new Dexie(dbName);
 db = {};
 db.getDb = function () {
@@ -17,15 +17,15 @@ db.Init = function () {
         NOTAMs: "Id,StationId,FDPId,DateDay",
         ASRsX: "Id,FlightId,IsSynced",
         ASRs: "Id,FlightId,IsSynced",
-        ASR:"FlightId,IsSynced",
+        ASR: "FlightId,IsSynced",
         VRs: "Id,FlightId,IsSynced",
         VR: "FlightId,IsSynced",
         DR: "FlightId,IsSynced",
         OFP: "FlightId,IsSynced",
         OFPProp: "Id,OFPId,PropName,IsSynced",
         LogProp: "FlightId,PropName",
-        LogErr:"++id",
-         
+        LogErr: "++id",
+
     });
     _db.open();
 };
@@ -37,7 +37,7 @@ db.GetCalendarCollection = function (from, to) {
             //return true;
 
             //return rec.Year==year && rec.Month==month;
-            
+
             //return   new Date(rec.DateStart).getTime() >= new Date(from).getTime()  && new Date(rec.DateStart).getTime() <= new Date(to).getTime();
             return DateToNumber(new Date(rec.DateStart)) >= _from && DateToNumber(new Date(rec.DateStart)) <= _to;
         });
@@ -49,13 +49,13 @@ db.GetDutiesCollection = function (from, to) {
     var _to = DateToNumber(to);
     var collection = _db.Duties
         .filter(function (rec) {
-             return DateToNumber(new Date(rec.DateStart)) >= _from && DateToNumber(new Date(rec.DateStart)) <= _to;
+            return DateToNumber(new Date(rec.DateStart)) >= _from && DateToNumber(new Date(rec.DateStart)) <= _to;
         });
 
     return collection;
 };
 ////rec.ConfirmedBy != GlobalUserId;
-db.GetDutiesUserDefinedCollection = function (from, to) { 
+db.GetDutiesUserDefinedCollection = function (from, to) {
     var _from = DateToNumber(from);
     var _to = DateToNumber(to);
     var collection = _db.Duties
@@ -77,10 +77,10 @@ db.GetDutiesOperatorDefinedCollection = function (from, to) {
 };
 
 db.GetTAFCollection = function (fdpId) {
-    
+
     var collection = _db.TAFs
         .filter(function (rec) {
-            return rec.FDPId==fdpId;
+            return rec.FDPId == fdpId;
         });
 
     return collection;
@@ -110,7 +110,7 @@ db.GetNOTAMCollection = function (fdpId) {
 db.GetTAFs = function (fdpId, callback) {
     var collection = db.GetTAFCollection(fdpId);
     collection.toArray().then(function (arg) {
-        
+
 
         callback(arg);
     });
@@ -160,7 +160,7 @@ db.GetOFPByFlightCollection = function (flightId) {
 
     return collection;
 };
- 
+
 
 db.GetOFPPropCollection = function (ofpId) {
 
@@ -171,11 +171,11 @@ db.GetOFPPropCollection = function (ofpId) {
 
     return collection;
 };
-db.GetOFPPropCollectionByName = function (ofpId,name) {
+db.GetOFPPropCollectionByName = function (ofpId, name) {
 
     var collection = _db.OFPProp
         .filter(function (rec) {
-            return rec.OFPId == ofpId && rec.PropName==name;
+            return rec.OFPId == ofpId && rec.PropName == name;
         });
 
     return collection;
@@ -210,8 +210,10 @@ db.GetOFPsByFlightId = function (flightId, callback) {
     _db.OFP.get(flightId).then(function (arg) { callback(arg); });
 };
 
- 
 
+db.deleteOFPPropsCache = function (ofpId) {
+    window.CachedOFPProps = Enumerable.From(window.CachedOFPProps).Where('$.OFPId!=' + ofpId).ToArray();
+};
 db.GetOFPProps = function (ofpId, callback) {
 
 
@@ -221,23 +223,48 @@ db.GetOFPProps = function (ofpId, callback) {
     //        return rec.OFPId == ofpId;
     //    });
 
-   /* var collection = db.GetOFPPropCollection(ofpId);
-    collection.toArray().then(function (arg) {
+    /* var collection = db.GetOFPPropCollection(ofpId);
+     collection.toArray().then(function (arg) {
+ 
+ 
+         callback(arg);
+     });
+     */
+    //var cached = Enumerable.From(window.CachedOFPProps).Where('$.OFPId==' + ofpId).FirstOrDefault();
+    //if (cached) {
+    //    console.log('get from cache');
+    //    callback(cached.items);
+    //}
+    //else
+    //    _db.OFPProp.where('OFPId').equals(ofpId).toArray(function (arg) {
+    //        console.log('get from db');
+    //        if (arg && arg.length > 0)
+    //            window.CachedOFPProps.push({ OFPId: ofpId, items: arg });
+    //        callback(arg);
+    //    });
 
-
+    _db.OFPProp.where('OFPId').equals(ofpId).toArray(function (arg) {
+        
         callback(arg);
     });
-    */
-
-    _db.OFPProp.where('OFPId').equals(ofpId).toArray(function (arg) { callback(arg); });
 
 
 };
-
+//doolu
+//doolu
 db.GetOFPPropByName = function (ofpId, name, callback) {
-   
-    _db.OFPProp.filter(function (row) { return row.OFPId == ofpId && row.PropName == name; })
-        .first(function (item) { callback(item); });
+     
+    _db.OFPProp.get({ OFPId: ofpId, PropName: name }).then(function (rec) { callback(rec); });
+
+
+  //  _db.OFPProp.filter(function (row) { return row.OFPId == ofpId && row.PropName == name; })
+   //     .first(function (item) { callback(item); });
+};
+
+db.GetOFPPropByName2 = function (ofpId, name,props, callback) {
+
+    var prop = Enumerable.From(props).Where('$.PropName=="' + name + '"').FirstOrDefault();
+    callback(prop);
 };
 
 
@@ -271,9 +298,9 @@ db.GetDuties = function (from, to, callback) {
 };
 
 db.GetCalendar = function (from, to, callback) {
-    var collection = db.GetCalendarCollection(from,to);
+    var collection = db.GetCalendarCollection(from, to);
     collection.toArray().then(function (arg) {
-        console.log('caltable',arg);
+        console.log('caltable', arg);
 
         callback(arg);
     });
@@ -287,37 +314,37 @@ db.DateTimeToNumber = function (dt) {
     return Number(str);
 };
 db.GetAppCrewFlightsByDatesCollection = function (df, dt) {
-    
-    
-    var collection= _db.AppCrewFlights
+
+
+    var collection = _db.AppCrewFlights
         .filter(function (flight) {
-           
+
             return db.DateToNumber(CreateDate(flight.STDDay)) >= db.DateToNumber(CreateDate(df)) && db.DateToNumber(CreateDate(flight.STDDay)) <= db.DateToNumber(CreateDate(dt));
         });
-     
+
     return collection;
 };
 db.GetFlightCrewsCollection = function (fid) {
     var collection = _db.FlightCrews.filter(function (row) { return row.FlightId == fid; });
     return collection;
 };
-db.GetFlightCrews = function (fid,callback) {
+db.GetFlightCrews = function (fid, callback) {
     var collection = _db.FlightCrews.filter(function (row) { return row.FlightId == fid; });
     collection.toArray().then(function (arg) { callback(arg); });
 };
 
 
 ////// AppCrewFlights
-db.GetAppFlightCrew =   function (fid) {
+db.GetAppFlightCrew = function (fid) {
     //_db.FlightCrews.filter(function (row) { return row.FlightId == fid; });
     //collection.toArray().then(function (arg) { callback(arg); });
     return _db.AppCrewFlights.get(fid);
-     //   .then(function (arg) {
-     //   callback(arg);
-     //});
-   
+    //   .then(function (arg) {
+    //   callback(arg);
+    //});
+
 };
-db.GetAppCrewFlightsByDates = function (df, dt,callback) {
+db.GetAppCrewFlightsByDates = function (df, dt, callback) {
     var collection = db.GetAppCrewFlightsByDatesCollection(df, dt);
     collection.toArray().then(function (arg) { callback(arg); });
 };
@@ -337,50 +364,52 @@ db.DeleteAppCrewFlightsByDates = function (df, dt, callback) {
 //        console.log("Last raindrop's id was: " + lastKey); // Will be 100000.
 //        callback();
 //    }).catch(Dexie.BulkError, function (e) {
-        
+
 //        console.error('AddBulkAppCrewFlights Error',e);
 //    });
 //};
-db.AddBulkAppCrewFlights =async  function (items) {
+db.AddBulkAppCrewFlights = async function (items) {
     var lastKey = await _db.AppCrewFlights.bulkAdd(items);
     return lastKey;
 };
 db._deSynced = async function (table, items) {
     items.forEach(function (item, index) {
-            _db[table].update(item, { IsSynced: 0 });
+        _db[table].update(item, { IsSynced: 0 });
     });
-    
-     
+
+
 };
-db.deSyncedItem = async function (table, key,callback) {
+db.deSyncedItem = async function (table, key, callback) {
 
     _db[table].update(key, { IsSynced: 0 }).then(function (upd) { callback(); });
-    
+
 
 };
 //db.friends.where("shoeSize").aboveOrEqual(47).modify({isBigfoot: 1});
-db.deSyncedOFPProp = async function (ofpId,name, callback) {
 
+db.deSyncedOFPProp = async function (ofpId, name, callback) {
+    //_db.OFPProp.get({ OFPId: ofpId, PropName: name }).then(function (rec) { callback(rec); });
     //_db[table].update(key, { IsSynced: 0 }).then(function (upd) { callback(); });
-    _db.OFPProp.filter(function (row) { return row.OFPId == ofpId && row.PropName == name; }).modify({ IsSynced: 0 }).then(function () {   callback(); });
 
+    //_db.OFPProp.filter(function (row) { return row.OFPId == ofpId && row.PropName == name; }).modify({ IsSynced: 0 }).then(function () { callback(); });
+    _db.OFPProp.where({ OFPId: ofpId, PropName: name }).modify({ IsSynced: 0 }).then(function () { callback(); });
 };
 db.getCount = function (table, callback) {
     return _db[table].count(function (e) { callback(e); });
 };
-db.Update =  function (table, key, changes, callback) {
+db.Update = function (table, key, changes, callback) {
     //db.friends.update(2, { name: "Number 2" }).then(function (updated) {
     //    if (updated)
     //        console.log("Friend number 2 was renamed to Number 2");
     //    else
     //        console.log("Nothing was updated - there were no friend with primary key: 2");
     //});
-   // var updated = await _db[table].update(key, changes);
-   // var row = await _db[table].get(key);
-   // return row;
+    // var updated = await _db[table].update(key, changes);
+    // var row = await _db[table].get(key);
+    // return row;
     _db[table].update(key, changes).then(function (upd) {
         _db[table].get(key).then(function (row) {
-           
+
             if (callback)
                 callback(row);
         });
@@ -388,44 +417,53 @@ db.Update =  function (table, key, changes, callback) {
 };
 
 db.Put = function (table, key, item, callback) {
-     
-    _db[table].put(item,key).then(function (upd) {
+
+    _db[table].put(item, key).then(function (upd) {
         _db[table].get(key).then(function (row) {
             if (callback)
                 callback(row);
         });
     });
 };
-db.PutOFPProp = function (ofpId,name,   item, callback) {
+//doolu
+db.PutOFPProp = function (ofpId, name, item, callback) {
 
     _db["OFPProp"].put(item).then(function (upd) {
-       
-        _db.OFPProp.filter(function (row) { return row.OFPId == ofpId && row.PropName == name; })
-            .first(function (item) { callback(item); });
-              
+        _db.OFPProp.get({ OFPId: ofpId, PropName: name }).then(function (rec) { callback(rec); });
+       // _db.OFPProp.filter(function (row) { return row.OFPId == ofpId && row.PropName == name; })
+       //     .first(function (item) { callback(item); });
+
     });
 };
-db.AddErrorLog = function (empId,request,remark,  callback) {
-    
+db.PutOFPProp2 = function (ofpId, name, item, callback) {
+
+    _db["OFPProp"].put(item).then(function (upd) {
+        //_db.OFPProp.get({ OFPId: ofpId, PropName: name }).then(function (rec) { callback(rec); });
+        callback(item);
+       
+    });
+};
+db.AddErrorLog = function (empId, request, remark, callback) {
+
     _db.LogErr.add({
         EmployeeId: empId,
-       Request: request,
-       Remark: remark,
-       IsSynced: 0,
-         Date: moment(new Date()).format('YYYYMMDDHHmmss')
+        Request: request,
+        Remark: remark,
+        IsSynced: 0,
+        Date: moment(new Date()).format('YYYYMMDDHHmmss')
     }).then(function (id) {
-         
 
-            if (callback)
-                callback(id);
-        
+
+        if (callback)
+            callback(id);
+
     });
 };
 db.PutOFPPropById = function (id, item, callback) {
 
     _db["OFPProp"].put(item).then(function (upd) {
 
-        _db.OFPProp.filter(function (row) { return row.Id == id ; })
+        _db.OFPProp.filter(function (row) { return row.Id == id; })
             .first(function (item) { callback(item); });
 
     });
@@ -436,10 +474,10 @@ db.Delete = function (table, key, callback) {
 };
 
 db.Clear = function (table, callback) {
-    _db[table].clear().then(function (e) { callback(e);});
+    _db[table].clear().then(function (e) { callback(e); });
 };
 db.DeleteAsr = function (key, callback) {
-    _db['ASR'].delete(key).then(res => {   callback(); }, rej => {   callback(); });
+    _db['ASR'].delete(key).then(res => { callback(); }, rej => { callback(); });
 };
 db.DeleteDr = function (key, callback) {
     _db['DR'].delete(key).then(res => { callback(); }, rej => { callback(); });
@@ -453,25 +491,25 @@ db.DeleteVr = function (key, callback) {
 
 db.DeleteOFPProps = function (ofpId, callback) {
     //_db['OFPProp'].delete(key).then(res => { callback(); }, rej => { callback(); });
-    _db.OFPProp.filter(function (row) { return row.OFPId == ofpId  ; })
+    _db.OFPProp.filter(function (row) { return row.OFPId == ofpId; })
         .delete()
         .then(function (deleteCount) {
             callback(deleteCount);
-        }); 
+        });
 };
 //cool
 db.DeleteOFPProp = function (ofpId, name, callback) {
-        _db.OFPProp.filter(function (row) { return row.OFPId == ofpId && row.PropName == name; })
+    _db.OFPProp.filter(function (row) { return row.OFPId == ofpId && row.PropName == name; })
         .delete()
         .then(function (deleteCount) {
             callback(deleteCount);
-        }); 
+        });
 
-   // _db['OFPProp'].delete(key).then(res => { callback(); }, rej => { callback(); });
+    // _db['OFPProp'].delete(key).then(res => { callback(); }, rej => { callback(); });
 };
 
-db.DeleteOFPPropById = function (id,   callback) {
-    _db.OFPProp.filter(function (row) { return row.Id == id ; })
+db.DeleteOFPPropById = function (id, callback) {
+    _db.OFPProp.filter(function (row) { return row.Id == id; })
         .delete()
         .then(function (deleteCount) {
             callback(deleteCount);
@@ -492,20 +530,20 @@ db.DeleteDrByIds = function (keys, callback) {
 };
 
 db.auth = {};
-db.auth.update = function (userName, password,userData,authData, callback) {
-   
+db.auth.update = function (userName, password, userData, authData, callback) {
+
     _db.Auth.clear().then(function (e) {
-        
-        _db.Auth.add({ UserName: userName, Password: password,UserData:userData, AuthData:authData }).then(function (e2) {
-            
+
+        _db.Auth.add({ UserName: userName, Password: password, UserData: userData, AuthData: authData }).then(function (e2) {
+
             if (callback)
                 callback();
         });
     });
 };
-db.auth.getUser = function (userName,callback) {
+db.auth.getUser = function (userName, callback) {
     _db.Auth.get(userName).then(function (user) {
-         
+
         callback(user);
     });
 };
@@ -519,19 +557,19 @@ db.sync.SyncCalendar = async function (from, to, serverData, callback) {
     await _db.Calendar.bulkDelete(deleted);
     var pts = await _db.Calendar.bulkPut(serverData);
     var data = await db.GetCalendarCollection(from, to).toArray();
-     
+
     callback({ Data: data, IsSuccess: 1 });
-     
+
 };
 //alert(GlobalUserId);
 db.sync.SyncDuties = async function (from, to, serverData, callback) {
     var collection = db.GetDutiesCollection(from, to);
-     
+
     var userDefinedCollection = db.GetDutiesUserDefinedCollection(from, to);
     var operatorCollection = db.GetDutiesOperatorDefinedCollection(from, to);
     var deletedOperator = await operatorCollection.keys();
-   
-   await _db.Duties.bulkDelete(deletedOperator);
+
+    await _db.Duties.bulkDelete(deletedOperator);
 
     var operatorServer = Enumerable.From(serverData).Where('$.ConfirmedBy!=' + GlobalUserId).ToArray();
 
@@ -556,13 +594,13 @@ db.sync.SyncTAF = async function (fdpId, serverData, callback) {
         puts.push(_s);
     });
     var pts = await _db.TAFs.bulkAdd(puts);
-    
+
 
     db.GetTAFs(fdpId, function (data) {
         callback({ Data: data, IsSuccess: 1 });
     });
 
-   
+
 
 };
 
@@ -581,7 +619,7 @@ db.sync.SyncMETAR = async function (fdpId, serverData, callback) {
         puts.push(_s);
     });
     var pts = await _db.METARs.bulkAdd(puts);
-   
+
 
     db.GetMETARs(fdpId, function (data) {
         callback({ Data: data, IsSuccess: 1 });
@@ -683,16 +721,16 @@ db.sync.SyncVR = async function (flightId, serverData, callback) {
 
 
 db.sync.SyncAppCrewFlightsByDateRange = async function (df, dt, serverData, callback) {
-      
-   // _db.AppCrewFlights.update(62205, { Version: 2 }).then(function (arg) { alert(arg); });
-   // return;
-   
+
+    // _db.AppCrewFlights.update(62205, { Version: 2 }).then(function (arg) { alert(arg); });
+    // return;
+
     var collection = db.GetAppCrewFlightsByDatesCollection(df, dt);
     var allRows = await collection.toArray();
-     
+
     var allFids = Enumerable.From(allRows).Select('Number($.Id)').ToArray();
     var serverIds = Enumerable.From(serverData).Select('Number($.Id)').ToArray();
-      
+
 
     var deleted = await collection.filter(function (flight) { return serverIds.indexOf(Number(flight.Id)) == -1; }).keys();
     if (deleted && deleted.length > 0) {
@@ -701,10 +739,10 @@ db.sync.SyncAppCrewFlightsByDateRange = async function (df, dt, serverData, call
 
     var puts = [];
     var upds = [];
-    
+
     $.each(serverData, function (_i, _s) {
         var local = Enumerable.From(allRows).Where('$.Id==' + _s.Id).FirstOrDefault();
-        if (!local || (getTimeForSync(_s.JLDate) >= getTimeForSync(local.JLDate) && local.IsSynced==1)) {
+        if (!local || (getTimeForSync(_s.JLDate) >= getTimeForSync(local.JLDate) && local.IsSynced == 1)) {
             _s.IsSynced = 1;
             _s.JLDate = momentFromatLocalUTC(_s.JLDate);
             puts.push(_s);
@@ -713,37 +751,37 @@ db.sync.SyncAppCrewFlightsByDateRange = async function (df, dt, serverData, call
             //update
             //var upd = await _db.AppCrewFlights.update(local.Id, { IsSynced: 0 });
             //console.log('upd',upd);
-            
+
             upds.push(local.Id);
         }
     });
     if (upds && upds.length > 0) {
-        
+
         await db._deSynced('AppCrewFlights', upds);
     }
     if (puts && puts.length > 0) {
         var pts = await _db.AppCrewFlights.bulkPut(puts);
         console.log('puts', pts);
     }
-   
+
 
     //var news = Enumerable.From(serverData).Where(function (x) { return allFids.indexOf(x.Id) == -1; }).ToArray();
     //var newsLastKey = await db.AddBulkAppCrewFlights(news);
 
 
-    
-   // var rows = await collection.toArray();
+
+    // var rows = await collection.toArray();
     //alert(rows.length);
     // console.log(rows);
     var data = await db.GetAppCrewFlightsByDatesCollection(df, dt).toArray();
 
-    callback({Data:data,IsSuccess:1});
+    callback({ Data: data, IsSuccess: 1 });
 };
 db.sync.SyncFlightCrews = async function (fid, serverData, callback) {
     //await _db.FlightCrews.clear();
     await db.GetFlightCrewsCollection(fid).delete();
     var pts = await _db.FlightCrews.bulkPut(serverData);
-   
+
     var data = serverData; //await db.GetAppCrewFlightsByDatesCollection(df, dt).toArray();
 
     callback({ Data: data, IsSuccess: 1 });
@@ -761,8 +799,8 @@ db.sync.SyncAuto = async function (callback) {
     //var allRows = await collection.toArray();
     var flights = await _db.AppCrewFlights
         .filter(function (flight) {
-            
-            return flight.IsSynced==0;
+
+            return flight.IsSynced == 0;
         }).toArray();
 
     callback(flights);

@@ -1131,11 +1131,11 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
             changes.AttRepositioning2Dt = entity.AttRepositioning2Dt;
         }
 
-        console.log(changes);
-
+      
+         
 
         db.Update('AppCrewFlights', entity.FlightId, changes, function (row) {
-
+             
 
             if ($rootScope.getOnlineStatus() && entity.Server) {
                 _checkInternet(function (st) {
@@ -1145,7 +1145,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                             var _flt = response.data.Data.flight;
                             _flt.JLDate = momentFromatLocalUTC(_flt.JLDate);
                             _flt.IsSynced = 1;
-                            _flt.JLUserId = $rootScope.employeeId;
+                            _flt.JLUserId = $rootScope.employeeId; 
                             db.Put('AppCrewFlights', entity.FlightId, _flt, function (row2) { deferred.resolve({ Data: row2, IsSuccess: 1 }); });
                             //db.Update('AppCrewFlights', entity.FlightId, dateChanges, function (row2) {
                             //    deferred.resolve({ Data: row2, IsSuccess: 1 });
@@ -1666,7 +1666,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
 
 
-
+  //doolu
     var _saveOFPProp = function (entity) {
         var pk = entity.OFPId;
         var deferred = $q.defer();
@@ -1681,8 +1681,8 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
             entity.Id = _result.Id;
             entity.DateUpdate = momentUtcNowStringSecond();
 
-            db.PutOFPProp(entity.OFPId, entity.PropName, entity, function (row) {
-
+            db.PutOFPProp2(entity.OFPId, entity.PropName, entity, function (row) {
+                 
                 if ($rootScope.getOnlineStatus()) {
 
                     $http.post($rootScope.apiUrl + 'ofp/prop/save', entity).then(function (response) {
@@ -1691,7 +1691,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                             var item = response.data.Data;
                             item.IsSynced = 1;
                             db.DeleteOFPProp(item.OFPId, item.PropName, function () {
-                                db.PutOFPProp(item.OFPId, item.PropName, item, function (dbitem) {
+                                db.PutOFPProp2(item.OFPId, item.PropName, item, function (dbitem) {
                                     deferred.resolve({ Data: dbitem, IsSuccess: 1 });
                                 });
                             });
@@ -1732,13 +1732,19 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
     };
 
-
-    var _saveOFPPropBulk = function (objs) {
+    //doolu
+    var _saveOFPPropBulk =async function (objs,_ofpId) {
         var deferred = $q.defer();
+        var _db = db.getDb();
+        var _names = Enumerable.From(objs).Select('$.PropName').ToArray();
+        var _props = await _db.OFPProp.where("OFPId").equals(_ofpId).toArray();
+        _props = Enumerable.From(_props).Where(function (x) { return _names.indexOf(x.PropName) != -1; }).ToArray();
+       // console.log('props', _props);
+      //  console.log(' buk saved start');
         $.each(objs, function (_w, entity) {
             entity.IsSynced = 1;
-            db.GetOFPPropByName(entity.OFPId, entity.PropName, function (_result) {
-
+            db.GetOFPPropByName2(entity.OFPId, entity.PropName,_props, function (_result) {
+               // console.log('got',_result);
                 if (!_result) {
                     deferred.reject("no property found in local db :" + entity.PropName);
                     return;
@@ -1746,16 +1752,17 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                 entity.Id = _result.Id;
                 entity.DateUpdate = momentUtcNowStringSecond();
                 db.PutOFPProp(entity.OFPId, entity.PropName, entity, function (row) {
-
+                   
                     if ($rootScope.getOnlineStatus()) {
-
+                        console.log('     sending server');
                         $http.post($rootScope.apiUrl + 'ofp/prop/save', entity).then(function (response) {
                             if (response.data.IsSuccess) {
                                 //deferred.resolve(response.data);
                                 var item = response.data.Data;
                                 item.IsSynced = 1;
                                 db.DeleteOFPProp(item.OFPId, item.PropName, function () {
-                                    db.PutOFPProp(item.OFPId, item.PropName, item, function (dbitem) {
+                                    db.PutOFPProp2(item.OFPId, item.PropName, item, function (dbitem) {
+                                        console.log('     sending server done');
                                         deferred.resolve({ Data: dbitem, IsSuccess: 1 });
                                     });
                                 });
@@ -1772,9 +1779,9 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                     else {
 
                         row.IsSynced = 0
-
+                        
                         db.deSyncedOFPProp(entity.OFPId, entity.PropName, function () {
-
+                             
                             deferred.resolve({ Data: row, IsSuccess: 1 });
                         });
                     }
@@ -2125,41 +2132,50 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
     //10-10
     var _epGetOFPProps = function (ofpId) { 
         var deferred = $q.defer();
-         
+        console.log('_p1');
+        var _db = db.getDb();
+        console.log('_p2');
         db.GetOFPProps(ofpId, function (_dbitem) {
+            console.log('_p3 ' + _dbitem.length);
+            
             //var dbitem = _dbitem && _dbitem.length > 0 ? _dbitem[0] : null;
             if ($rootScope.getOnlineStatus()) {
                 _checkInternet(function (st) {
                     if (st) {
-                        console.log('internet checked');
+                       
                         
                         $http.get($rootScope.apiUrl + 'ofp/props/' + ofpId).then(function (response) {
+                            console.log('_p4');
                             if (response.data.IsSuccess && response.data.Data) {
                                 //deferred.resolve({ IsSuccess: 1, Data: response.data.Data }); 
                                 var dbRows = response.data.Data;
 
                                 var output = [];
                                 var upd = 1;
-                                
+
+                                //var _deleteList = [];
+                                var _putList = [];
+
                                 $.each(dbRows, function (_i, _dbRow) {
                                     var localRow = Enumerable.From(_dbitem).Where('$.Id==' + _dbRow.Id).FirstOrDefault();
                                     var _dbdate = !localRow ? 0 : Number(localRow.DateUpdate);
                                     var _serverdate = Number(_dbRow.DateUpdate);
-                                    if (!localRow || _serverdate > _dbdate) {
+                                    if (!localRow || _serverdate > _dbdate) { 
                                         _dbRow.IsSynced = 1;
                                         output.push(_dbRow);
-                                        db.DeleteOFPPropById(_dbRow.Id, function () {
-                                            console.log('deleted ' + _dbRow.Id);
+                                        _putList.push(_dbRow);
+                                        //doolu
+                                        //db.DeleteOFPPropById(_dbRow.Id, function () {
+                                        //    console.log('deleted ' + _dbRow.Id);
 
-                                            db.PutOFPPropById(_dbRow.Id, _dbRow, function (row) {
-                                                console.log('put ' + _dbRow.Id);
-                                                // output.push(row);
-                                                upd++;
-                                                //if (upd == dbRows.length)
-                                                //   deferred.resolve({ IsSuccess: 1, Data: output });
-                                            });
+                                        //    db.PutOFPPropById(_dbRow.Id, _dbRow, function (row) {
+                                        //        console.log('put ' + _dbRow.Id);
+                                               
+                                        //        upd++;
+                                               
+                                        //    });
 
-                                        });
+                                        //});
                                     }
 
                                     else if (localRow.IsSynced == 0 && _serverdate <= _dbdate) {
@@ -2180,7 +2196,34 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                                     }
 
                                 });
-                                deferred.resolve({ IsSuccess: 1, Data: output });
+
+                                if (_putList.length > 0) {
+                                    var _keys = Enumerable.From(_putList).Select('$.Id').ToArray();
+                                    //clear cache
+                                    _db['OFPProp'].bulkDelete(_keys).then(res => {
+                                        _db.OFPProp.bulkPut(_putList).then(bpres => {
+                                            deferred.resolve({ IsSuccess: 1, Data: output });
+                                        }).catch(function (dErr) {
+                                             // Handle error PUTING
+                                            alert('ERROR in OFP properties deleting. Please report the error code to the application administrator. CODE: OFP-100' );
+                                            deferred.resolve({ IsSuccess: 1, Data: output });
+                                        });
+                                    }).catch(function (dErr) {
+                                        // Handle error DELETING
+                                        alert('ERROR in OFP properties inserting. Please report the error code to the application administrator. CODE: OFP-101');
+                                        deferred.resolve({ IsSuccess: 1, Data: output });
+                                    });
+
+                                    //db.DeleteOFPPropByIds(_keys, function () {
+                                       
+                                    //    _db.OFPProp.bulkPut(_putList).then(bpres => {
+                                    //        deferred.resolve({ IsSuccess: 1, Data: output });
+                                    //    });
+                                    //});
+                                }
+                                else
+
+                                    deferred.resolve({ IsSuccess: 1, Data: output });
                             }
                             else
                                 deferred.resolve({ IsSuccess: 1, Data: dbitem });
@@ -2501,15 +2544,21 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
         dto.DelayBlockOff = null;
         dto.BlockTime = null;
         dto.FlightTime = null;
+        //CreateDate
         if (flt.BlockOff)
-            dto.BlockOffDate = momentFromatFroServerUTC(flt.BlockOff);
+            //dto.BlockOffDate = momentFromatFroServerUTC(flt.BlockOff);
+            // dto.BlockOffDate = CreateDate(flt.BlockOff);
+            dto.BlockOffDate = momentFromatFroServerUTCObj(CreateDate(flt.BlockOff)).result;
 
         if (flt.BlockOn)
-            dto.BlockOnDate = momentFromatFroServerUTC(flt.BlockOn);
+            dto.BlockOnDate = momentFromatFroServerUTCObj(CreateDate(flt.BlockOn)).result; //momentFromatFroServerUTC(flt.BlockOn);
+           // dto.BlockOnDate = CreateDate(flt.BlockOn);
         if (flt.TakeOff)
-            dto.TakeOffDate = momentFromatFroServerUTC(flt.TakeOff);
+            dto.TakeOffDate = momentFromatFroServerUTCObj(CreateDate(flt.TakeOff)).result; //momentFromatFroServerUTC(flt.TakeOff);
+            //dto.TakeOffDate = CreateDate(flt.TakeOff);
         if (flt.Landing)
-            dto.LandingDate = momentFromatFroServerUTC(flt.Landing);
+            dto.LandingDate = momentFromatFroServerUTCObj(CreateDate(flt.Landing)).result; //momentFromatFroServerUTC(flt.Landing);
+            //dto.LandingDate = CreateDate(flt.Landing);
 
         dto.FuelRemaining = flt.FuelRemaining;
         dto.FuelUplift = flt.FuelUplift;
@@ -2601,7 +2650,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
         return dto;
     };
 
-    //nool
+    //noolu
     var _autoSyncLogsNew = async function (callback) {
         var _db = db.getDb();
         var flights = await _db.AppCrewFlights
@@ -2622,6 +2671,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
         var syncedPromises = [];
         var resps = [];
         $.each(flights, function (_d, _flt) {
+          
             syncedPromises.push($http.post($rootScope.apiUrl + 'flight/log/save2', _getSyncDtoNew(_flt)).then(resp => { resps.push({ id: _flt.FlightId, flight: resp.data.Data.flight }); }));
         });
         $q.all(syncedPromises).then(result => {
@@ -2630,6 +2680,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
                 _item.flight.IsSynced = 1;
                 _item.flight.JLDate = momentFromatLocalUTC(_item.flight.JLDate);
                 db.Put('AppCrewFlights', _item.flight.FlightId, _item.flight, function (row2) {
+                   
                     console.log('SYN NEWW  WWW W ', row2);
                     _cntr++;
                     if (_cntr >= resps.length) {

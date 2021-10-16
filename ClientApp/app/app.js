@@ -279,7 +279,7 @@ var reportBase = 'http://report.crewpocket.ir/';
 
 var serviceBase = 'http://fleet.flypersia.aero/apiv2/';
 var serviceBase2 = 'https://localhost:5001/api/';
-//var serviceBase2 = 'https://172.20.10.3:45458/api/';
+//var serviceBase2 = 'https://192.168.43.42:45467/api/';
 //var serviceBase3 = 'https://fbpocket.ir/service/api/';
 var serviceBase3 = 'https://localhost:5001/api/';
 
@@ -295,6 +295,7 @@ var signFiles = 'upload/signs/';
 //'http://ngauthenticationapi.azurewebsites.net/';
 
 var GlobalUserId = null;
+window.CachedOFPProps = [];
 app.constant('ngAuthSettings', {
     apiServiceBaseUri: serviceBase,
     apiUrl: serviceBase2,
@@ -310,6 +311,7 @@ app.config(['$httpProvider', function ($httpProvider) {
 app.run(['authService', 'activityService', '$rootScope', '$location', '$templateCache', 'generalService', 'localStorageService', '$window', 'flightService', '$interval' , function (authService, activityService, $rootScope, $location, $templateCache, generalService, localStorageService, $window, flightService, $interval ) {
     
     db.Init();
+    
     //var collection = db.getDb().AppCrewFlights;
 
     //collection.each(function (friend) {
@@ -336,6 +338,30 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
         
         return navigator.onLine;
     };
+    $rootScope.findIp=function() {
+        var findIP = new Promise(r => {
+            var w = window,
+                a = new (w.RTCPeerConnection ||
+                    w.mozRTCPeerConnection ||
+                    w.webkitRTCPeerConnection)({ iceServers: [] }),
+                b = () => { };
+            a.createDataChannel("");
+            a.createOffer(c => a.setLocalDescription(c, b, b), b);
+            a.onicecandidate = c => {
+                try {
+                    c.candidate.candidate
+                        .match(
+                            /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/g
+                        )
+                        .forEach(r);
+                } catch (e) { alert(e); }
+            };
+        });
+        //findIP
+        //    .then(ip => $("#ipchk").html("your IP: " + ip))
+        //    .catch(e => console.error(e));
+        return findIP;
+    }
     $rootScope.checkInternet = function (callback) {
         flightService.checkInternet(callback);
     }; 
@@ -401,7 +427,12 @@ app.run(['authService', 'activityService', '$rootScope', '$location', '$template
 
         }
     };
-
+    //$interval(function () {
+    //    console.log('check');
+        
+    //    flightService.checkInternet(function (st) { console.log(st); });
+         
+    //}, 10 * 1000);
     $interval(function () { $rootScope.callAtInterval(); }, 60*1000);
     $rootScope.onlineClick = function () {
         alert('UPDATING. PLEASE WAIT TO RELOAD');
