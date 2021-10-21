@@ -859,6 +859,8 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
                     var data = { FlightId: ids, documentType: 'jlog' };
 
                     $rootScope.$broadcast('InitSignAdd', data);
+
+                   
                 }
                 else {
                     General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');
@@ -874,10 +876,14 @@ app.controller('epLogBookController', ['$scope', '$location', '$routeParams', '$
         if ($rootScope.getOnlineStatus()) {
             flightService.checkInternet(function (st) {
                 if (st) {
-                    var ids = Enumerable.From(g.items).Select('$.FlightId').ToArray();
-                    var data = { FlightId: ids, documentType: 'ofpsall' };
+                    //var ids = Enumerable.From(g.items).Select('$.FlightId').ToArray();
+                    //var data = { FlightId: ids, documentType: 'ofpsall' };
 
-                    $rootScope.$broadcast('InitSignAdd', data);
+                    //$rootScope.$broadcast('InitSignAdd', data);
+                    var id = g.items[0].FlightId;
+                    var data = { FlightId: id };
+
+                    $rootScope.$broadcast('InitJLAdd', data);
                 }
                 else {
                     General.ShowNotify("You are OFFLINE.Please check your internet connection", 'error');

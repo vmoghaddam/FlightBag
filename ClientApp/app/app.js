@@ -283,6 +283,8 @@ var serviceBase2 = 'https://localhost:5001/api/';
 //var serviceBase3 = 'https://fbpocket.ir/service/api/';
 var serviceBase3 = 'https://localhost:5001/api/';
 
+var serviceBaseAPI = 'http://localhost:12271/';
+
 //var staticFiles = 'https://localhost:5001/Upload/';
 var staticFiles = 'https://fbpocket.ir/Upload/';
 var signFiles = 'upload/signs/';

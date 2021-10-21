@@ -457,23 +457,23 @@
                                         {{updversion}}
                                     </div>
                                     <!--<table style="width:100%;border:1px solid #eee; background-color:dimgray;margin-top:5px;" ng-class="getInfoClass(g,'TAF')" ng-click="infoClick(g.FDPId,'TAF',g)">
-        <tr>
-            <td style="text-align:left;padding:5px 0 5px 5px;font-size:16px;font-weight:bold">TAF <span style="display:inline-block;font-size:14px;margin-left:3px" ng-show="g.tafLoading">(Loading...)</span></td>
-            <td style="text-align:right;padding-right:5px;font-size:16px;">{{g.TAF && g.TAF[0]?formatDateTime( g.TAF[0].DateCreate) :'-'}}</td>
-        </tr>
-    </table>
-    <table style="width:100%;border:1px solid #eee;margin-top:7px; background:dimgray" ng-class="getInfoClass(g,'METAR')" ng-click="infoClick(g.FDPId,'METAR',g)">
-        <tr>
-            <td style="text-align:left;padding:5px 0 5px 5px;font-size:16px;font-weight:bold">METAR<span style="display:inline-block;font-size:14px;margin-left:3px" ng-show="g.metarLoading">(Loading...)</span></td>
-            <td style="text-align:right;padding-right:5px;font-size:16px;">{{g.METAR && g.METAR[0]?formatDateTime( g.METAR[0].DateCreate) :'-'}}</td>
-        </tr>
-    </table>
-    <table style="width:100%;border:1px solid #eee;margin-top:7px; background:dimgray" ng-class="getInfoClass(g,'NOTAM')" ng-click="infoClick(g.FDPId,'NOTAM',g)">
-        <tr>
-            <td style="text-align:left;padding:5px 0 5px 5px;font-size:16px;font-weight:bold">NOTAM<span style="display:inline-block;font-size:14px;margin-left:3px" ng-show="g.notamLoading">(Loading...)</span></td>
-            <td style="text-align:right;padding-right:5px;font-size:16px;">{{g.NOTAM && g.NOTAM[0]?formatDateTime( g.NOTAM[0].DateCreate) :'-'}}</td>
-        </tr>
-    </table>-->
+                                        <tr>
+                                            <td style="text-align:left;padding:5px 0 5px 5px;font-size:16px;font-weight:bold">TAF <span style="display:inline-block;font-size:14px;margin-left:3px" ng-show="g.tafLoading">(Loading...)</span></td>
+                                            <td style="text-align:right;padding-right:5px;font-size:16px;">{{g.TAF && g.TAF[0]?formatDateTime( g.TAF[0].DateCreate) :'-'}}</td>
+                                        </tr>
+                                    </table>
+                                    <table style="width:100%;border:1px solid #eee;margin-top:7px; background:dimgray" ng-class="getInfoClass(g,'METAR')" ng-click="infoClick(g.FDPId,'METAR',g)">
+                                        <tr>
+                                            <td style="text-align:left;padding:5px 0 5px 5px;font-size:16px;font-weight:bold">METAR<span style="display:inline-block;font-size:14px;margin-left:3px" ng-show="g.metarLoading">(Loading...)</span></td>
+                                            <td style="text-align:right;padding-right:5px;font-size:16px;">{{g.METAR && g.METAR[0]?formatDateTime( g.METAR[0].DateCreate) :'-'}}</td>
+                                        </tr>
+                                    </table>
+                                    <table style="width:100%;border:1px solid #eee;margin-top:7px; background:dimgray" ng-class="getInfoClass(g,'NOTAM')" ng-click="infoClick(g.FDPId,'NOTAM',g)">
+                                        <tr>
+                                            <td style="text-align:left;padding:5px 0 5px 5px;font-size:16px;font-weight:bold">NOTAM<span style="display:inline-block;font-size:14px;margin-left:3px" ng-show="g.notamLoading">(Loading...)</span></td>
+                                            <td style="text-align:right;padding-right:5px;font-size:16px;">{{g.NOTAM && g.NOTAM[0]?formatDateTime( g.NOTAM[0].DateCreate) :'-'}}</td>
+                                        </tr>
+                                    </table>-->
                                 </div>
                             </div>
 
@@ -1453,6 +1453,7 @@
     <div ng-include="'app/views/asrAdd.html?vx=2'"></div>
     <div ng-include="'app/views/vrAdd.html?vx=2'"></div>
     <div ng-include="'app/views/drAdd.html?vx=2'"></div>
+    <div ng-include="'app/views/jl.html?vx=2'"></div>
     <div ng-include="'app/views/ofpAdd.html?vx=2'"></div>
     <div ng-include="'app/views/signAdd.html?vx=2'"></div>
     <div ng-include="'app/views/calendar.html?vx=2'"></div>

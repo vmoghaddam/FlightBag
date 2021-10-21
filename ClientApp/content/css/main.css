@@ -1477,4 +1477,182 @@ body {
     background-color: #ddd;
     outline: 1px solid slategrey;
 }
+
+
+
+
+.page-a4 {
+    background: pink;
+    height: 21cm;
+    min-width: 29.7cm;
+   /* min-width: 27cm;*/
+    width: 100%;
+    padding: 0cm;
+    margin: 0;
+    border: 1px #D3D3D3 solid;
+    border-radius: 5px;
+    background: white;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+    .page-a4 .subpage {
+        position: relative;
+        padding: 0cm;
+        border: 0px red solid;
+        height: 150mm;
+        height: 210mm;
+        /*outline: 2cm #FFEAEA solid;*/
+    }
+
+.page-a4p {
+    background: pink;
+    min-width: 21cm;
+    height: 29.7cm;
+    padding: 0cm;
+    margin: 0;
+    border: 1px #D3D3D3 solid;
+    border-radius: 5px;
+    background: white;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+    .page-a4p .subpage {
+        position: relative;
+        padding: 0cm;
+        border: 0px red solid;
+        height: 150mm;
+        height: 210mm;
+        /*outline: 2cm #FFEAEA solid;*/
+    }
+
+.jl-table {
+}
+
+    .jl-table tr {
+        min-height: 37px;
+    }
+
+    .jl-table td {
+        border: 1px solid black;
+        text-align: center;
+        padding: 4px 0 4px 0;
+        font-size: 12px;
+    }
+
+    .jl-table th {
+        border: 1px solid black;
+        text-align: center;
+        padding: 8px 0 8px 0;
+        font-size: 12px;
+        font-weight: normal;
+    }
+
+.fjl {
+    font-size: 12px;
+}
+
+.dcell {
+    padding: 3px 0 3px 0;
+    height: 24px;
+}
+
+.dp {
+    padding: 3px 0;
+}
+
+.bo {
+    /*border-top: 1px solid black;*/
+    /*border-bottom: 1px solid black;*/
+    border-left: 1px solid #aaa;
+}
+
+.bob {
+    border-left: 1px solid black;
+}
+
+.bo2 {
+    /*border-top: 1px solid #aaa;*/
+    border-bottom: 1px solid black;
+    border-left: 1px solid #aaa;
+}
+
+.nbo {
+    border: none;
+}
+
+.hatch-aog {
+    background-image: linear-gradient(45deg, black 25%, transparent 25%, transparent 75%, black 75%, black), linear-gradient(45deg, black 25%, transparent 25%, transparent 75%, black 75%, black), linear-gradient(#eee,#eee ) !important;
+    background-size: 4px 4px, 4px 4px, 100% 100%;
+    background-position: 0px 0px, 2px 2px, 0px 0px;
+}
+
+.hatch-delay {
+    background-image: linear-gradient(45deg, yellow 25%, transparent 25%, transparent 75%, yellow 75%, yellow), linear-gradient(45deg, yellow 25%, transparent 25%, transparent 75%, yellow 75%, yellow), linear-gradient(#f44336,#f44336 ) !important;
+    background-size: 2px 2px, 2px 2px, 100% 100% !important;
+    background-position: 0px 0px, 2px 2px, 0px 0px !important;
+}
+
+@media print {
+    @page {
+        size: landscape,A4;
+        margin: 0;
+    }
+
+    .page-a4, .page-a4p {
+        margin: 0;
+        border: initial;
+        border-radius: initial;
+        width: initial;
+        min-height: initial;
+        box-shadow: initial;
+        background: initial;
+        page-break-after: always;
+    }
+
+    .jl-title {
+        margin-top: 20px !important;
+    }
+
+    .div2 {
+        margin-top: 2px !important;
+        padding-right: 25px !important;
+        padding-left: 20px !important;
+    }
+
+    .div2-nopadding {
+        margin-top: 2px !important;
+    }
+
+    .div3 {
+        padding-left: 15px !important;
+    }
+
+    .page-a4 .subpage {
+        /*outline: 2cm #FFEAEA solid;*/
+    }
+
+    .jl-table-1 {
+        /*width: 81% !important;*/
+    }
+
+    .gantt {
+        -webkit-transform: rotate(-90deg) !important;
+        -moz-transform: rotate(-90deg) !important;
+        filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3) !important;
+    }
+
+    ._print {
+        -webkit-transform: rotate(-90deg);
+        -moz-transform: rotate(-90deg);
+        filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
+    }
+
+    .noprint {
+        display: none !important;
+    }
+
+    .td-dh {
+        background-color: #ffccff !important;
+    }
+}
  

@@ -3462,6 +3462,21 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
         return deferred.promise;
     };
+
+
+    var _getJL = function (fid) {
+
+        var deferred = $q.defer();
+        $http.get(serviceBaseAPI + "api/jl/" + fid).then(function (response) {
+            deferred.resolve(response.data);
+        }, function (err, status) {
+
+            deferred.reject(Exceptions.getMessage(err));
+        });
+
+        return deferred.promise;
+    };
+    serviceFactory.getJL = _getJL;
     //////////////////////////////////
     serviceFactory.checkInternet = _checkInternet;
     serviceFactory.checkLock = _checkLock;

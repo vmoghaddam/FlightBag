@@ -6,6 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System.Net;
+using System.Text;
 
 namespace APCore.Services
 {
@@ -51,9 +54,11 @@ namespace APCore.Services
     public class FlightService : IFlightService
     {
         private readonly ppa_cspnContext _context;
-        public FlightService(ppa_cspnContext context)
+        private IConfiguration _configuration;
+        public FlightService(ppa_cspnContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
         public async Task<DataResponse> GetCrewFlights(int crewId, DateTime from, DateTime to)
         {
@@ -381,13 +386,43 @@ namespace APCore.Services
                     var asr = await _context.EFBASRs.SingleOrDefaultAsync(q => q.FlightId == flightId);
                     if (asr != null)
                     {
+                        var appleg = await _context.AppLegs.FirstOrDefaultAsync(q => q.FlightId == flightId);
                         asr.JLSignedBy = user;
                         asr.JLDatePICApproved = DateTime.UtcNow;
                         asr.PICId = pic;
                         asr.PIC = picStr;
                         var saveResult3 = await _context.SaveAsync();
                         if (saveResult3.Succeed)
+                        {
+                            try
+                            {
+                                var URI = _configuration["WeatherUrls:FREESMS"];
+                                List<string> txtParts = new List<string>();
+                                txtParts.Add("ASR ALERT");
+                                txtParts.Add("FLT " + appleg.FlightNumber + " " + appleg.FromAirportIATA + "-" + appleg.ToAirportIATA);
+                                txtParts.Add("DATE "+((DateTime) appleg.STDDay).ToString("yyyy-MM-dd"));
+                                txtParts.Add("PIC " + appleg.PIC);
+                                //string myParameters = "param1=value1&param2=value2&param3=value3";
+                                var text = String.Join("\n", txtParts);
+                                using (WebClient wc = new WebClient())
+                                {
+                                    System.Collections.Specialized.NameValueCollection postData =
+                                         new System.Collections.Specialized.NameValueCollection()
+                                              {
+                                                   { "mobile",_configuration["WeatherUrls:ASRMOBILES"] },
+                                                   { "text", text },
+
+                                              };
+                                    string pagesource = Encoding.UTF8.GetString(wc.UploadValues(URI, postData));
+
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+
+                            }
                             return new DataResponse() { IsSuccess = true, Data = new { asr.Id, asr.FlightId, asr.PICId, asr.JLSignedBy, asr.JLDatePICApproved, asr.PIC } };
+                        }
                         else
                             return new DataResponse() { IsSuccess = false };
                     }
@@ -413,13 +448,43 @@ namespace APCore.Services
                     var vr = await _context.EFBVoyageReports.SingleOrDefaultAsync(q => q.FlightId == flightId);
                     if (vr != null)
                     {
+                        var appleg = await _context.AppLegs.FirstOrDefaultAsync(q => q.FlightId == flightId);
                         vr.JLSignedBy = user;
                         vr.JLDatePICApproved = DateTime.UtcNow;
                         vr.PICId = pic;
                         vr.PIC = picStr;
                         var saveResult5 = await _context.SaveAsync();
                         if (saveResult5.Succeed)
+                        {
+                            try
+                            {
+                                var URI = _configuration["WeatherUrls:FREESMS"];
+                                List<string> txtParts = new List<string>();
+                                txtParts.Add("VOYAGE REPORT ALERT");
+                                txtParts.Add("FLT " + appleg.FlightNumber + " " + appleg.FromAirportIATA + "-" + appleg.ToAirportIATA);
+                                txtParts.Add("DATE " + ((DateTime)appleg.STDDay).ToString("yyyy-MM-dd"));
+                                txtParts.Add("PIC " + appleg.PIC);
+                                //string myParameters = "param1=value1&param2=value2&param3=value3";
+                                var text = String.Join("\n", txtParts);
+                                using (WebClient wc = new WebClient())
+                                {
+                                    System.Collections.Specialized.NameValueCollection postData =
+                                         new System.Collections.Specialized.NameValueCollection()
+                                              {
+                                                   { "mobile",_configuration["WeatherUrls:ASRMOBILES"] },
+                                                   { "text", text },
+
+                                              };
+                                    string pagesource = Encoding.UTF8.GetString(wc.UploadValues(URI, postData));
+
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+
+                            }
                             return new DataResponse() { IsSuccess = true, Data = new { vr.Id, vr.FlightId, vr.PICId, vr.JLSignedBy, vr.JLDatePICApproved, vr.PIC } };
+                        }
                         else
                             return new DataResponse() { IsSuccess = false };
                     }
@@ -461,19 +526,19 @@ namespace APCore.Services
                 return false;
         }
 
-        void updateProp(int fid,int crew,string name,string date,string value,List<LogProp> props)
+        void updateProp(int fid, int crew, string name, string date, string value, List<LogProp> props)
         {
             var prop = props.FirstOrDefault(q => q.PropName == name);
             if (prop == null)
             {
                 prop = new LogProp()
                 {
-                    FlightId =fid,
-                    User =crew.ToString(),
+                    FlightId = fid,
+                    User = crew.ToString(),
                     DateUpdate = DateTime.UtcNow,
                     DateUpdateLocal = Convert.ToDecimal(date),
                     PropValue = value,
-                    PropName=name,
+                    PropName = name,
                 };
                 _context.LogProps.Add(prop);
             }
@@ -490,55 +555,55 @@ namespace APCore.Services
             var flight = await _context.FlightInformations.FirstOrDefaultAsync(q => q.ID == log.FlightId);
             var props = await _context.LogProps.Where(q => q.FlightId == flight.ID).ToListAsync();
 
-            if (log.BlockOffDate!=null && checkLogProp(log.BlockOffDateDt, "BLOCKOFF", props))
+            if (log.BlockOffDate != null && checkLogProp(log.BlockOffDateDt, "BLOCKOFF", props))
             {
                 updateProp(flight.ID, log.CrewId, "BLOCKOFF", log.BlockOffDateDt, log.BlockOffDate.ToString(), props);
                 flight.JLOffBlock = log.BlockOffDate;
             }
 
-            if (log.TakeOffDate!=null && checkLogProp(log.TakeOffDateDt, "TAKEOFF", props))
+            if (log.TakeOffDate != null && checkLogProp(log.TakeOffDateDt, "TAKEOFF", props))
             {
                 updateProp(flight.ID, log.CrewId, "TAKEOFF", log.TakeOffDateDt, log.TakeOffDate.ToString(), props);
                 flight.JLTakeOff = log.TakeOffDate;
             }
 
 
-         
+
             if (log.LandingDate != null && checkLogProp(log.LandingDateDt, "LANDING", props))
             {
                 updateProp(flight.ID, log.CrewId, "LANDING", log.LandingDateDt, log.LandingDate.ToString(), props);
                 flight.JLLanding = log.LandingDate;
             }
 
-          
+
             if (log.BlockOnDate != null && checkLogProp(log.BlockOnDateDt, "BLOCKON", props))
             {
                 updateProp(flight.ID, log.CrewId, "BLOCKON", log.BlockOnDateDt, log.BlockOnDate.ToString(), props);
                 flight.JLOnBlock = log.BlockOnDate;
             }
 
-           
+
             if (log.FuelDensity != null && checkLogProp(log.FuelDensityDt, "DENSITY", props))
             {
                 updateProp(flight.ID, log.CrewId, "DENSITY", log.FuelDensityDt, log.FuelDensity.ToString(), props);
                 flight.FuelDensity = log.FuelDensity;
             }
 
-             
+
             if (log.FuelUplift != null && checkLogProp(log.FuelUpliftDt, "UPLIFT", props))
             {
                 updateProp(flight.ID, log.CrewId, "UPLIFT", log.FuelUpliftDt, log.FuelUplift.ToString(), props);
                 flight.FuelDeparture = log.FuelUplift;
             }
 
-           
+
             if (log.FuelRemaining != null && checkLogProp(log.FuelRemainingDt, "FuelRemaining", props))
             {
                 updateProp(flight.ID, log.CrewId, "FuelRemaining", log.FuelRemainingDt, log.FuelRemaining.ToString(), props);
                 flight.FuelArrival = log.FuelRemaining;
             }
 
-          
+
             if (log.FuelUsed != null && checkLogProp(log.FuelUsedDt, "FuelUsed", props))
             {
                 updateProp(flight.ID, log.CrewId, "FuelUsed", log.FuelUsedDt, log.FuelUsed.ToString(), props);
@@ -546,21 +611,21 @@ namespace APCore.Services
             }
 
 
-            
+
             if (log.PaxAdult != null && checkLogProp(log.PaxAdultDt, "PaxAdult", props))
             {
                 updateProp(flight.ID, log.CrewId, "PaxAdult", log.PaxAdultDt, log.PaxAdult.ToString(), props);
                 flight.PaxAdult = log.PaxAdult;
             }
 
-           
+
             if (log.PaxChild != null && checkLogProp(log.PaxChildDt, "PaxAdult", props))
             {
                 updateProp(flight.ID, log.CrewId, "PaxChild", log.PaxChildDt, log.PaxChild.ToString(), props);
                 flight.PaxChild = log.PaxChild;
             }
 
-             
+
             if (log.PaxInfant != null && checkLogProp(log.PaxInfantDt, "PaxInfant", props))
             {
                 updateProp(flight.ID, log.CrewId, "PaxInfant", log.PaxInfantDt, log.PaxInfant.ToString(), props);
@@ -568,76 +633,76 @@ namespace APCore.Services
             }
 
 
-           
+
             if (log.BaggageWeight != null && checkLogProp(log.BaggageWeightDt, "BaggageWeight", props))
             {
                 updateProp(flight.ID, log.CrewId, "BaggageWeight", log.BaggageWeightDt, log.BaggageWeight.ToString(), props);
                 flight.BaggageWeight = log.BaggageWeight;
             }
 
-            
+
             if (log.CargoWeight != null && checkLogProp(log.CargoWeightDt, "CargoWeight", props))
             {
                 updateProp(flight.ID, log.CrewId, "CargoWeight", log.CargoWeightDt, log.CargoWeight.ToString(), props);
                 flight.CargoWeight = log.CargoWeight;
             }
 
-          
+
             if (log.SerialNo != null && checkLogProp(log.SerialNoDt, "SerialNo", props))
             {
                 updateProp(flight.ID, log.CrewId, "SerialNo", log.SerialNoDt, log.SerialNo.ToString(), props);
                 flight.SerialNo = log.SerialNo;
             }
 
-            
+
             if (log.LTR != null && checkLogProp(log.LTRDt, "LTR", props))
             {
                 updateProp(flight.ID, log.CrewId, "LTR", log.LTRDt, log.LTR.ToString(), props);
                 flight.LTR = log.LTR;
             }
 
-            
+
             if (log.PF != null && checkLogProp(log.PFDt, "PF", props))
             {
                 updateProp(flight.ID, log.CrewId, "PF", log.PFDt, log.PF.ToString(), props);
                 flight.PF = log.PF;
             }
 
-             
+
             if (log.RVSM_GND_CPT != null && checkLogProp(log.RVSM_GND_CPTDt, "RVSM_GND_CPT", props))
             {
                 updateProp(flight.ID, log.CrewId, "RVSM_GND_CPT", log.RVSM_GND_CPTDt, log.RVSM_GND_CPT.ToString(), props);
                 flight.RVSM_GND_CPT = log.RVSM_GND_CPT;
             }
 
-           
+
             if (log.RVSM_GND_STBY != null && checkLogProp(log.RVSM_GND_STBYDt, "RVSM_GND_STBY", props))
             {
                 updateProp(flight.ID, log.CrewId, "RVSM_GND_STBY", log.RVSM_GND_STBYDt, log.RVSM_GND_STBY.ToString(), props);
                 flight.RVSM_GND_STBY = log.RVSM_GND_STBY;
             }
 
-             
+
             if (log.RVSM_GND_FO != null && checkLogProp(log.RVSM_GND_FODt, "RVSM_GND_FO", props))
             {
                 updateProp(flight.ID, log.CrewId, "RVSM_GND_FO", log.RVSM_GND_FODt, log.RVSM_GND_FO.ToString(), props);
                 flight.RVSM_GND_FO = log.RVSM_GND_FO;
             }
 
-            
+
             if (log.RVSM_FLT_CPT != null && checkLogProp(log.RVSM_FLT_CPTDt, "RVSM_FLT_CPT", props))
             {
                 updateProp(flight.ID, log.CrewId, "RVSM_FLT_CPT", log.RVSM_FLT_CPTDt, log.RVSM_FLT_CPT.ToString(), props);
                 flight.RVSM_FLT_CPT = log.RVSM_FLT_CPT;
             }
- 
+
             if (log.RVSM_FLT_STBY != null && checkLogProp(log.RVSM_FLT_STBYDt, "RVSM_FLT_STBY", props))
             {
                 updateProp(flight.ID, log.CrewId, "RVSM_FLT_STBY", log.RVSM_FLT_STBYDt, log.RVSM_FLT_STBY.ToString(), props);
                 flight.RVSM_FLT_STBY = log.RVSM_FLT_STBY;
             }
 
-           
+
             if (log.RVSM_FLT_FO != null && checkLogProp(log.RVSM_FLT_FODt, "RVSM_FLT_FO", props))
             {
                 updateProp(flight.ID, log.CrewId, "RVSM_FLT_FO", log.RVSM_FLT_FODt, log.RVSM_FLT_FO.ToString(), props);
@@ -645,7 +710,7 @@ namespace APCore.Services
             }
 
 
-            
+
             if (log.AttRepositioning1 != null && checkLogProp(log.AttRepositioning1Dt, "AttRepositioning1", props))
             {
                 updateProp(flight.ID, log.CrewId, "AttRepositioning1", log.AttRepositioning1Dt, log.AttRepositioning1.ToString(), props);
@@ -653,14 +718,14 @@ namespace APCore.Services
             }
 
 
-            
+
             if (log.AttRepositioning2 != null && checkLogProp(log.AttRepositioning2Dt, "AttRepositioning2", props))
             {
                 updateProp(flight.ID, log.CrewId, "AttRepositioning2", log.AttRepositioning2Dt, log.AttRepositioning2.ToString(), props);
                 flight.AttRepositioning2 = log.AttRepositioning2;
             }
 
-            
+
             if (log.CommanderNote != null && checkLogProp(log.CommanderNoteDt, "CommanderNoteDt", props))
             {
                 updateProp(flight.ID, log.CrewId, "CommanderNote", log.CommanderNoteDt, log.CommanderNote.ToString(), props);
@@ -674,9 +739,9 @@ namespace APCore.Services
             if (saveResult.Succeed)
             {
                 var _flt = await _context.AppCrewFlights.Where(q => q.FlightId == flight.ID && q.CrewId == log.CrewId).FirstOrDefaultAsync();
-                return new DataResponse() { IsSuccess = true, Data = new { flight=_flt, props } };
+                return new DataResponse() { IsSuccess = true, Data = new { flight = _flt, props } };
             }
-                
+
             else
                 return new DataResponse() { IsSuccess = false };
 
