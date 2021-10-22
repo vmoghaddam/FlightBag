@@ -163,6 +163,8 @@ app.controller('jlController', ['$scope', '$location', 'flightService', 'authSer
     $scope.bind = function () {
         var fid = $scope.FlightId;
         $scope.jl = { asr: false, vr: false, pos1: false, pos2: false, sign: '' };
+        //jl.ReportingTime
+        $scope.jl.StartTime=
         $scope.loadingVisible = true;
 
         flightService.getJL(fid).then(function (response) {

@@ -109,6 +109,7 @@
     <Content Include="app\controllers\passwordChangeController.js" />
     <Content Include="app\controllers\pdfViewer.js" />
     <Content Include="app\controllers\signAdd.js" />
+    <Content Include="app\setting.js" />
     <Content Include="app\views\drAdd.html" />
     <Content Include="app\views\imageviewer.html" />
     <Content Include="app\views\jl.html" />

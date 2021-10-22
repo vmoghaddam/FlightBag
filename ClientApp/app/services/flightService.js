@@ -3476,7 +3476,7 @@ app.factory('flightService', ['$http', '$q', 'ngAuthSettings', '$rootScope', fun
 
         return deferred.promise;
     };
-    serviceFactory.getJL = _getJL;
+    serviceFactory.ffdfgetJL = _getJL;
     //////////////////////////////////
     serviceFactory.checkInternet = _checkInternet;
     serviceFactory.checkLock = _checkLock;
